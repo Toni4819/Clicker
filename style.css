@@ -86,7 +86,12 @@ html, body {
   padding: 14px 16px; border-bottom: 1px solid var(--border);
 }
 
-.modal-body { padding: 16px; }
+.modal-body {
+  padding: 16px;
+  max-height: 80vh; /* Limite la hauteur à 80% de l’écran */
+  overflow-y: auto; /* Active le scroll vertical si nécessaire */
+}
+
 
 .close-btn {
   background: transparent; border: none; color: var(--fg);
