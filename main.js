@@ -339,3 +339,10 @@ els.closeDevBtn.addEventListener("click", () => closeModal(els.devModal));
 
 // Sauvegarder à la fermeture
 window.addEventListener("beforeunload", save);
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js')
+    .then(() => console.log('✅ Service Worker actif'))
+    .catch(err => console.error('❌ Erreur Service Worker', err));
+}
+
