@@ -18,6 +18,28 @@ html, body {
   font-family: -apple-system, system-ui, Segoe UI, Roboto, Inter, sans-serif;
 }
 
+/* Empêcher la sélection de texte */
+html, body {
+    user-select: none;         /* Standard */
+    -webkit-user-select: none; /* Safari/Chrome */
+    -moz-user-select: none;    /* Firefox */
+    -ms-user-select: none;     /* IE/Edge */
+}
+
+/* Empêcher le scroll */
+html, body {
+    overflow: hidden; /* Cache les barres de défilement */
+    height: 100%;     /* Nécessaire pour bloquer le scroll */
+    margin: 0;
+    padding: 0;
+}
+
+/* Empêcher le zoom sur mobile */
+html {
+    touch-action: none; /* Bloque le pinch-to-zoom et double-tap */
+}
+
+
 .container {
   max-width: 720px; margin: 32px auto; padding: 24px;
 }
