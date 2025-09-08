@@ -74,9 +74,21 @@ html {
 .spacer { height: 24px; }
 
 .footer {
-  display: flex; align-items: center; justify-content: space-between;
-  color: var(--muted);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: var(--muted);
+
+    position: fixed;   /* Fixe le footer */
+    bottom: 0;         /* Collé en bas */
+    left: 0;
+    width: 100%;       /* Prend toute la largeur */
+    background: var(--background, #222); /* Couleur de fond (variable ou fallback) */
+    padding: 10px 20px;
+    box-shadow: 0 -2px 5px rgba(0,0,0,0.2);
+    z-index: 1000;     /* Toujours au-dessus du contenu */
 }
+
 
 .icon-btn {
   width: 44px; height: 44px;
