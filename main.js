@@ -29,11 +29,8 @@ function load() {
   if (!state.pointsPerClick || state.pointsPerClick < 1) state.pointsPerClick = 1;
 }
 
-function saveDiscordData() {
-  const id = window.discordUserId;
-  if (!id) return save(); // fallback local
-
-  window.saveCloudData(id, state);
+function save() {
+  for (const k of keys) localStorage.setItem(k, String(state[k]));
 }
 
 
