@@ -1,4 +1,4 @@
-// rebrithSystem.js
+// rebirthSystem.js
 
 /**
  * Système de “Rebirth” complet :
