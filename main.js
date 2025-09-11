@@ -29,9 +29,13 @@ function load() {
   if (!state.pointsPerClick || state.pointsPerClick < 1) state.pointsPerClick = 1;
 }
 
-function save() {
-  for (const k of keys) localStorage.setItem(k, String(state[k]));
+function saveDiscordData() {
+  const id = window.discordUserId;
+  if (!id) return save(); // fallback local
+
+  window.saveCloudData(id, state);
 }
+
 
 // Format compact comme la func Swift formatNumber (k/M/B/T, 1 décimale max)
 const nf1 = new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 0, maximumFractionDigits: 1 });
