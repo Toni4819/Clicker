@@ -1,4 +1,4 @@
-// État et persistance (équivalent UserDefaults → localStorage)
+// État et persistance (localStorage)
 const keys = [
   "points",
   "autoClickers",
@@ -17,7 +17,6 @@ const keys = [
 const state = Object.fromEntries(keys.map(k => [k, 0]));
 state.pointsPerClick = 1;
 
-// Chargement des valeurs stockées
 function load() {
   for (const k of keys) {
     const raw = localStorage.getItem(k);
@@ -31,14 +30,13 @@ function load() {
   }
 }
 
-// Sauvegarde dans localStorage
 function save() {
   for (const k of keys) {
     localStorage.setItem(k, String(state[k]));
   }
 }
 
-// Format compact style Swift (k/M/B/T, 1 décimale max)
+// Format compact (k/M/B/T, 1 décimale max)
 const nf1 = new Intl.NumberFormat("fr-FR", {
   minimumFractionDigits: 0,
   maximumFractionDigits: 1,
@@ -69,23 +67,13 @@ function totalAutoClicksPerSecond() {
 }
 
 function costFor(base, owned) {
-  // Swift: Int(Double(base) * pow(1.15, Double(owned))) → troncature
   return Math.floor(base * Math.pow(1.15, owned));
 }
 
-// Définition des machines
-const machines = [
-  { level: 1, title: "Machine N1 (+5/s)", base: 50, key: "machinesLevel1" },
-  { level: 2, title: "Machine N2 (+10/s)", base: 100, key: "machinesLevel2" },
-  { level: 3, title: "Machine N3 (+25/s)", base: 250, key: "machinesLevel3" },
-  { level: 4, title: "Machine N4 (+50/s)", base: 500, key: "machinesLevel4" },
-  { level: 5, title: "Machine N5 (+100/s)", base: 1_000, key: "machinesLevel5" },
-  { level: 6, title: "Machine N6 (+250/s)", base: 10_000, key: "machinesLevel6" },
-  { level: 7, title: "Machine N7 (+500/s)", base: 50_000, key: "machinesLevel7" },
-  { level: 8, title: "Machine N8 (+1000/s)", base: 100_000, key: "machinesLevel8" },
-  { level: 9, title: "Machine N9 (+2500/s)", base: 500_000, key: "machinesLevel9" },
-  { level: 10, title: "Machine N10 (+5000/s)", base: 1_000_000, key: "machinesLevel10" },
-];
+// Import des modules
+import { machines } from "./machines.js";
+import { initDevMenu } from "./dev.js";
+import { initUpgrades } from "./upgrades.js";
 
 // Sélecteurs DOM
 const els = {
@@ -114,102 +102,7 @@ function renderMain() {
   els.versionText.textContent = `Toni’s Studios – v1.1`;
 }
 
-// Rendu boutique
-function renderStore() {
-  els.upgradesList.innerHTML = "";
-
-  // Auto-Clicker
-  {
-    const owned = state.autoClickers;
-    const cost = costFor(10, owned);
-    const item = document.createElement("div");
-    item.className = "item";
-    const left = document.createElement("div");
-    left.innerHTML = `<div class="item-title">🔁 Auto-Clicker</div> <div class="item-meta">${formatCompact(cost)} 💰 • x${owned}</div>`;
-    const btn = document.createElement("button");
-    btn.className = "item-btn";
-    btn.textContent = "Acheter";
-    if (owned >= 150) btn.disabled = true;
-    btn.addEventListener("click", () => {
-      if (state.points >= cost && state.autoClickers < 150) {
-        state.points -= cost;
-        state.autoClickers++;
-        save();
-        renderMain();
-        renderStore();
-      }
-    });
-    item.append(left, btn);
-    els.upgradesList.appendChild(item);
-  }
-
-  // Double Clicker
-  {
-    const owned = state.pointsPerClick - 1;
-    const cost = costFor(20, owned);
-    const item = document.createElement("div");
-    item.className = "item";
-    const left = document.createElement("div");
-    left.innerHTML = `<div class="item-title">⌑ Double Clicker</div> <div class="item-meta">${formatCompact(cost)} 💰 • x${owned}</div>`;
-    const btn = document.createElement("button");
-    btn.className = "item-btn";
-    btn.textContent = "Acheter";
-    btn.addEventListener("click", () => {
-      if (state.points >= cost) {
-        state.points -= cost;
-        state.pointsPerClick++;
-        save();
-        renderMain();
-        renderStore();
-      }
-    });
-    item.append(left, btn);
-    els.upgradesList.appendChild(item);
-  }
-
-  // Machines 1..10
-  els.machinesList.innerHTML = "";
-  for (const m of machines) {
-    const owned = state[m.key];
-    const cost = costFor(m.base, owned);
-    const item = document.createElement("div");
-    item.className = "item";
-    const left = document.createElement("div");
-    left.innerHTML = `<div class="item-title">${m.title}</div> <div class="item-meta">${formatCompact(cost)} 💰 • x${owned}</div>`;
-    const btn = document.createElement("button");
-    btn.className = "item-btn";
-    btn.textContent = "Acheter";
-    if (owned >= 150) btn.disabled = true;
-    btn.addEventListener("click", () => {
-      if (state.points >= cost && state[m.key] < 150) {
-        state.points -= cost;
-        state[m.key]++;
-        save();
-        renderMain();
-        renderStore();
-      }
-    });
-    item.append(left, btn);
-    els.machinesList.appendChild(item);
-  }
-
-  // Statistiques
-  els.statsList.innerHTML = "";
-  addStat("Auto-clickers", state.autoClickers);
-  addStat("Points/clic", state.pointsPerClick);
-  for (const m of machines) {
-    addStat(`Machines N${m.level}`, state[m.key]);
-  }
-
-  function addStat(label, value) {
-    const row = document.createElement("div");
-    row.className = "stat";
-    row.innerHTML = `<span>${label}</span><strong>${value}</strong>`;
-    els.statsList.appendChild(row);
-  }
-}
-
-// Gestion des modales
+// Modales
 function openModal(modal) {
   modal.setAttribute("aria-hidden", "false");
 }
@@ -217,7 +110,7 @@ function closeModal(modal) {
   modal.setAttribute("aria-hidden", "true");
 }
 
-// Séquence d’initialisation
+// Initialisation
 load();
 renderMain();
 save();
@@ -238,32 +131,35 @@ els.tapBtn.addEventListener("click", () => {
   save();
   renderMain();
 });
-els.openStoreBtn.addEventListener("click", () => {
-  renderStore();
-  openModal(els.storeModal);
-});
-els.closeStoreBtn.addEventListener("click", () => {
-  save();
-  closeModal(els.storeModal);
-});
 els.resetBtn.addEventListener("click", () => {
   const ok = confirm(
     "Réinitialiser le jeu ?\nCette action supprimera toute votre progression."
   );
   if (!ok) return;
-  for (const k of keys) state[k] = k === "pointsPerClick" ? 1 : 0;
+  for (const k of keys) {
+    state[k] = k === "pointsPerClick" ? 1 : 0;
+  }
   save();
   renderMain();
-  if (els.storeModal.getAttribute("aria-hidden") === "false") {
-    renderStore();
-  }
 });
 
-// ========== Menu Dev extrait ==========
-import { initDevMenu } from "./dev.js";
-initDevMenu({ els, state, save, renderMain, renderStore, openModal, closeModal });
+// Extraction du menu “Boutique” → Améliorations
+initUpgrades({
+  els,
+  state,
+  save,
+  renderMain,
+  openModal,
+  closeModal,
+  formatCompact,
+  costFor,
+  machines,
+});
 
-// Sauvegarder à la fermeture
+// Extraction du menu Dev
+initDevMenu({ els, state, save, renderMain, renderStore: () => {}, openModal, closeModal });
+
+// Sauvegarde à la fermeture
 window.addEventListener("beforeunload", save);
 
 if ("serviceWorker" in navigator) {
