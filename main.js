@@ -158,16 +158,16 @@ initDevMenu({
   closeModal,
 });
 
-// Extraction du bouton Rbrith
-initRebirthSystem({ 
-  els, 
-  state, 
-  keys, 
-  save, 
-  renderMain, 
-  renderStore,      // pour mettre à jour la boutique après un Rebirth
-  formatCompact     // pour formater correctement les coûts et compteurs
+initRebirthSystem({
+  els,
+  state,
+  keys,
+  save,
+  renderMain,
+  renderStore,    // ta fonction de rafraîchissement de la boutique
+  formatCompact   // ta fonction de formatage de nombres
 });
+
 
 // Sauvegarde à la fermeture
 window.addEventListener("beforeunload", save);
