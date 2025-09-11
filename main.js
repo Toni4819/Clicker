@@ -74,6 +74,7 @@ function costFor(base, owned) {
 import { machines } from "./machines.js";
 import { initDevMenu } from "./dev.js";
 import { initUpgrades } from "./upgrades.js";
+import { initReset } from "./rebrithSystem.js";
 
 // Sélecteurs DOM
 const els = {
@@ -131,19 +132,8 @@ els.tapBtn.addEventListener("click", () => {
   save();
   renderMain();
 });
-els.resetBtn.addEventListener("click", () => {
-  const ok = confirm(
-    "Réinitialiser le jeu ?\nCette action supprimera toute votre progression."
-  );
-  if (!ok) return;
-  for (const k of keys) {
-    state[k] = k === "pointsPerClick" ? 1 : 0;
-  }
-  save();
-  renderMain();
-});
 
-// Extraction du menu “Boutique” → Améliorations
+// Extraction du menu “Améliorations”
 initUpgrades({
   els,
   state,
@@ -157,7 +147,18 @@ initUpgrades({
 });
 
 // Extraction du menu Dev
-initDevMenu({ els, state, save, renderMain, renderStore: () => {}, openModal, closeModal });
+initDevMenu({
+  els,
+  state,
+  save,
+  renderMain,
+  renderStore: () => {},
+  openModal,
+  closeModal,
+});
+
+// Extraction du bouton Réinitialiser
+initReset({ els, state, keys, save, renderMain });
 
 // Sauvegarde à la fermeture
 window.addEventListener("beforeunload", save);
