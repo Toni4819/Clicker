@@ -4,14 +4,14 @@ import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/fireb
 
 // ✅ Configuration Firebase
 const firebaseConfig = {
-  apiKey: "AIzaSyBRavjkGz8F_mM3WZ2cmYzOzudzT0sAiwE",
-  authDomain: "clicker-cloud-92001.firebaseapp.com",
-  projectId: "clicker-cloud-92001",
-  storageBucket: "clicker-cloud-92001.firebasestorage.app",
-  messagingSenderId: "394775732759",
-  appId: "1:394775732759:web:1ea325bb0b186489427252",
-  measurementId: "G-QELQ4GJ8F6"
+  apiKey: "AIzaSyBVZKPSVzpkNehiJlnrNErrEvXwWnK8TtY",
+  authDomain: "tonisstudios.firebaseapp.com",
+  projectId: "tonisstudios",
+  storageBucket: "tonisstudios.firebasestorage.app",
+  messagingSenderId: "769862192373",
+  appId: "1:769862192373:web:7cf35222520929cb2cc9bc"
 };
+
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
