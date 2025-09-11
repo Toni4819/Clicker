@@ -33,7 +33,6 @@ function save() {
   for (const k of keys) localStorage.setItem(k, String(state[k]));
 }
 
-
 // Format compact comme la func Swift formatNumber (k/M/B/T, 1 décimale max)
 const nf1 = new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 0, maximumFractionDigits: 1 });
 function formatCompact(n) {
@@ -202,7 +201,7 @@ function closeModal(modal) {
 }
 
 /* Dev menu */
-const base64Code = "MzRTYXVjZTEy"; // "87Saussicej"
+const base64Code = "MzRTYXVjZTEy"; //
 let devUnlocked = false;
 
 function renderDev() {
@@ -346,5 +345,3 @@ if ('serviceWorker' in navigator) {
     .then(() => console.log('✅ Service Worker enregistré'))
     .catch(err => console.error('❌ Erreur Service Worker', err));
 }
-
-
