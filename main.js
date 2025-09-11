@@ -76,6 +76,7 @@ import { initDevMenu } from "./dev.js";
 import { initUpgrades } from "./upgrades.js";
 import { initRebirthSystem } from "./rebirthSystem.js";
 
+
 // Sélecteurs DOM
 const els = {
   pointsValue: document.getElementById("pointsValue"),
