@@ -67,10 +67,11 @@ window.addEventListener("DOMContentLoaded", () => {
       if (window.discordUserId) {
         const confirmLogout = confirm("Se déconnecter de Discord ?");
         if (confirmLogout) {
+          sessionStorage.removeItem("discord_token");
           window.discordUserId = null;
           window.discordUsername = null;
           window.discordAvatarURL = null;
-          location.href = location.origin + location.pathname; // reset hash
+          location.href = location.origin + location.pathname;
         }
       } else {
         window.location.href = discordAuthURL;
@@ -79,7 +80,14 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 
   const hash = window.location.hash;
-  const token = new URLSearchParams(hash.substring(1)).get("access_token");
+  let token = new URLSearchParams(hash.substring(1)).get("access_token");
+
+  if (!token) {
+    token = sessionStorage.getItem("discord_token");
+  } else {
+    sessionStorage.setItem("discord_token", token);
+    history.replaceState(null, "", location.pathname);
+  }
 
   if (token) {
     fetch("https://discord.com/api/users/@me", {
