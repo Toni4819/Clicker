@@ -1,11 +1,12 @@
 // URL OAuth2 Discord
-export const discordAuthURL = "https://discord.com/oauth2/authorize?client_id=1415716108031361185&response_type=token&redirect_uri=https%3A%2F%2Ftoni4819.github.io%2FClicker%2F&scope=identify%20email";
+const discordAuthURL = "https://discord.com/oauth2/authorize?client_id=1415716108031361185&response_type=token&redirect_uri=https%3A%2F%2Ftoni4819.github.io%2FClicker%2F&scope=identify%20email";
 
-export let discordUserId = null;
-export let discordUsername = null;
+// Variables globales
+window.discordUserId = null;
+window.discordUsername = null;
 
-// Lance la connexion Discord
-export function initDiscordLogin() {
+// Bouton de connexion Discord
+window.addEventListener("DOMContentLoaded", () => {
   const loginBtn = document.getElementById("discordLoginBtn");
   if (loginBtn) {
     loginBtn.addEventListener("click", () => {
@@ -24,18 +25,18 @@ export function initDiscordLogin() {
     })
     .then(res => res.json())
     .then(user => {
-      discordUserId = user.id;
-      discordUsername = user.username + "#" + user.discriminator;
+      window.discordUserId = user.id;
+      window.discordUsername = user.username + "#" + user.discriminator;
 
       const info = document.getElementById("discordUserInfo");
       if (info) {
-        info.textContent = `Connecté en tant que ${discordUsername}`;
+        info.textContent = `Connecté en tant que ${window.discordUsername}`;
       }
 
-      // Appelle une fonction de ton jeu pour charger les données
+      // Charge les données du jeu pour cet utilisateur
       if (typeof window.loadDiscordData === "function") {
         window.loadDiscordData();
       }
     });
   }
-}
+});
