@@ -18,10 +18,6 @@
  * @param {Function} deps.formatCompact— formatage compact de tes nombres
  */
 export function initRebirthSystem({
-  console.log("✅ initRebirthSystem démarré", deps.els.resetBtn);
-  const btn = deps.els.resetBtn;
-  btn.addEventListener("click", e => {
-    console.log("🔔 rebirth click !", e, "points:", deps.state.points);
   els,
   state,
   keys,
@@ -30,9 +26,12 @@ export function initRebirthSystem({
   renderStore = () => {},
   formatCompact,
 }) {
+  // Debug : vérification d'appel de la fonction
+  console.log("✅ initRebirthSystem démarré", els.resetBtn);
+
   const STORAGE_KEY = "rebirthCount";
-  const BASE_COST = 10000;
-  let rebirthCount = parseInt(localStorage.getItem(STORAGE_KEY) || "0", 10);
+  const BASE_COST    = 10000;
+  let rebirthCount   = parseInt(localStorage.getItem(STORAGE_KEY) || "0", 10);
 
   function getNextCost() {
     return Math.floor(BASE_COST * Math.pow(1.1, rebirthCount));
@@ -42,36 +41,48 @@ export function initRebirthSystem({
     return Math.pow(1.1, rebirthCount);
   }
 
-  // 🔁 Réutilise le bouton existant resetBtn
-  const btn = els.resetBtn;
+  // Réutilisation du bouton reset comme bouton Rebirth
+  let btn = els.resetBtn;
   btn.textContent = "🌱 Rebirth";
-  btn.title = "Rebirth";
+  btn.title       = "Rebirth";
   btn.classList.add("btn", "btn-warning");
 
-  // 📊 Bloc d’info Rebirth
+  // Remplacement pour supprimer d’anciens listeners
+  const freshBtn = btn.cloneNode(true);
+  btn.replaceWith(freshBtn);
+  els.resetBtn = freshBtn;
+  btn = freshBtn;
+
+  // Création ou récupération du bloc d’info Rebirth
   let info = document.getElementById("rebirthInfo");
   if (!info) {
     info = document.createElement("div");
     info.id = "rebirthInfo";
     info.style.fontSize = "0.9em";
-    info.style.margin = "4px 0";
-    info.style.color = "#8d8d8d";
+    info.style.margin   = "4px 0";
+    info.style.color    = "#8d8d8d";
     btn.insertAdjacentElement("afterend", info);
   }
 
   function updateInfo() {
-    const cost = getNextCost();
-    info.textContent = `Rebirths : ${rebirthCount} — Coût suivant : ${formatCompact(cost)}`;
+    const cost  = getNextCost();
     const boost = getBoostFactor();
-    els.tapBtn.textContent = `👇 Tapper (+${(state.pointsPerClick * boost).toFixed(0)})`;
+    info.textContent     =
+      `Rebirths : ${rebirthCount} — Coût suivant : ${formatCompact(cost)}`;
+    els.tapBtn.textContent =
+      `👇 Tapper (+${(state.pointsPerClick * boost).toFixed(0)})`;
   }
 
-  btn.addEventListener("click", () => {
+  // Écouteur de click pour le Rebirth
+  btn.addEventListener("click", e => {
+    console.log("🔔 rebirth click !", "points avant :", state.points);
+
     const cost = getNextCost();
     if (state.points < cost) {
       alert("Tu n’as pas assez de points pour rebirth !");
       return;
     }
+
     const ok = confirm(
       `Rebirth #${rebirthCount + 1} pour ${formatCompact(cost)} points ?\n` +
       `→ Toutes tes machines seront remises à zéro\n` +
@@ -80,26 +91,35 @@ export function initRebirthSystem({
     );
     if (!ok) return;
 
+    // 1) payer le coût
     state.points -= cost;
 
+    // 2) reset de toutes les machines et auto-clickers
     for (const k of keys) {
       if (k !== "points" && k !== "pointsPerClick") {
         state[k] = 0;
       }
     }
 
+    // 3) diviser l’argent restant par 2
     state.points = Math.floor(state.points / 2);
+
+    // 4) incrémenter et stocker
     rebirthCount += 1;
     localStorage.setItem(STORAGE_KEY, String(rebirthCount));
 
-    const boost = getBoostFactor();
-    state.pointsPerClick = Math.max(1, Math.floor(state.pointsPerClick * boost));
+    // 5) booster les points par clic
+    const totalBoost = getBoostFactor();
+    state.pointsPerClick =
+      Math.max(1, Math.floor(state.pointsPerClick * totalBoost));
 
+    // 6) sauve et rafraîchis l’UI
     save();
     renderMain();
     renderStore();
     updateInfo();
   });
 
+  // Initialisation de l’affichage
   updateInfo();
 }
