@@ -26,35 +26,25 @@ export function initRebirthSystem({
   renderStore = () => {},
   formatCompact,
 }) {
-  // --- CONSTANTES ET ÉTAT STOCKÉ ---
   const STORAGE_KEY = "rebirthCount";
-  const BASE_COST = 10000;   // coût de base du 1er Rebirth
+  const BASE_COST = 10000;
   let rebirthCount = parseInt(localStorage.getItem(STORAGE_KEY) || "0", 10);
 
-  // --- FONCTIONS UTILES ---
   function getNextCost() {
-    // exponentiel +10% par rebirth : base * (1.1^rebirthCount)
     return Math.floor(BASE_COST * Math.pow(1.1, rebirthCount));
   }
 
   function getBoostFactor() {
-    // +10% de boost cumulatif : 1.1^rebirthCount
     return Math.pow(1.1, rebirthCount);
   }
 
-  // Création dynamique du bouton Rebirth (si pas dans ton HTML)
-  let btn = els.rebirthBtn;
-  if (!btn) {
-    btn = document.createElement("button");
-    btn.id = "rebirthBtn";
-    btn.className = "btn btn-warning";
-    btn.textContent = "🌱 Rebirth";
-    // on l’ajoute juste après le bouton reset pour pas toucher à l’HTML
-    els.resetBtn.insertAdjacentElement("afterend", btn);
-    els.rebirthBtn = btn;
-  }
+  // 🔁 Réutilise le bouton existant resetBtn
+  const btn = els.resetBtn;
+  btn.textContent = "🌱 Rebirth";
+  btn.title = "Rebirth";
+  btn.classList.add("btn", "btn-warning");
 
-  // Création du bloc d’info Rebirth
+  // 📊 Bloc d’info Rebirth
   let info = document.getElementById("rebirthInfo");
   if (!info) {
     info = document.createElement("div");
@@ -65,16 +55,13 @@ export function initRebirthSystem({
     btn.insertAdjacentElement("afterend", info);
   }
 
-  // Met à jour l’affichage du nb de Rebirths et du coût
   function updateInfo() {
     const cost = getNextCost();
     info.textContent = `Rebirths : ${rebirthCount} — Coût suivant : ${formatCompact(cost)}`;
-    // on met à jour le label du bouton Tap pour afficher la puissance actuelle
     const boost = getBoostFactor();
     els.tapBtn.textContent = `👇 Tapper (+${(state.pointsPerClick * boost).toFixed(0)})`;
   }
 
-  // Action de Rebirth
   btn.addEventListener("click", () => {
     const cost = getNextCost();
     if (state.points < cost) {
@@ -89,35 +76,26 @@ export function initRebirthSystem({
     );
     if (!ok) return;
 
-    // 1) payer le coût
     state.points -= cost;
 
-    // 2) reset de toutes les machines et auto-clickers
     for (const k of keys) {
       if (k !== "points" && k !== "pointsPerClick") {
-        // on remet à zéro autoClickers et machinesLevelX
         state[k] = 0;
       }
     }
 
-    // 3) on divise l’argent restant par 2
     state.points = Math.floor(state.points / 2);
-
-    // 4) on augmente le compteur et on stocke
     rebirthCount += 1;
     localStorage.setItem(STORAGE_KEY, String(rebirthCount));
 
-    // 5) on boost les points par clic
     const boost = getBoostFactor();
     state.pointsPerClick = Math.max(1, Math.floor(state.pointsPerClick * boost));
 
-    // 6) on sauve et on rafraîchit l’UI
     save();
     renderMain();
     renderStore();
     updateInfo();
   });
 
-  // Initialisation de l’affichage
   updateInfo();
 }
