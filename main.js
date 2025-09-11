@@ -74,7 +74,7 @@ function costFor(base, owned) {
 import { machines } from "./machines.js";
 import { initDevMenu } from "./dev.js";
 import { initUpgrades } from "./upgrades.js";
-import { initRebirthSystem } from "./rebrithSystem.js";
+import { initRebirthSystem } from "./rebirthSystem.js";
 
 // Sélecteurs DOM
 const els = {
