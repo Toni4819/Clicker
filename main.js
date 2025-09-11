@@ -43,12 +43,18 @@ const nf1 = new Intl.NumberFormat("fr-FR", {
 });
 function formatCompact(n) {
   const abs = Math.abs(n);
-  if (abs >= 1_000_000_000_000) return `\`${nf1.format(n / 1_000_000_000_000)}T\``;
-  if (abs >= 1_000_000_000) return `\`${nf1.format(n / 1_000_000_000)}B\``;
-  if (abs >= 1_000_000) return `\`${nf1.format(n / 1_000_000)}M\``;
-  if (abs >= 1_000) return `\`${nf1.format(n / 1_000)}k\``;
-  return String(n);
+  const nf1 = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
+
+  if (abs >= 1e18) return `\`${nf1.format(n / 1e18)}QT\``;
+  if (abs >= 1e15) return `\`${nf1.format(n / 1e15)}Q\``;
+  if (abs >= 1e12) return `\`${nf1.format(n / 1e12)}T\``;
+  if (abs >= 1e9)  return `\`${nf1.format(n / 1e9)}B\``;
+  if (abs >= 1e6)  return `\`${nf1.format(n / 1e6)}M\``;
+  if (abs >= 1e3)  return `\`${nf1.format(n / 1e3)}k\``;
+
+  return `\`${nf1.format(n)}\``;
 }
+
 
 function totalAutoClicksPerSecond() {
   return (
