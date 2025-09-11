@@ -157,8 +157,16 @@ initDevMenu({
   closeModal,
 });
 
-// Extraction du bouton Réinitialiser
-initReset({ els, state, keys, save, renderMain });
+// Extraction du bouton Rbrith
+initRebirthSystem({ 
+  els, 
+  state, 
+  keys, 
+  save, 
+  renderMain, 
+  renderStore,      // pour mettre à jour la boutique après un Rebirth
+  formatCompact     // pour formater correctement les coûts et compteurs
+});
 
 // Sauvegarde à la fermeture
 window.addEventListener("beforeunload", save);
