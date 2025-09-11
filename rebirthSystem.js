@@ -18,6 +18,10 @@
  * @param {Function} deps.formatCompact— formatage compact de tes nombres
  */
 export function initRebirthSystem({
+  console.log("✅ initRebirthSystem démarré", deps.els.resetBtn);
+  const btn = deps.els.resetBtn;
+  btn.addEventListener("click", e => {
+    console.log("🔔 rebirth click !", e, "points:", deps.state.points);
   els,
   state,
   keys,
