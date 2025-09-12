@@ -94,6 +94,7 @@ const els = {
   devModal:      document.getElementById("devModal"),
   closeDevBtn:   document.getElementById("closeDevBtn"),
   devBody:       document.getElementById("devBody"),
+  resetBtn: document.getElementById("resetBtn"),
 };
 
 // Rendu écran principal
