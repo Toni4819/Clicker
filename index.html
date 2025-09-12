@@ -1,9 +1,23 @@
 <!doctype html>
 <html lang="fr">
   <head>
+    <!-- Icônes et favicons -->
+    <link rel="icon" type="image/png" href="image/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="image/favicon.svg" />
+    <link rel="shortcut icon" href="image/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="image/apple-touch-icon.png" />
+
+    <!-- PWA manifest -->
+    <link rel="manifest" href="image/site.webmanifest" />
+    <meta name="theme-color" content="#000000" />
+    <meta name="apple-mobile-web-app-title" content="Clicker" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
     <meta charset="utf-8" />
     <title>Clicker</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="color-scheme" content="dark light" />
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
@@ -25,7 +39,7 @@
         </div>
       </section>
 
-      <!-- Modales -->
+      <!-- Modale Boutique -->
       <div id="storeModal" class="modal" aria-hidden="true" role="dialog" aria-labelledby="storeTitle">
         <div class="modal-content">
           <header class="modal-header">
@@ -49,6 +63,7 @@
         </div>
       </div>
 
+      <!-- Modale Dev -->
       <div id="devModal" class="modal" aria-hidden="true" role="dialog" aria-labelledby="devTitle">
         <div class="modal-content">
           <header class="modal-header">
