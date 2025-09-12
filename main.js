@@ -74,6 +74,8 @@ import { machines } from "./machines.js";
 import { initDevMenu } from "./dev.js";
 import { initUpgrades } from "./upgrades.js";
 import { initRebirthSystem } from "./rebirthSystem.js";
+import { initReset } from "./reset.js";
+
 
 // Sélecteurs DOM
 const els = {
