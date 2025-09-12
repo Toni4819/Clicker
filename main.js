@@ -191,6 +191,8 @@ initRebirthSystem({
   renderStore: () => {},
   formatCompact
 });
+initReset({ els, state, keys, save, renderMain });
+
 
 // Sauvegarde à la fermeture
 window.addEventListener("beforeunload", save);
