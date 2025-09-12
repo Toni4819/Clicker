@@ -90,7 +90,7 @@ const els = {
   autoClicksValue: document.getElementById("autoClicksValue"),
   tapBtn: document.getElementById("tapBtn"),
   openStoreBtn: document.getElementById("openStoreBtn"),
-  resetBtn: document.getElementById("resetBtn"),
+  rebirthBtn: document.getElementById("rebirthBtn"),
   versionText: document.getElementById("versionText"),
   storeModal: document.getElementById("storeModal"),
   closeStoreBtn: document.getElementById("closeStoreBtn"),
