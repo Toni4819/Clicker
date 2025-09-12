@@ -27,7 +27,7 @@ export function initRebirthSystem({
   formatCompact,
 }) {
   // Debug : vérification d'appel de la fonction
-  console.log("✅ initRebirthSystem démarré", els.resetBtn);
+  console.log("✅ initRebirthSystem démarré", els.rebirthBtn);
 
   const STORAGE_KEY = "rebirthCount";
   const BASE_COST    = 10000;
@@ -42,16 +42,12 @@ export function initRebirthSystem({
   }
 
   // Réutilisation du bouton reset comme bouton Rebirth
-  let btn = els.resetBtn;
+  let btn = els.rebirthBtn;
   btn.textContent = "🌱 Rebirth";
   btn.title       = "Rebirth";
   btn.classList.add("btn", "btn-warning");
 
   // Remplacement pour supprimer d’anciens listeners
-  const freshBtn = btn.cloneNode(true);
-  btn.replaceWith(freshBtn);
-  els.resetBtn = freshBtn;
-  btn = freshBtn;
 
   // Création ou récupération du bloc d’info Rebirth
   let info = document.getElementById("rebirthInfo");
