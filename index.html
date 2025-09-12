@@ -17,16 +17,16 @@
     <meta charset="utf-8" />
     <title>Clicker</title>
     <meta name="color-scheme" content="dark light" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no" />
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <!-- Déclencheur caché du menu dev (zone 120x50 en haut-gauche) -->
+    <!-- Déclencheur caché du menu dev -->
     <button id="devTrigger" aria-label="Desultory">Desultory</button>
 
     <main class="game-layout">
 
-      <!-- Statuts -->
+      <!-- Stats -->
       <header class="stats-header">
         <h1 class="title">💰 Points : <span id="pointsValue">0</span></h1>
         <p class="subtitle">⚡ Clics/s : <span id="autoClicksValue">0</span></p>
@@ -34,16 +34,19 @@
 
       <!-- Zone d’actions principales -->
       <section class="action-zone">
+        <!-- Bouton de clic centré -->
         <button id="tapBtn" class="btn btn-primary big-btn">👆 Tapper (+1)</button>
 
+        <!-- Séparateur entre clic et autres actions -->
+        <hr class="divider action-divider" />
+
+        <!-- Autres boutons -->
         <div class="actions-grid">
           <button id="openStoreBtn" class="btn btn-secondary">🆙 Améliorations</button>
           <button id="shopBtn" class="btn btn-shop">🛍️ Shop</button>
           <button id="rebirthBtn" class="btn btn-warning">🌱 Rebirth</button>
         </div>
       </section>
-
-      <hr class="divider" />
 
       <!-- Modale Boutique -->
       <div id="storeModal" class="modal" aria-hidden="true" role="dialog" aria-labelledby="storeTitle">
@@ -57,12 +60,10 @@
               <h3 class="section-title">💡 Améliorations basiques</h3>
               <div id="upgradesList" class="list"></div>
             </section>
-
             <section class="section">
               <h3 class="section-title">⚙️ Machines</h3>
               <div id="machinesList" class="list"></div>
             </section>
-
             <section class="section">
               <h3 class="section-title">📊 Statistiques</h3>
               <div id="statsList" class="list"></div>
@@ -78,13 +79,11 @@
             <h2 id="devTitle">🔧 Mode Développeur</h2>
             <button id="closeDevBtn" class="close-btn" aria-label="Fermer">✕</button>
           </header>
-          <div class="modal-body" id="devBody">
-            <!-- Contenu généré par JS: écran code -> outils dev -->
-          </div>
+          <div class="modal-body" id="devBody"></div>
         </div>
       </div>
 
-      <!-- Footer fixé bas -->
+      <!-- Footer fixé en bas -->
       <footer class="footer">
         <div class="footer-left">
           <span id="versionText">Toni’s Studios – v1.8</span>
@@ -93,6 +92,7 @@
           <button id="resetBtn" class="btn footer-reset">↺ Reset total</button>
         </div>
       </footer>
+
     </main>
 
     <script type="module" src="./main.js"></script>
