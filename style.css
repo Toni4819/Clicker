@@ -95,7 +95,7 @@ html { touch-action: none; }
 
 /* Séparateur interne */
 .action-divider {
-  width: min(80%, 360px);
+  width: clamp(200px, 60%, 400px);
   margin: 0; /* supprime margin vertical par défaut */
   border: none;
   border-top: 1px solid var(--border);
