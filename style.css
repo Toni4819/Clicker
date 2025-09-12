@@ -2,10 +2,10 @@
   --bg: #0f1217;
   --fg: #e9eef5;
   --muted: #9aa7b5;
-  --primary: #f59f00;
-  --secondary: #1e66f5;
-  --shop: #00b894;
-  --danger: #e03131;
+  --primary: #f59f00; /* orange */
+  --secondary: #1e66f5; /* blue */
+  --shop: #00b894; /* green for shop */
+  --danger: #e03131; /* red */
   --surface: #171a21;
   --border: #2a2f3a;
   --radius: 14px;
@@ -13,63 +13,58 @@
 
 * { box-sizing: border-box; }
 
+/* Base */
 html, body {
   margin: 0; padding: 0;
   background: var(--bg); color: var(--fg);
   font-family: -apple-system, system-ui, Segoe UI, Roboto, Inter, sans-serif;
-  user-select: none;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
+
+  /* Empêcher la sélection de texte */
+  user-select: none;         /* Standard */
+  -webkit-user-select: none; /* Safari/Chrome */
+  -moz-user-select: none;    /* Firefox */
+  -ms-user-select: none;     /* IE/Edge */
+
+  /* Empêcher le scroll global (on scrolle dans les modales si besoin) */
   overflow: hidden;
   height: 100%;
 }
 
+/* Empêcher le zoom sur mobile */
 html { touch-action: none; }
 
-/* ====== Structure ====== */
-.game-layout {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100%;
-  max-width: 720px;
-  padding: 1rem;
-  margin: 0 auto;
-}
-
-.stats-header {
-  text-align: center;
-  margin-bottom: 1rem;
-  position: relative;
-}
-
+/* Bouton dev caché mais cliquable */
 #devTrigger {
-  position: absolute;
-  top: 0; left: 0;
-  width: 120px; height: 50px;
-  background: transparent; color: transparent;
-  border: none; cursor: pointer;
+  position: fixed; top: 0; left: 0; width: 120px; height: 50px;
+  background: transparent; color: transparent; border: none; cursor: pointer;
+  z-index: 1001;
 }
 
+/* Conteneur principal centré et avec padding bas pour le footer fixe */
+.game-layout {
+  display: flex; flex-direction: column; align-items: center;
+  width: 100%; max-width: 720px; margin: 0 auto; padding: 24px 16px;
+  padding-bottom: 96px; /* réserve l'espace du footer fixe */
+}
+
+/* Titres */
 .title {
   font-size: 2.2rem; margin: 0 0 8px 0; font-weight: 800;
 }
-
 .subtitle {
   font-size: 1.1rem; margin: 0 0 24px 0; color: var(--muted);
 }
+.stats-header { text-align: center; }
 
-/* ====== Boutons ====== */
+/* Boutons génériques */
 .btn {
   display: inline-block;
   padding: 14px 16px;
   border: none; border-radius: var(--radius);
   font-size: 1.1rem; font-weight: 700;
   cursor: pointer;
-  transition: transform .05s ease, background 0.2s ease;
+  transition: transform .05s ease, background .2s ease, box-shadow .2s ease;
 }
-
 .btn:active { transform: translateY(1px); }
 
 .btn-primary { background: var(--primary); color: #000; }
@@ -77,48 +72,78 @@ html { touch-action: none; }
 .btn-warning { background: var(--danger); color: #fff; }
 .btn-shop { background: var(--shop); color: #fff; }
 
+/* Effets hover (desktop) */
+@media (hover: hover) and (pointer: fine) {
+  .btn-primary:hover { box-shadow: 0 6px 16px rgba(245,159,0,0.25); }
+  .btn-secondary:hover { box-shadow: 0 6px 16px rgba(30,102,245,0.25); }
+  .btn-warning:hover { box-shadow: 0 6px 16px rgba(224,49,49,0.25); }
+  .btn-shop:hover { box-shadow: 0 6px 16px rgba(0,184,148,0.25); }
+}
+
+/* Bouton de clic principal */
 .big-btn {
-  font-size: 1.4rem;
+  font-size: 1.5rem;
   padding: 1rem 2rem;
-  width: 80%;
-  max-width: 400px;
+  width: min(90%, 420px);
+  text-align: center;
 }
 
-/* ====== Zone d’actions ====== */
-.action-zone {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
+/* Grille des actions secondaires (Améliorations / Shop / Rebirth) */
+.actions-grid {
   width: 100%;
+  max-width: 640px;
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(140px, 1fr));
+  gap: 12px;
+  justify-items: stretch;
 }
+.actions-grid .btn { width: 100%; }
 
-.secondary-actions {
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-
+/* Séparateur */
 .divider {
   border: none; border-top: 1px solid var(--border);
   margin: 24px 0;
+  width: 100%;
+  max-width: 720px;
 }
 
-/* ====== Footer ====== */
+/* Footer fixé en bas, pleine largeur */
 .footer {
-  margin-top: auto;
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  padding: 0.8rem 1rem;
+  position: fixed; bottom: 0; left: 0; width: 100%;
   background: var(--surface);
   border-top: 1px solid var(--border);
-  font-size: 0.9rem;
+  box-shadow: 0 -8px 24px rgba(0,0,0,0.25);
+  padding: 10px 16px;
+  z-index: 1000;
+
+  display: flex; align-items: center; justify-content: space-between;
   color: var(--muted);
 }
 
-/* ====== Modales ====== */
+/* Bouton reset dans le footer */
+.footer-reset {
+  background: transparent;
+  color: #fff;
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  border-radius: 10px;
+}
+@media (hover: hover) and (pointer: fine) {
+  .footer-reset:hover {
+    background: #10141b;
+  }
+}
+
+/* Icônes rondes (si utilisées ailleurs) */
+.icon-btn {
+  width: 44px; height: 44px;
+  border-radius: 50%; border: 1px solid var(--border);
+  background: var(--surface); color: var(--danger);
+  font-size: 22px; cursor: pointer;
+}
+
+/* Modales */
 .modal {
   position: fixed; inset: 0;
   display: none; align-items: center; justify-content: center;
@@ -138,4 +163,61 @@ html { touch-action: none; }
 
 .modal-header {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 16px; border-bottom: 1
+  padding: 14px 16px; border-bottom: 1px solid var(--border);
+}
+
+.modal-body {
+  padding: 16px;
+  max-height: 80vh; /* Limite la hauteur à 80% de l’écran */
+  overflow-y: auto; /* Active le scroll vertical si nécessaire */
+}
+
+.close-btn {
+  background: transparent; border: none; color: var(--fg);
+  font-size: 20px; cursor: pointer;
+}
+
+/* Sections boutique */
+.section { margin-bottom: 16px; }
+.section-title { margin: 0 0 8px 0; font-size: 1rem; color: var(--muted); }
+
+.list { display: grid; gap: 8px; }
+
+.item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 14px; border-radius: 12px;
+  background: #0e1117; border: 1px solid var(--border);
+}
+.item-title { font-weight: 600; }
+.item-meta { color: var(--muted); font-size: .95rem; }
+
+.item-btn {
+  margin-left: 12px;
+  padding: 8px 12px; border-radius: 10px; border: 1px solid var(--border);
+  background: #10141b; color: var(--fg); cursor: pointer;
+}
+.item-btn[disabled] { opacity: .5; cursor: not-allowed; }
+
+.stat {
+  display: flex; justify-content: space-between; padding: 10px 12px;
+  border: 1px dashed var(--border); border-radius: 10px; color: var(--muted);
+}
+
+/* Inputs */
+input[type="number"], input[type="password"], input[type="text"] {
+  background: #0d0f14; color: var(--fg);
+  border: 1px solid var(--border);
+  padding: 10px 12px; border-radius: 10px; width: 200px;
+}
+
+/* Responsive: si l’écran est étroit, la grille passe en 2 colonnes puis 1 */
+@media (max-width: 520px) {
+  .actions-grid {
+    grid-template-columns: repeat(2, minmax(120px, 1fr));
+  }
+}
+@media (max-width: 380px) {
+  .actions-grid {
+    grid-template-columns: 1fr;
+  }
+}
