@@ -2,10 +2,10 @@
   --bg: #0f1217;
   --fg: #e9eef5;
   --muted: #9aa7b5;
-  --primary: #f59f00; /* orange */
-  --secondary: #1e66f5; /* blue */
-  --shop: #00b894; /* vert shop */
-  --danger: #e03131; /* red */
+  --primary: #f59f00;
+  --secondary: #1e66f5;
+  --shop: #00b894;
+  --danger: #e03131;
   --surface: #171a21;
   --border: #2a2f3a;
   --radius: 14px;
@@ -25,11 +25,9 @@ html, body {
   height: 100%;
 }
 
-html {
-  touch-action: none;
-}
+html { touch-action: none; }
 
-/* ====== Structure générale ====== */
+/* ====== Structure ====== */
 .game-layout {
   display: flex;
   flex-direction: column;
@@ -107,7 +105,7 @@ html {
   margin: 24px 0;
 }
 
-/* ====== Footer créatif ====== */
+/* ====== Footer ====== */
 .footer {
   margin-top: auto;
   width: 100%;
@@ -140,62 +138,4 @@ html {
 
 .modal-header {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 16px; border-bottom: 1px solid var(--border);
-}
-
-.modal-body {
-  padding: 16px;
-  max-height: 80vh;
-  overflow-y: auto;
-}
-
-.close-btn {
-  background: transparent; border: none; color: var(--fg);
-  font-size: 20px; cursor: pointer;
-}
-
-/* ====== Sections boutique ====== */
-.section { margin-bottom: 16px; }
-.section-title { margin: 0 0 8px 0; font-size: 1rem; color: var(--muted); }
-
-.list { display: grid; gap: 8px; }
-
-.item {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 12px 14px; border-radius: 12px;
-  background: #0e1117; border: 1px solid var(--border);
-}
-.item-title { font-weight: 600; }
-.item-meta { color: var(--muted); font-size: .95rem; }
-
-.item-btn {
-  margin-left: 12px;
-  padding: 8px 12px; border-radius: 10px; border: 1px solid var(--border);
-  background: #10141b; color: var(--fg); cursor: pointer;
-}
-.item-btn[disabled] { opacity: .5; cursor: not-allowed; }
-
-.stat {
-  display: flex; justify-content: space-between; padding: 10px 12px;
-  border: 1px dashed var(--border); border-radius: 10px; color: var(--muted);
-}
-
-/* ====== Inputs ====== */
-input[type="number"], input[type="password"], input[type="text"] {
-  background: #0d0f14; color: var(--fg);
-  border: 1px solid var(--border);
-  padding: 10px 12px; border-radius: 10px; width: 200px;
-}
-
-/* ====== Responsive ====== */
-@media (min-width: 600px) {
-  .action-zone {
-    flex-direction: row;
-    justify-content: center;
-    flex-wrap: wrap;
-  }
-  .big-btn {
-    flex: 1 1 100%;
-    order: -1;
-  }
-}
+  padding: 14px 16px; border-bottom: 1
