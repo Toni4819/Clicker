@@ -50,8 +50,6 @@ function formatCompact(n) {
   return nf1.format(n);
 }
 
-
-
 function totalAutoClicksPerSecond() {
   return (
     state.autoClickers +
@@ -78,24 +76,23 @@ import { initDevMenu } from "./dev.js";
 import { initUpgrades } from "./upgrades.js";
 import { initRebirthSystem } from "./rebirthSystem.js";
 
-
 // Sélecteurs DOM
 const els = {
-  pointsValue: document.getElementById("pointsValue"),
+  pointsValue:   document.getElementById("pointsValue"),
   autoClicksValue: document.getElementById("autoClicksValue"),
-  tapBtn: document.getElementById("tapBtn"),
-  openStoreBtn: document.getElementById("openStoreBtn"),
-  rebirthBtn: document.getElementById("rebirthBtn"),
-  versionText: document.getElementById("versionText"),
-  storeModal: document.getElementById("storeModal"),
+  tapBtn:        document.getElementById("tapBtn"),
+  openStoreBtn:  document.getElementById("openStoreBtn"),
+  rebirthBtn:    document.getElementById("rebirthBtn"),
+  versionText:   document.getElementById("versionText"),
+  storeModal:    document.getElementById("storeModal"),
   closeStoreBtn: document.getElementById("closeStoreBtn"),
-  upgradesList: document.getElementById("upgradesList"),
-  machinesList: document.getElementById("machinesList"),
-  statsList: document.getElementById("statsList"),
-  devTrigger: document.getElementById("devTrigger"),
-  devModal: document.getElementById("devModal"),
-  closeDevBtn: document.getElementById("closeDevBtn"),
-  devBody: document.getElementById("devBody"),
+  upgradesList:  document.getElementById("upgradesList"),
+  machinesList:  document.getElementById("machinesList"),
+  statsList:     document.getElementById("statsList"),
+  devTrigger:    document.getElementById("devTrigger"),
+  devModal:      document.getElementById("devModal"),
+  closeDevBtn:   document.getElementById("closeDevBtn"),
+  devBody:       document.getElementById("devBody"),
 };
 
 // Rendu écran principal
@@ -104,6 +101,20 @@ function renderMain() {
   els.autoClicksValue.textContent = formatCompact(totalAutoClicksPerSecond());
   els.tapBtn.textContent = `👇 Tapper (+${state.pointsPerClick})`;
   els.versionText.textContent = `Toni’s Studios – v1.1`;
+}
+
+// ─── Nouvelle fonction pour l’animation “+N” ───
+function animateClick(amount) {
+  const span = document.createElement("span");
+  span.textContent = `+${amount}`;
+  span.classList.add("click-burst");
+
+  const rect = els.tapBtn.getBoundingClientRect();
+  span.style.left = `${rect.left + rect.width / 2}px`;
+  span.style.top  = `${rect.top - 10}px`;
+
+  document.body.appendChild(span);
+  span.addEventListener("animationend", () => span.remove());
 }
 
 // Modales
@@ -134,6 +145,16 @@ els.tapBtn.addEventListener("click", () => {
   state.points += state.pointsPerClick;
   save();
   renderMain();
+
+  // on anime le "+N"
+  animateClick(state.pointsPerClick);
+
+  // on pulse le bouton
+  els.tapBtn.classList.add("pulse");
+  els.tapBtn.addEventListener("animationend", function _rm() {
+    els.tapBtn.classList.remove("pulse");
+    els.tapBtn.removeEventListener("animationend", _rm);
+  });
 });
 
 // Extraction du menu “Améliorations”
@@ -169,7 +190,6 @@ initRebirthSystem({
   renderStore: () => {},
   formatCompact
 });
-
 
 // Sauvegarde à la fermeture
 window.addEventListener("beforeunload", save);
