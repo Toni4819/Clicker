@@ -36,19 +36,18 @@ function save() {
   }
 }
 
-function formatCompact(n) {
-  const abs = Math.abs(n);
-  const nf1 = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
+// Déclare ce formateur une seule fois en haut de ton fichier
+const compactFormatter = new Intl.NumberFormat("en-US", {
+  notation: "compact",
+  compactDisplay: "short",
+  maximumFractionDigits: 2
+});
 
-  if (abs >= 1e18) return nf1.format(n / 1e18) + 'QT';
-  if (abs >= 1e15) return nf1.format(n / 1e15) + 'Q';
-  if (abs >= 1e12) return nf1.format(n / 1e12) + 'T';
-  if (abs >= 1e9)  return nf1.format(n / 1e9) + 'B';
-  if (abs >= 1e6)  return nf1.format(n / 1e6) + 'M';
-  if (abs >= 1e3)  return nf1.format(n / 1e3) + 'k';
-
-  return nf1.format(n);
+// Remplace ta fonction manuelle par celle-ci
+function formatCompact(num) {
+  return compactFormatter.format(num);
 }
+
 
 function totalAutoClicksPerSecond() {
   return (
