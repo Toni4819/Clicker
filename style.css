@@ -2,112 +2,144 @@
   --bg: #0f1217;
   --fg: #e9eef5;
   --muted: #9aa7b5;
-  --primary: #f59f00; /* orange */
-  --secondary: #1e66f5; /* blue */
-  --danger: #e03131; /* red */
+  --primary: #f59f00;
+  --secondary: #1e66f5;
+  --danger: #e03131;
   --surface: #171a21;
   --border: #2a2f3a;
   --radius: 14px;
 }
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
 html, body {
-  margin: 0; padding: 0;
-  background: var(--bg); color: var(--fg);
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--fg);
   font-family: -apple-system, system-ui, Segoe UI, Roboto, Inter, sans-serif;
 }
 
-/* Empêcher la sélection de texte */
 html, body {
-    user-select: none;         /* Standard */
-    -webkit-user-select: none; /* Safari/Chrome */
-    -moz-user-select: none;    /* Firefox */
-    -ms-user-select: none;     /* IE/Edge */
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
 
-/* Empêcher le scroll */
 html, body {
-    overflow: hidden; /* Cache les barres de défilement */
-    height: 100%;     /* Nécessaire pour bloquer le scroll */
-    margin: 0;
-    padding: 0;
+  overflow: hidden;
+  height: 100%;
+  margin: 0;
+  padding: 0;
 }
 
-/* Empêcher le zoom sur mobile */
 html {
-    touch-action: none; /* Bloque le pinch-to-zoom et double-tap */
+  touch-action: none;
 }
 
-
+/* Mise en page originale conservée */
 .container {
-  max-width: 720px; margin: 32px auto; padding: 24px;
+  max-width: 720px;
+  margin: 32px auto;
+  padding: 24px;
 }
 
 .title {
-  font-size: 2.2rem; margin: 0 0 8px 0; font-weight: 800;
+  font-size: 2.2rem;
+  margin: 0 0 8px 0;
+  font-weight: 800;
 }
 
 .subtitle {
-  font-size: 1.1rem; margin: 0 0 24px 0; color: var(--muted);
+  font-size: 1.1rem;
+  margin: 0 0 24px 0;
+  color: var(--muted);
 }
 
 .btn {
   display: inline-block;
   width: 100%;
   padding: 14px 16px;
-  border: none; border-radius: var(--radius);
-  font-size: 1.1rem; font-weight: 700;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 1.1rem;
+  font-weight: 700;
   cursor: pointer;
   transition: transform .05s ease;
 }
-.btn:active { transform: translateY(1px); }
 
-.btn-primary { background: var(--primary); color: #000; }
-.btn-secondary { background: var(--secondary); color: #fff; }
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: #000;
+}
+
+.btn-secondary {
+  background: var(--secondary);
+  color: #fff;
+}
 
 .divider {
-  border: none; border-top: 1px solid var(--border);
+  border: none;
+  border-top: 1px solid var(--border);
   margin: 24px 0;
 }
 
-.spacer { height: 24px; }
-
-.footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    color: var(--muted);
-
-    position: fixed;   /* Fixe le footer */
-    bottom: 0;         /* Collé en bas */
-    left: 0;
-    width: 100%;       /* Prend toute la largeur */
-    background: var(--background, #222); /* Couleur de fond (variable ou fallback) */
-    padding: 10px 20px;
-    box-shadow: 0 -2px 5px rgba(0,0,0,0.2);
-    z-index: 1000;     /* Toujours au-dessus du contenu */
+.spacer {
+  height: 24px;
 }
 
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--muted);
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: var(--background, #222);
+  padding: 10px 20px;
+  box-shadow: 0 -2px 5px rgba(0,0,0,0.2);
+  z-index: 1000;
+}
 
 .icon-btn {
-  width: 44px; height: 44px;
-  border-radius: 50%; border: 1px solid var(--border);
-  background: var(--surface); color: var(--danger);
-  font-size: 22px; cursor: pointer;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--danger);
+  font-size: 22px;
+  cursor: pointer;
 }
 
 /* Modales */
 .modal {
-  position: fixed; inset: 0;
-  display: none; align-items: center; justify-content: center;
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
   background: rgba(0,0,0,0.55);
-  padding: 16px; z-index: 100;
+  padding: 16px;
+  z-index: 100;
 }
-.modal[aria-hidden="false"] { display: flex; }
+
+.modal[aria-hidden="false"] {
+  display: flex;
+}
 
 .modal-content {
-  width: 100%; max-width: 760px;
+  width: 100%;
+  max-width: 760px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 16px;
@@ -116,85 +148,191 @@ html {
 }
 
 .modal-header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 16px; border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
 }
 
 .modal-body {
   padding: 16px;
-  max-height: 80vh; /* Limite la hauteur à 80% de l’écran */
-  overflow-y: auto; /* Active le scroll vertical si nécessaire */
+  max-height: 80vh;
+  overflow-y: auto;
 }
-
 
 .close-btn {
-  background: transparent; border: none; color: var(--fg);
-  font-size: 20px; cursor: pointer;
+  background: transparent;
+  border: none;
+  color: var(--fg);
+  font-size: 20px;
+  cursor: pointer;
 }
 
-/* Sections boutique */
-.section { margin-bottom: 16px; }
-.section-title { margin: 0 0 8px 0; font-size: 1rem; color: var(--muted); }
+.section {
+  margin-bottom: 16px;
+}
 
-.list { display: grid; gap: 8px; }
+.section-title {
+  margin: 0 0 8px 0;
+  font-size: 1rem;
+  color: var(--muted);
+}
+
+.list {
+  display: grid;
+  gap: 8px;
+}
 
 .item {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 12px 14px; border-radius: 12px;
-  background: #0e1117; border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #0e1117;
+  border: 1px solid var(--border);
 }
-.item-title { font-weight: 600; }
-.item-meta { color: var(--muted); font-size: .95rem; }
+
+.item-title {
+  font-weight: 600;
+}
+
+.item-meta {
+  color: var(--muted);
+  font-size: .95rem;
+}
 
 .item-btn {
   margin-left: 12px;
-  padding: 8px 12px; border-radius: 10px; border: 1px solid var(--border);
-  background: #10141b; color: var(--fg); cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #10141b;
+  color: var(--fg);
+  cursor: pointer;
 }
-.item-btn[disabled] { opacity: .5; cursor: not-allowed; }
+
+.item-btn[disabled] {
+  opacity: .5;
+  cursor: not-allowed;
+}
 
 .stat {
-  display: flex; justify-content: space-between; padding: 10px 12px;
-  border: 1px dashed var(--border); border-radius: 10px; color: var(--muted);
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  color: var(--muted);
 }
 
-/* Inputs */
-input[type="number"], input[type="password"], input[type="text"] {
-  background: #0d0f14; color: var(--fg);
+input[type="number"],
+input[type="password"],
+input[type="text"] {
+  background: #0d0f14;
+  color: var(--fg);
   border: 1px solid var(--border);
-  padding: 10px 12px; border-radius: 10px; width: 200px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  width: 200px;
 }
 
-/* Bouton dev caché mais cliquable */
+/* Bouton dev caché */
 #devTrigger {
-  position: fixed; top: 0; left: 0; width: 120px; height: 50px;
-  background: transparent; color: transparent; border: none; cursor: pointer;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 120px;
+  height: 50px;
+  background: transparent;
+  color: transparent;
+  border: none;
+  cursor: pointer;
 }
 
-/* ─── Agencement et tailles des boutons principaux ─── */
-#tapBtn,
-#openStoreBtn,
-#rebirthBtn {
+/* ─── Nouveaux styles de layout ─── */
+.layout {
+  display: grid;
+  grid-template-areas:
+    "header"
+    "actions"
+    "divider"
+    "content"
+    "footer";
+  grid-template-rows: auto auto 1px 1fr auto;
+  gap: 1rem;
+  min-height: 100vh;
+  padding: 1rem;
+}
+
+.header {
+  grid-area: header;
+  text-align: center;
+  position: relative;
+}
+
+.actions {
+  grid-area: actions;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
+
+.actions .btn {
+  width: 100%;
+}
+
+.divider {
+  grid-area: divider;
+  margin: 0;
+  border: none;
+  border-top: 1px solid var(--border);
+}
+
+.content {
+  grid-area: content;
+  position: relative;
+}
+
+.footer {
+  grid-area: footer;
+  position: static;
   display: block;
-  width: 80%;
-  max-width: 300px;
-  margin: 16px auto;
-  padding: 14px 20px; /* un peu plus de padding latéral */
+  text-align: center;
+  padding: 0.75rem 0;
 }
 
-/* On ne veut pas que “Rebirth” prenne 80 % en footer */
-.footer .btn-warning {
-  width: auto;
-  margin: 0;  
+/* Repositionner le trigger dev dans .header */
+.header #devTrigger {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 120px;
+  height: 50px;
 }
 
-/* ─── Sur grand écran : Tapper et Améliorations côte-à-côte ─── */
+/* Responsive desktop */
 @media (min-width: 600px) {
-  #tapBtn,
-  #openStoreBtn {
-    display: inline-block;
-    width: calc(50% - 16px);
-    margin: 8px;
+  .layout {
+    grid-template-areas:
+      "header    header"
+      "actions   content"
+      "footer    footer";
+    grid-template-columns: max-content 1fr;
+    grid-template-rows: auto 1fr auto;
+  }
+
+  .header {
+    padding-bottom: 1rem;
+  }
+
+  .actions {
+    align-self: start;
+  }
+
+  .content {
+    padding-left: 1rem;
   }
 }
-
+```
