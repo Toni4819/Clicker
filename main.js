@@ -36,11 +36,6 @@ function save() {
   }
 }
 
-// Format compact (k/M/B/T, 1 décimale max)
-const nf1 = new Intl.NumberFormat("fr-FR", {
-  minimumFractionDigits: 0,
-  maximumFractionDigits: 1,
-});
 function formatCompact(n) {
   const abs = Math.abs(n);
   const nf1 = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
@@ -171,8 +166,8 @@ initRebirthSystem({
   keys,
   save,
   renderMain,
-  renderStore,    // ta fonction de rafraîchissement de la boutique
-  formatCompact   // ta fonction de formatage de nombres
+  renderStore: () => {},
+  formatCompact
 });
 
 
