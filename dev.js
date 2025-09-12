@@ -1,5 +1,5 @@
 // Clé Base64 fragmentée
-const _devKeyParts = ["Mz", "RT", "YX", "Vj", "ZTEy"];
+const _devKeyParts = ["NT", "Zz", "QV", "VD", "RT", "Ey"];
 const base64Code = _devKeyParts.join(""); // "MzRTYXVjZTEy"
 let devUnlocked = false;
 
