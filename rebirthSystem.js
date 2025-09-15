@@ -1,8 +1,8 @@
-// rebirthSystem.js — Rebirth v2 (UI + progression + nouveaux ratios)
+// rebirthSystem.js — Rebirth v2 (UI + progression + +25% coût, +5% boost global)
 /**
  * - Reset des machines à zéro à chaque Rebirth
  * - Coût exponentiel (+25% par Rebirth)
- * - Boost permanent des clics : +5% par Rebirth (cumulatif)
+ * - Boost permanent global des gains : +5% par Rebirth (cumulatif)
  * - On conserve 50% des points restants après paiement
  * - UI dédiée avec barre de progression vers le prochain Rebirth
  */
@@ -14,6 +14,9 @@ export function initRebirthSystem({
   renderMain,
   renderStore = () => {},
   formatCompact,
+  getRebirthBoostFactor,
+  formatPercentNoZeros,
+  formatNumberNoZeros
 }) {
   const STORAGE_KEY = "rebirthCount";
   const BASE_COST   = 10_000;
@@ -43,7 +46,7 @@ export function initRebirthSystem({
     `;
     modal.innerHTML = `
       <div class="rebirth-card" role="dialog" aria-labelledby="rebirthTitle" style="
-        width: min(480px, 92vw);
+        width: min(520px, 92vw);
         background: var(--panel, #141414);
         border: 1px solid rgba(255,255,255,.08);
         border-radius: 12px;
@@ -56,12 +59,12 @@ export function initRebirthSystem({
             background:none; border:none; color:#bbb; font-size:1.1rem; cursor:pointer; padding:6px;
           ">✕</button>
         </header>
-        <div style="padding:14px; display:grid; gap:10px;">
+        <div style="padding:14px; display:grid; gap:12px;">
           <div id="rbTopLine" style="font-size:.95rem; color:#ddd;"></div>
 
           <div>
             <div style="display:flex; justify-content:space-between; font-size:.85rem; color:#aaa; margin-bottom:6px;">
-              <span id="rbProgLabelLeft">Progression</span>
+              <span>Progression vers le prochain rebirth</span>
               <span id="rbProgLabelRight">0%</span>
             </div>
             <div style="width:100%; height:12px; background: rgba(255,255,255,.08); border-radius: 999px; overflow:hidden;">
@@ -69,9 +72,7 @@ export function initRebirthSystem({
             </div>
           </div>
 
-          <div id="rbCosts" style="
-            display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:.9rem; color:#ccc;
-          ">
+          <div id="rbCosts" style="display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:.9rem; color:#ccc;">
             <div style="background: rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.06); border-radius:8px; padding:10px;">
               <div style="opacity:.75; font-size:.8rem;">Coût précédent</div>
               <div id="rbPrevCost" style="font-weight:600;">—</div>
@@ -89,7 +90,7 @@ export function initRebirthSystem({
           </div>
 
           <div style="font-size:.85rem; color:#9aa;">
-            • Reset des machines et auto-clickers à zéro • Conserve 50% des points restants après paiement • +5% points/clic permanent
+            • Reset machines et auto-clickers • Conserve 50% des points restants après paiement • +5% gains permanents (clics et auto)
           </div>
         </div>
       </div>
@@ -113,7 +114,7 @@ export function initRebirthSystem({
     modal.style.opacity = "1";
     modal.style.pointerEvents = "auto";
     modalOpen = true;
-    loopUpdate(); // start UI updates while open
+    loopUpdate();
   }
 
   function closeModal() {
@@ -133,7 +134,7 @@ export function initRebirthSystem({
     const next = cur + 1;
     const curBoostPct  = getTotalBoostPercent(cur);
     const nextBoostPct = getTotalBoostPercent(next);
-    rbTopLine.textContent = `Rebirth actuel : ${cur} (+${curBoostPct.toFixed(2)}%) → Prochain : ${next} (+${nextBoostPct.toFixed(2)}%)`;
+    rbTopLine.textContent = `Rebirth actuel : ${cur} (+${formatPercentNoZeros(curBoostPct)}%) → Prochain : ${next} (+${formatPercentNoZeros(nextBoostPct)}%)`;
 
     // Coûts
     const prevCost = getPrevCost();
@@ -142,13 +143,13 @@ export function initRebirthSystem({
     rbNextCost.textContent = formatCompact(nextCost);
 
     // Progression vers le prochain Rebirth
-    const ratio = nextCost > 0 ? Math.min(1, state.points / nextCost) : 0;
+    const ratio = nextCost > 0 ? Math.min(1, (state.points || 0) / nextCost) : 0;
     const pct = Math.floor(ratio * 100);
     rbProgRight.textContent = `${pct}%`;
     rbProgress.style.width = `${pct}%`;
 
     // Etat du bouton
-    const canRebirth = state.points >= nextCost;
+    const canRebirth = (state.points || 0) >= nextCost;
     rbDoBtn.disabled = !canRebirth;
     rbDoBtn.style.opacity = canRebirth ? "1" : ".6";
     rbDoBtn.style.cursor = canRebirth ? "pointer" : "not-allowed";
@@ -160,7 +161,7 @@ export function initRebirthSystem({
     rafId = requestAnimationFrame(loopUpdate);
   }
 
-  // Ouvrir la modale au clic sur le bouton principal Rebirth
+  // Ouvrir/fermer
   els.rebirthBtn.addEventListener("click", openModal);
   rbCloseBtn.addEventListener("click", closeModal);
   modal.addEventListener("click", (e) => {
@@ -170,7 +171,7 @@ export function initRebirthSystem({
   // Action Rebirth
   rbDoBtn.addEventListener("click", () => {
     const cost = getNextCost();
-    if (state.points < cost) return; // garde-fou
+    if ((state.points || 0) < cost) return;
 
     // 1) Payer le coût
     state.points -= cost;
@@ -189,26 +190,15 @@ export function initRebirthSystem({
     state.rebirths += 1;
     localStorage.setItem(STORAGE_KEY, String(state.rebirths));
 
-    // 5) Appliquer le boost permanent de clic (+5%)
-    state.pointsPerClick = Math.max(1, Math.floor(state.pointsPerClick * BOOST_RATE));
+    // 5) NE PAS toucher à pointsPerClick; le boost est global via getRebirthBoostFactor()
 
-    // 6) Sauvegarder + rafraîchir UI globale
+    // 6) Sauvegarde + rafraîchir UI globale
     save();
     renderMain();
     renderStore();
     updateUI();
-
-    // Laisser la modale ouverte pour visualiser la progression post-rebirth,
-    // ou ferme-la si tu préfères:
-    // closeModal();
   });
 
-  // Pas de texte injecté sous le bouton — on se contente d’une modale.
-  // On peut toutefois mettre à jour le texte du bouton Tap selon le PPC actuel (si besoin).
-  function syncTapButton() {
-    els.tapBtn.textContent = `👇 Tapper (+${state.pointsPerClick})`;
-  }
-
-  // Premier sync (au chargement)
-  syncTapButton();
+  // Sync initial du bouton Tap (affichage déjà géré par renderMain)
+  updateUI();
 }
