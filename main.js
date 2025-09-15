@@ -195,6 +195,7 @@ initRebirthSystem({
   formatCompact
 });
 initReset({ els, state, keys, save, renderMain });
+
 initStats({
   els,
   state,
