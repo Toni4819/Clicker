@@ -1,8 +1,8 @@
 import { machines } from "./machines.js";
 
 /**
- * Initialise le menu Améliorations (anciennement Boutique),
- * crée entièrement le modal et son contenu en JS.
+ * Initialise le menu Améliorations (anciennement Boutique)
+ * @param {Object} deps
  */
 export function initUpgrades(deps) {
   const {
@@ -17,25 +17,48 @@ export function initUpgrades(deps) {
     machines: machinesData
   } = deps;
 
-  // 1) Assurer la présence d'un container #storeModal
+  // ─── Création du modal si absent ───
   let modal = els.storeModal;
   if (!modal) {
     modal = document.createElement("div");
     modal.id = "storeModal";
-    modal.className = "modal";
-    modal.setAttribute("aria-hidden", "true");
-    modal.setAttribute("role", "dialog");
-    modal.setAttribute("aria-labelledby", "storeTitle");
     document.body.appendChild(modal);
     els.storeModal = modal;
   }
 
-  // 2) Injecter le HTML “statique” du modal
+  // Styles et attributs du modal
+  modal.className = "modal";
+  modal.setAttribute("aria-hidden", "true");
+  modal.setAttribute("role", "dialog");
+  modal.setAttribute("aria-labelledby", "storeTitle");
+  modal.style.cssText = `
+    position: fixed;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    background: rgba(0,0,0,0.5);
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  `;
+
+  // ─── Injection du contenu HTML ───
   modal.innerHTML = `
-    <div class="modal-content">
-      <header class="modal-header">
+    <div class="modal-content" style="
+      background: #1a1a1a;
+      border-radius: 12px;
+      padding: 16px;
+      width: min(500px, 92vw);
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+    ">
+      <header class="modal-header" style="display:flex;justify-content:space-between;align-items:center;">
         <h2 id="storeTitle" class="modal-title">🆙 Améliorations</h2>
-        <button id="closeStoreBtn" class="close-btn" aria-label="Fermer">✕</button>
+        <button id="closeStoreBtn" class="close-btn" aria-label="Fermer" style="
+          background:none;border:none;color:#bbb;font-size:1.2rem;cursor:pointer;
+        ">✕</button>
       </header>
       <div class="modal-body">
         <section class="section">
@@ -54,19 +77,31 @@ export function initUpgrades(deps) {
     </div>
   `;
 
-  // 3) Récupérer les nouvelles zones dynamiques
+  // ─── Sélecteurs internes ───
   els.upgradesList  = modal.querySelector("#upgradesList");
   els.machinesList  = modal.querySelector("#machinesList");
   els.statsList     = modal.querySelector("#statsList");
   els.closeStoreBtn = modal.querySelector("#closeStoreBtn");
 
-  // 4) Fonction de rendu des items
+  // ─── Fonctions ouverture/fermeture ───
+  function openStore() {
+    modal.setAttribute("aria-hidden", "false");
+    modal.style.opacity = "1";
+    modal.style.pointerEvents = "auto";
+  }
+  function closeStore() {
+    modal.setAttribute("aria-hidden", "true");
+    modal.style.opacity = "0";
+    modal.style.pointerEvents = "none";
+  }
+
+  // ─── Rendu des items ───
   function renderAmeliorations() {
     els.upgradesList.innerHTML = "";
     els.machinesList.innerHTML = "";
     els.statsList.innerHTML    = "";
 
-    // Helper pour un item 1x / 10x / Max
+    // Helper pour créer un item avec 1x / 10x / Max
     function addItem(title, keyName, baseCost, container) {
       const owned = keyName === "pointsPerClick"
         ? state.pointsPerClick - 1
@@ -74,41 +109,40 @@ export function initUpgrades(deps) {
       const max   = 150;
       const cost1 = costFor(baseCost, owned);
 
-      // Créer l’item
       const item = document.createElement("div");
       item.className = "item";
 
-      // Colonne gauche : titre + méta
       const left = document.createElement("div");
       left.innerHTML = `
         <div class="item-title">${title}</div>
         <div class="item-meta">${formatCompact(cost1)} 💰 • x${owned}</div>
       `;
 
-      // Colonne boutons
       const controls = document.createElement("div");
       controls.className = "item-controls";
+      controls.style.display = "flex";
+      controls.style.gap = "4px";
 
       const btn1 = document.createElement("button");
       btn1.className = "item-btn";
       btn1.textContent = "1x";
-      btn1.disabled   = state.points < cost1 || owned >= max;
+      btn1.disabled = state.points < cost1 || owned >= max;
 
       const btn10 = document.createElement("button");
       btn10.className = "item-btn";
       btn10.textContent = "10x";
-      btn10.disabled  = btn1.disabled;
+      btn10.disabled = btn1.disabled;
 
       const btnMax = document.createElement("button");
       btnMax.className = "item-btn";
       btnMax.textContent = "Max";
-      btnMax.disabled  = btn1.disabled;
+      btnMax.disabled = btn1.disabled;
 
       controls.append(btn1, btn10, btnMax);
       item.append(left, controls);
       container.appendChild(item);
 
-      // Achats
+      // Achat 1x
       btn1.addEventListener("click", () => {
         if (state.points >= cost1 && owned < max) {
           state.points -= cost1;
@@ -120,8 +154,9 @@ export function initUpgrades(deps) {
         }
       });
 
+      // Achat 10x
       btn10.addEventListener("click", () => {
-        let n = 0;
+        let bought = 0;
         for (let i = 0; i < 10; i++) {
           const own2 = keyName === "pointsPerClick"
             ? state.pointsPerClick - 1
@@ -131,18 +166,19 @@ export function initUpgrades(deps) {
             state.points -= c;
             if (keyName === "pointsPerClick") state.pointsPerClick++;
             else state[keyName]++;
-            n++;
+            bought++;
           } else break;
         }
-        if (n > 0) {
+        if (bought > 0) {
           save();
           renderMain();
           renderAmeliorations();
         }
       });
 
+      // Achat Max
       btnMax.addEventListener("click", () => {
-        let n = 0;
+        let bought = 0;
         while (true) {
           const own2 = keyName === "pointsPerClick"
             ? state.pointsPerClick - 1
@@ -152,10 +188,10 @@ export function initUpgrades(deps) {
             state.points -= c;
             if (keyName === "pointsPerClick") state.pointsPerClick++;
             else state[keyName]++;
-            n++;
+            bought++;
           } else break;
         }
-        if (n > 0) {
+        if (bought > 0) {
           save();
           renderMain();
           renderAmeliorations();
@@ -163,16 +199,16 @@ export function initUpgrades(deps) {
       });
     }
 
-    // 4.1) Améliorations basiques
+    // Améliorations basiques
     addItem("🔁 Auto-Clicker",   "autoClickers",   10, els.upgradesList);
     addItem("⌑ Double Clicker",  "pointsPerClick", 20, els.upgradesList);
 
-    // 4.2) Machines N1→N10
+    // Machines
     for (const m of machinesData) {
       addItem(m.title, m.key, m.base, els.machinesList);
     }
 
-    // 4.3) Statistiques brutes
+    // Statistiques
     const statsData = [
       { label: "Auto-clickers", value: state.autoClickers },
       { label: "Points/clic",   value: state.pointsPerClick },
@@ -186,13 +222,19 @@ export function initUpgrades(deps) {
     }
   }
 
-  // 5) Ouvrir / fermer le modal
+  // ─── Événements ───
   els.openStoreBtn.addEventListener("click", () => {
     renderAmeliorations();
-    openModal(els.storeModal);
+    openStore();
   });
+
   els.closeStoreBtn.addEventListener("click", () => {
     save();
-    closeModal(els.storeModal);
+    closeStore();
+  });
+
+  // Fermer en cliquant hors contenu
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) closeStore();
   });
 }
