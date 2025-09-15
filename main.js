@@ -149,17 +149,14 @@ els.tapBtn.addEventListener("click", () => {
   state.points += state.pointsPerClick;
   save();
   renderMain();
-
-  // on anime le "+N"
   animateClick(state.pointsPerClick);
 
-  // on pulse le bouton
+  // 🔄 Relancer l’animation même si elle est déjà en cours
+  els.tapBtn.classList.remove("pulse");
+  void els.tapBtn.offsetWidth; // force un reflow
   els.tapBtn.classList.add("pulse");
-  els.tapBtn.addEventListener("animationend", function _rm() {
-    els.tapBtn.classList.remove("pulse");
-    els.tapBtn.removeEventListener("animationend", _rm);
-  });
 });
+
 
 // Extraction du menu “Améliorations”
 initUpgrades({
