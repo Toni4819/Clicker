@@ -1,19 +1,20 @@
 // stats.js
 export function initStats({ els, state, formatCompact, totalAutoClicksPerSecond }) {
-  // --- Rendu des stats rapides sous les boutons ---
+  // Bloc rapide sous les boutons
   function renderQuickStats() {
-    const qsPoints   = document.getElementById("qsPoints");
-    const qsCps      = document.getElementById("qsCps");
-    const qsPpc      = document.getElementById("qsPpc");
-    const qsRebirths = document.getElementById("qsRebirths");
+    const container = document.getElementById("quickStats");
+    if (!container) return;
 
-    if (qsPoints)   qsPoints.textContent   = formatCompact(state.points);
-    if (qsCps)      qsCps.textContent      = formatCompact(totalAutoClicksPerSecond());
-    if (qsPpc)      qsPpc.textContent      = formatCompact(state.pointsPerClick);
-    if (qsRebirths) qsRebirths.textContent = state.rebirths || 0;
+    container.innerHTML = `
+      <h3 style="margin:4px 0; font-size:1em;">📊 Statistiques</h3>
+      <div>💰 Points : <strong>${formatCompact(state.points)}</strong></div>
+      <div>⚡ Clics automatiques/s : <strong>${formatCompact(totalAutoClicksPerSecond())}</strong></div>
+      <div>👆 Points par clic : <strong>${formatCompact(state.pointsPerClick)}</strong></div>
+      <div>🌱 Rebirths : <strong>${state.rebirths || 0}</strong></div>
+    `;
   }
 
-  // --- Rendu des stats détaillées dans la boutique ---
+  // Stats détaillées dans la boutique
   function renderStoreStats() {
     els.statsList.innerHTML = `
       <div class="stat-item">💰 Points totaux : <strong>${formatCompact(state.points)}</strong></div>
@@ -36,11 +37,11 @@ export function initStats({ els, state, formatCompact, totalAutoClicksPerSecond 
     `;
   }
 
-  // --- Mise à jour initiale ---
+  // Initial render
   renderQuickStats();
   renderStoreStats();
 
-  // --- Rafraîchissement régulier ---
+  // Rafraîchissement régulier
   setInterval(() => {
     renderQuickStats();
     renderStoreStats();
