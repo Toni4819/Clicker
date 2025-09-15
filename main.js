@@ -75,6 +75,8 @@ import { initDevMenu } from "./dev.js";
 import { initUpgrades } from "./upgrades.js";
 import { initRebirthSystem } from "./rebirthSystem.js";
 import { initReset } from "./reset.js";
+import { initStats } from "./stats.js";
+
 
 
 // Sélecteurs DOM
