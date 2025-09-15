@@ -31,6 +31,7 @@ export function initUpgrades(deps) {
   modal.setAttribute("aria-hidden", "true");
   modal.setAttribute("role", "dialog");
   modal.setAttribute("aria-labelledby", "storeTitle");
+  // Styles du modal
   modal.style.cssText = `
     position: fixed;
     inset: 0;
@@ -49,9 +50,9 @@ export function initUpgrades(deps) {
       background: #1a1a1a;
       border-radius: 12px;
       padding: 16px;
-      width: min(500px, 92vw);
+      width: min(600px, 95vw); /* ← plus large */
       max-height: 90vh;
-      overflow-y: auto;
+      overflow-y: auto; /* scroll interne uniquement */
       box-shadow: 0 8px 30px rgba(0,0,0,0.4);
     ">
       <header class="modal-header" style="display:flex;justify-content:space-between;align-items:center;">
@@ -88,12 +89,16 @@ export function initUpgrades(deps) {
     modal.setAttribute("aria-hidden", "false");
     modal.style.opacity = "1";
     modal.style.pointerEvents = "auto";
+    document.body.style.overflow = "hidden"; // bloque le scroll de la page derrière
   }
+
   function closeStore() {
     modal.setAttribute("aria-hidden", "true");
     modal.style.opacity = "0";
     modal.style.pointerEvents = "none";
+    document.body.style.overflow = ""; // réactive le scroll de la page
   }
+
 
   // ─── Rendu des items ───
   function renderAmeliorations() {
