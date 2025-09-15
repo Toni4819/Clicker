@@ -18,7 +18,6 @@
  * @param {Function} deps.formatCompact— formatage compact de tes nombres
  */
 // rebirthSystem.js
-
 export function initRebirthSystem({
   els,
   state,
@@ -32,31 +31,20 @@ export function initRebirthSystem({
   const BASE_COST   = 10_000;
   const BOOST_RATE  = 1.1;
 
-  // 1) Charger le compteur depuis localStorage dans state
+  // Charger le compteur depuis localStorage dans state
   state.rebirths = parseInt(localStorage.getItem(STORAGE_KEY) || "0", 10);
 
-  // 2) Helpers de coût et de boost
+  // Helpers
   const getNextCost    = () => Math.floor(BASE_COST * Math.pow(BOOST_RATE, state.rebirths));
   const getBoostFactor = () => Math.pow(BOOST_RATE, state.rebirths);
 
-  // 3) Créer / récupérer l’info-bar si nécessaire
-  let info = document.getElementById("rebirthInfo");
-  if (!info) {
-    info = document.createElement("div");
-    info.id = "rebirthInfo";
-    info.style.cssText = "font-size:0.9em; margin:4px 0; color:#8d8d8d;";
-    els.rebirthBtn.insertAdjacentElement("afterend", info);
-  }
-
-  // 4) Mise à jour de l’UI
+  // Mise à jour du bouton Tap uniquement
   function updateInfo() {
-    const cost  = getNextCost();
     const boost = getBoostFactor();
-    info.textContent      = `Rebirths : ${state.rebirths} — Coût suivant : ${formatCompact(cost)}`;
     els.tapBtn.textContent = `👇 Tapper (+${Math.floor(state.pointsPerClick * boost)})`;
   }
 
-  // 5) Gestion du clic Rebirth
+  // Gestion du clic Rebirth
   els.rebirthBtn.addEventListener("click", () => {
     const cost = getNextCost();
     if (state.points < cost) {
@@ -72,33 +60,33 @@ export function initRebirthSystem({
     );
     if (!ok) return;
 
-    // 5.1) Payer le coût
+    // Payer le coût
     state.points -= cost;
 
-    // 5.2) Reset machines / auto-clickers
+    // Reset machines / auto-clickers
     keys.forEach(k => {
       if (k !== "points" && k !== "pointsPerClick") {
         state[k] = 0;
       }
     });
 
-    // 5.3) Récupérer 50% de l’argent restant
+    // Récupérer 50% de l’argent restant
     state.points = Math.floor(state.points / 2);
 
-    // 5.4) Incrémenter et stocker le compteur
+    // Incrémenter et stocker le compteur
     state.rebirths += 1;
     localStorage.setItem(STORAGE_KEY, String(state.rebirths));
 
-    // 5.5) Appliquer le boost de clic
+    // Appliquer le boost de clic
     state.pointsPerClick *= BOOST_RATE;
 
-    // 5.6) Sauvegarde et UI
+    // Sauvegarde et UI
     save();
     renderMain();
     renderStore();
     updateInfo();
   });
 
-  // 6) Initial UI refresh
+  // Initial UI refresh
   updateInfo();
 }
