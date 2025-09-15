@@ -248,4 +248,8 @@ input[type="text"] {
   display: flex;
   justify-content: space-between;
 }
+.quick-stats h3 {
+  color: #fff;
+  font-weight: bold;
+}
 
