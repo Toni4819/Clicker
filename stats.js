@@ -1,26 +1,35 @@
 // stats.js
-export function initStats({ els, state, formatCompact, totalAutoClicksPerSecond }) {
-  // Bloc rapide sous les boutons
+export function initStats({
+  els,
+  state,
+  formatCompact,
+  totalAutoClicksPerSecond,  // boosté
+  getRebirthBoostFactor,
+  formatPercentNoZeros,
+  formatNumberNoZeros
+}) {
   function renderQuickStats() {
     const container = document.getElementById("quickStats");
     if (!container) return;
 
+    const boostPct = (getRebirthBoostFactor() - 1) * 100;
+
     container.innerHTML = `
-      <h3 style="margin:4px 0; font-size:1em;">📊 Statistiques</h3>
+      <h3 style="margin:4px 0 6px; font-size:1em;">📊 Statistiques</h3>
       <div>💰 Points : <strong>${formatCompact(state.points)}</strong></div>
-      <div>⚡ Clics automatiques/s : <strong>${formatCompact(totalAutoClicksPerSecond())}</strong></div>
-      <div>👆 Points par clic : <strong>${formatCompact(state.pointsPerClick)}</strong></div>
-      <div>🌱 Rebirths : <strong>${state.rebirths || 0}</strong></div>
+      <div>⚡ Clics automatiques/s : <strong>${formatNumberNoZeros(totalAutoClicksPerSecond())}</strong></div>
+      <div>👆 Points par clic : <strong>${formatNumberNoZeros(state.pointsPerClick * getRebirthBoostFactor())}</strong></div>
+      <div>🌱 Rebirths : <strong>${state.rebirths || 0}</strong>  —  🔼 Boost : <strong>+${formatPercentNoZeros(boostPct)}%</strong></div>
     `;
   }
 
-  // Stats détaillées dans la boutique
   function renderStoreStats() {
+    const boostPct = (getRebirthBoostFactor() - 1) * 100;
     els.statsList.innerHTML = `
       <div class="stat-item">💰 Points totaux : <strong>${formatCompact(state.points)}</strong></div>
-      <div class="stat-item">⚡ Clics/s automatiques : <strong>${formatCompact(totalAutoClicksPerSecond())}</strong></div>
-      <div class="stat-item">👆 Points par clic : <strong>${formatCompact(state.pointsPerClick)}</strong></div>
-      <div class="stat-item">🌱 Rebirths : <strong>${state.rebirths || 0}</strong></div>
+      <div class="stat-item">⚡ Clics/s automatiques (réels) : <strong>${formatNumberNoZeros(totalAutoClicksPerSecond())}</strong></div>
+      <div class="stat-item">👆 Points par clic (réels) : <strong>${formatNumberNoZeros(state.pointsPerClick * getRebirthBoostFactor())}</strong></div>
+      <div class="stat-item">🌱 Rebirths : <strong>${state.rebirths || 0}</strong> — 🔼 Boost : <strong>+${formatPercentNoZeros(boostPct)}%</strong></div>
       <div class="stat-item">🏭 Auto-clickers : <strong>${state.autoClickers}</strong></div>
       <div class="stat-item">⚙️ Machines totales : <strong>${
         state.machinesLevel1 +
@@ -37,11 +46,8 @@ export function initStats({ els, state, formatCompact, totalAutoClicksPerSecond 
     `;
   }
 
-  // Initial render
   renderQuickStats();
   renderStoreStats();
-
-  // Rafraîchissement régulier
   setInterval(() => {
     renderQuickStats();
     renderStoreStats();
