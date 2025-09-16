@@ -1,4 +1,3 @@
-// stats.js
 export function initStats({
   els,
   state,
@@ -36,9 +35,5 @@ export function initStats({
     `;
   }
 
-
-
-
   renderQuickStats();
-  }
 }
