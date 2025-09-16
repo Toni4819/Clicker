@@ -40,9 +40,5 @@ export function initStats({
 
 
   renderQuickStats();
-  renderStoreStats();
-  setInterval(() => {
-    renderQuickStats();
-    renderStoreStats();
-  }, 1000);
+  }
 }
