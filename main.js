@@ -1,7 +1,6 @@
 // main.js
 console.log("✅ main.js chargé !");
 
-
 // ─── Clés et état (localStorage) ───
 const keys = [
   "points",
@@ -49,7 +48,6 @@ function formatNumberNoZeros(n) {
 function formatCompact(num) {
   if (!Number.isFinite(num)) return String(num);
   const abs = Math.abs(num);
-  // Échelle longue: K, M, B, T, P, E, Z, Y
   const units = [
     { value: 1e24, symbol: "Y" },
     { value: 1e21, symbol: "Z" },
@@ -109,6 +107,7 @@ import { initDevMenu }       from "./dev.js";
 import { initRebirthSystem } from "./rebirthSystem.js";
 import { initReset }         from "./reset.js";
 import { initStats }         from "./stats.js";
+import { animateClick, animatePassive } from "./animations.js";
 
 // ─── Sélecteurs DOM ───
 const els = {
@@ -148,62 +147,6 @@ function renderMain() {
   els.versionText.textContent = `Toni’s Studios – v2.0`;
 }
 
-// ─── Animations ───
-function animateClick(amount) {
-  const span = document.createElement("span");
-  span.textContent = `+${formatNumberNoZeros(amount)}`;
-  span.classList.add("click-burst");
-
-  const rect = els.tapBtn.getBoundingClientRect();
-  span.style.left = `${rect.left + rect.width / 2}px`;
-  span.style.top  = `${rect.top - 10}px`;
-
-  document.body.appendChild(span);
-  span.addEventListener("animationend", () => span.remove());
-}
-
-// Sécurise la récupération d'un rectangle même si l'élément n'existe pas
-function getSafeRect(el) {
-  if (el && typeof el.getBoundingClientRect === "function") {
-    const r = el.getBoundingClientRect();
-    if (Number.isFinite(r.left) && Number.isFinite(r.top)) {
-      return r;
-    }
-  }
-  // Fallback = centre de la fenêtre
-  return {
-    left: window.innerWidth  / 2,
-    top:  window.innerHeight / 2,
-    width:  0,
-    height: 0
-  };
-}
-
-function animatePassive(amount) {
-  const span = document.createElement("span");
-  span.textContent = `+${formatNumberNoZeros(amount)}`;
-  span.classList.add("click-burst-passive");
-  span.style.position = "fixed";
-
-  // Choix du point de départ : machinesList si dispo, sinon le bouton tap
-  const startEl = els.machinesList || els.tapBtn;
-  const sr = getSafeRect(startEl);
-  const startX = sr.left + (sr.width  ? Math.random() * sr.width  : 0);
-  const startY = sr.top  + (sr.height ? sr.height * 0.3         : 0);
-
-  span.style.left = `${startX}px`;
-  span.style.top  = `${startY}px`;
-  document.body.appendChild(span);
-
-  // Lancement de l’animation CSS (keyframes passiveBurst)
-  requestAnimationFrame(() => span.classList.add("animate"));
-
-  // Suppression à la fin
-  span.addEventListener("animationend", () => span.remove());
-
-  span.addEventListener("transitionend", () => span.remove());
-}
-
 // ─── Initialisation ───
 load();
 renderMain();
@@ -211,12 +154,13 @@ save();
 
 // Gains automatiques chaque seconde
 setInterval(() => {
-  const inc = totalAutoClicksPerSecond(); // déjà boosté
+  const inc = totalAutoClicksPerSecond();
   if (inc > 0) {
     state.points += inc;
     save();
     renderMain();
-    animatePassive(inc);
+    // on passe soit la liste des machines, soit le bouton
+    animatePassive(inc, els.machinesList || els.tapBtn, formatNumberNoZeros);
   }
 }, 1000);
 
@@ -226,7 +170,7 @@ els.tapBtn.addEventListener("click", () => {
   state.points += realPerClick;
   save();
   renderMain();
-  animateClick(realPerClick);
+  animateClick(realPerClick, els.tapBtn, formatNumberNoZeros);
 
   // Relance l’animation pulse
   els.tapBtn.classList.remove("pulse");
@@ -299,3 +243,4 @@ if ("serviceWorker" in navigator) {
     .then(() => console.log("✅ Service Worker enregistré"))
     .catch(err => console.error("❌ Erreur Service Worker", err));
 }
+```
