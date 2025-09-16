@@ -3,14 +3,12 @@ import { machines } from "./machines.js";
 export function initUpgrades(deps) {
   const { els, state, save, renderMain, formatCompact, costFor, machines: machinesData } = deps;
 
-  // Récupère le placeholder du HTML
   let modal = els.storeModal;
   modal.className = "modal";
   modal.setAttribute("aria-hidden", "true");
   modal.setAttribute("role", "dialog");
   modal.setAttribute("aria-labelledby", "storeTitle");
 
-  // Injection du contenu de la modale (même structure que devModal)
   modal.innerHTML = `
     <div class="modal-content">
       <header class="modal-header">
@@ -24,7 +22,6 @@ export function initUpgrades(deps) {
   els.closeStoreBtn = modal.querySelector("#closeStoreBtn");
   const body = modal.querySelector("#upgradesBody");
 
-  // Style interne comme le dev menu
   Object.assign(body.style, {
     display: "flex",
     flexDirection: "column",
@@ -33,7 +30,6 @@ export function initUpgrades(deps) {
     gap: "12px",
   });
 
-  // Fonctions ouverture/fermeture
   function openStore() {
     modal.setAttribute("aria-hidden", "false");
     document.body.classList.add("modal-open");
@@ -44,7 +40,6 @@ export function initUpgrades(deps) {
     document.body.classList.remove("modal-open");
   }
 
-  // Rendu du contenu
   function renderAmeliorations() {
     body.innerHTML = "";
 
@@ -60,7 +55,6 @@ export function initUpgrades(deps) {
     statsList.id = "statsList";
     statsList.className = "list";
 
-    // Helper pour créer un item
     function addItem(title, keyName, baseCost, container) {
       const owned = keyName === "pointsPerClick" ? state.pointsPerClick - 1 : state[keyName];
       const max = 150;
@@ -73,16 +67,56 @@ export function initUpgrades(deps) {
           <div class="item-title">${title}</div>
           <div class="item-meta">${formatCompact(cost1)} 💰 • x${owned}</div>
         </div>
-        <div style="display:flex;gap:4px;">
+        <div class="item-actions">
           <button class="item-btn" ${state.points < cost1 || owned >= max ? "disabled" : ""}>1x</button>
           <button class="item-btn" ${state.points < cost1 || owned >= max ? "disabled" : ""}>10x</button>
           <button class="item-btn" ${state.points < cost1 || owned >= max ? "disabled" : ""}>Max</button>
         </div>
       `;
       container.appendChild(item);
+
+      const buttons = item.querySelectorAll(".item-btn");
+      const quantities = [1, 10, "max"];
+
+      buttons.forEach((btn, i) => {
+        btn.addEventListener("click", () => {
+          let toBuy = 0;
+          const qty = quantities[i];
+          let current = keyName === "pointsPerClick" ? state.pointsPerClick - 1 : state[keyName];
+
+          if (qty === "max") {
+            let cost = costFor(baseCost, current);
+            while (state.points >= cost && current + toBuy < max) {
+              state.points -= cost;
+              toBuy++;
+              cost = costFor(baseCost, current + toBuy);
+            }
+          } else {
+            for (let j = 0; j < qty; j++) {
+              const cost = costFor(baseCost, current + toBuy);
+              if (state.points >= cost && current + toBuy < max) {
+                state.points -= cost;
+                toBuy++;
+              } else {
+                break;
+              }
+            }
+          }
+
+          if (toBuy > 0) {
+            if (keyName === "pointsPerClick") {
+              state.pointsPerClick += toBuy;
+            } else {
+              state[keyName] += toBuy;
+            }
+            save();
+            renderAmeliorations();
+            renderMain();
+          }
+        });
+      });
     }
 
-    // Sections
     const sectionUpgrades = document.createElement("section");
     sectionUpgrades.className = "section";
     sectionUpgrades.innerHTML = `<h3 class="section-title">💡 Améliorations basiques</h3>`;
@@ -100,7 +134,6 @@ export function initUpgrades(deps) {
 
     body.append(sectionUpgrades, sectionMachines, sectionStats);
 
-    // Remplissage
     addItem("🔁 Auto-Clicker", "autoClickers", 10, upgradesList);
     addItem("⌑ Double Clicker", "pointsPerClick", 20, upgradesList);
     for (const m of machinesData) addItem(m.title, m.key, m.base, machinesList);
@@ -112,7 +145,6 @@ export function initUpgrades(deps) {
     }
   }
 
-  // Événements
   els.openStoreBtn.addEventListener("click", () => {
     renderAmeliorations();
     openStore();
