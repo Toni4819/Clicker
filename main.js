@@ -160,16 +160,19 @@ function animateClick(amount) {
   span.addEventListener("animationend", () => span.remove());
 }
 
-// Sécurise la récupération d’un rect même si l’élément est absent
+// Sécurise la récupération d'un rectangle même si l'élément n'existe pas
 function getSafeRect(el) {
   if (el && typeof el.getBoundingClientRect === "function") {
     const r = el.getBoundingClientRect();
-    if (r && Number.isFinite(r.left) && Number.isFinite(r.top)) return r;
+    if (Number.isFinite(r.left) && Number.isFinite(r.top)) {
+      return r;
+    }
   }
+  // Fallback = centre de la fenêtre
   return {
-    left: window.innerWidth / 2,
-    top: window.innerHeight / 2,
-    width: 0,
+    left: window.innerWidth  / 2,
+    top:  window.innerHeight / 2,
+    width:  0,
     height: 0
   };
 }
@@ -178,25 +181,25 @@ function animatePassive(amount) {
   const span = document.createElement("span");
   span.textContent = `+${formatNumberNoZeros(amount)}`;
   span.classList.add("click-burst-passive");
+  span.style.position = "fixed";
 
-  // Position de départ
-  const startRoot = els.machinesList || els.tapBtn || null;
-  const sr = getSafeRect(startRoot);
-  const startX = sr.left + (sr.width ? Math.random() * sr.width : 0);
-  const startY = sr.top  + (sr.height ? sr.height * 0.3    : 0);
+  // Choix du point de départ : machinesList si dispo, sinon le bouton tap
+  const startEl = els.machinesList || els.tapBtn;
+  const sr = getSafeRect(startEl);
+  const startX = sr.left + (sr.width  ? Math.random() * sr.width  : 0);
+  const startY = sr.top  + (sr.height ? sr.height * 0.3         : 0);
 
   span.style.left = `${startX}px`;
   span.style.top  = `${startY}px`;
   document.body.appendChild(span);
 
-  // Force le déclenchement de l’animation CSS
-  requestAnimationFrame(() => {
-    span.classList.add("animate");
-  });
+  // Lancement de l’animation CSS (keyframes passiveBurst)
+  requestAnimationFrame(() => span.classList.add("animate"));
 
-  // Nettoyage
+  // Suppression à la fin
   span.addEventListener("animationend", () => span.remove());
 }
+
 
 
   span.addEventListener("transitionend", () => span.remove());
