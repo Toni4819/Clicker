@@ -1,9 +1,5 @@
 import { machines } from "./machines.js";
 
-/**
- * Initialise le menu Améliorations (anciennement Boutique)
- * @param {Object} deps
- */
 export function initUpgrades(deps) {
   const {
     els,
@@ -20,42 +16,20 @@ export function initUpgrades(deps) {
   if (!modal) {
     modal = document.createElement("div");
     modal.id = "storeModal";
+    modal.className = "modal";
+    modal.setAttribute("aria-hidden", "true");
+    modal.setAttribute("role", "dialog");
+    modal.setAttribute("aria-labelledby", "storeTitle");
     document.body.appendChild(modal);
     els.storeModal = modal;
   }
 
-  // Styles et attributs du modal
-  modal.className = "modal";
-  modal.setAttribute("aria-hidden", "true");
-  modal.setAttribute("role", "dialog");
-  modal.setAttribute("aria-labelledby", "storeTitle");
-  modal.style.cssText = `
-    position: fixed;
-    inset: 0;
-    display: none; /* masqué par défaut */
-    place-items: center;
-    background: rgba(0,0,0,0.5);
-    z-index: 1000;
-    pointer-events: none;
-    transition: opacity 0.2s ease;
-  `;
-
   // ─── Injection du contenu HTML ───
   modal.innerHTML = `
-    <div class="modal-content" style="
-      background: #1a1a1a;
-      border-radius: 12px;
-      padding: 16px;
-      width: min(600px, 95vw);
-      max-height: 90vh;
-      overflow-y: auto;
-      box-shadow: 0 8px 30px rgba(0,0,0,0.4);
-    ">
-      <header class="modal-header" style="display:flex;justify-content:space-between;align-items:center;">
+    <div class="modal-content">
+      <header class="modal-header">
         <h2 id="storeTitle" class="modal-title">🆙 Améliorations</h2>
-        <button id="closeStoreBtn" class="close-btn" aria-label="Fermer" style="
-          background:none;border:none;color:#bbb;font-size:1.2rem;cursor:pointer;
-        ">✕</button>
+        <button id="closeStoreBtn" class="close-btn" aria-label="Fermer">✕</button>
       </header>
       <div class="modal-body">
         <section class="section">
@@ -83,15 +57,11 @@ export function initUpgrades(deps) {
   // ─── Fonctions ouverture/fermeture ───
   function openStore() {
     modal.setAttribute("aria-hidden", "false");
-    modal.style.display = "grid";
-    modal.style.pointerEvents = "auto";
     document.body.classList.add("modal-open");
   }
 
   function closeStore() {
     modal.setAttribute("aria-hidden", "true");
-    modal.style.display = "none";
-    modal.style.pointerEvents = "none";
     document.body.classList.remove("modal-open");
   }
 
