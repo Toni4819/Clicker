@@ -16,7 +16,7 @@ export function initRebirthSystem({
   formatCompact,
   getRebirthBoostFactor,
   formatPercentNoZeros,
-  formatNumberNoZeros
+  formatNumberTrimZeros
 }) {
   const STORAGE_KEY = "rebirthCount";
   const BASE_COST   = 10_000;
