@@ -88,12 +88,14 @@ export function initUpgrades(deps) {
   function openStore() {
     modal.setAttribute("aria-hidden", "false");
     modal.style.display = "grid";
+    modal.style.pointerEvents = "auto";
     document.body.classList.add("modal-open");
   }
 
   function closeStore() {
     modal.setAttribute("aria-hidden", "true");
     modal.style.display = "none";
+    modal.style.pointerEvents = "none";
     document.body.classList.remove("modal-open");
   }
 
