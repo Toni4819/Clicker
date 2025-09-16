@@ -59,18 +59,21 @@ export function initUpgrades(deps) {
       const owned = keyName === "pointsPerClick" ? state.pointsPerClick - 1 : state[keyName];
       const max = 150;
       const cost1 = costFor(baseCost, owned);
+      const isBuyable = state.points >= cost1 && owned < max;
 
       const item = document.createElement("div");
-      item.className = "item";
+      item.className = "item" + (isBuyable ? " item-available" : "");
       item.innerHTML = `
-        <div>
-          <div class="item-title">${title}</div>
-          <div class="item-meta">${formatCompact(cost1)} 💰 • x${owned}</div>
-        </div>
-        <div class="item-actions">
-          <button class="item-btn" ${state.points < cost1 || owned >= max ? "disabled" : ""}>1x</button>
-          <button class="item-btn" ${state.points < cost1 || owned >= max ? "disabled" : ""}>10x</button>
-          <button class="item-btn" ${state.points < cost1 || owned >= max ? "disabled" : ""}>Max</button>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div class="item-title">${title}</div>
+            <div class="item-meta">${formatCompact(cost1)} 💰 • x${owned}</div>
+          </div>
+          <div style="display:flex;gap:4px;">
+            <button class="item-btn" ${!isBuyable ? "disabled" : ""}>1x</button>
+            <button class="item-btn" ${!isBuyable ? "disabled" : ""}>10x</button>
+            <button class="item-btn" ${!isBuyable ? "disabled" : ""}>Max</button>
+          </div>
         </div>
       `;
       container.appendChild(item);
