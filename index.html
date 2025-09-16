@@ -21,12 +21,15 @@
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <!-- Déclencheur caché du menu dev -->
-    <button id="devTrigger" aria-label="Desultory">Desultory</button>
+    <!-- Déclencheur caché du menu Dev (invisible et non interactif) -->
+    <button
+      id="devTrigger"
+      aria-label="Mode développeur"
+      style="position:absolute; width:1px; height:1px; padding:0; border:none; background:transparent; opacity:0; pointer-events:none;"
+    ></button>
 
     <main class="game-layout">
-
-      <!-- Stats -->
+      <!-- Stats en haut -->
       <header class="stats-header">
         <h1 class="title">💰 Points : <span id="pointsValue">0</span></h1>
         <p class="subtitle">⚡ Clics/s : <span id="autoClicksValue">0</span></p>
@@ -36,21 +39,29 @@
       <section class="action-zone">
         <button id="tapBtn" class="btn btn-primary big-btn">👆 Tapper (+1)</button>
         <hr class="divider action-divider" />
+
         <div class="actions-grid">
           <button id="openStoreBtn" class="btn btn-secondary">🆙 Améliorations</button>
           <button id="shopBtn" class="btn btn-shop">🛍️ Shop</button>
           <button id="rebirthBtn" class="btn btn-warning">🌱 Rebirth</button>
         </div>
+
         <hr class="divider action-divider" />
-        <!-- Quick Stats -->
+        <!-- Quick Stats dynamique -->
         <div id="quickStats" class="quick-stats"></div>
       </section>
 
-      <!-- Placeholder vide : le contenu du modal sera injecté par upgrades.js -->
+      <!-- Placeholder pour le modal Améliorations (injecté par upgrades.js) -->
       <div id="storeModal"></div>
 
-      <!-- Modale Dev -->
-      <div id="devModal" class="modal" aria-hidden="true" role="dialog" aria-labelledby="devTitle">
+      <!-- Modale Mode Développeur -->
+      <div
+        id="devModal"
+        class="modal"
+        aria-hidden="true"
+        role="dialog"
+        aria-labelledby="devTitle"
+      >
         <div class="modal-content">
           <header class="modal-header">
             <h2 id="devTitle">🔧 Mode Développeur</h2>
@@ -69,7 +80,6 @@
           <button id="resetBtn" class="btn footer-reset">↺ Reset total</button>
         </div>
       </footer>
-
     </main>
 
     <script type="module" src="./main.js"></script>
