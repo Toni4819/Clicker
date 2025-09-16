@@ -223,7 +223,7 @@ initRebirthSystem({
   formatCompact,
   getRebirthBoostFactor,
   formatPercentNoZeros,
-  formatNumberNoZeros
+  formatNumberTrimZeros
 });
 
 initReset({
