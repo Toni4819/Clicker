@@ -177,8 +177,14 @@ initUpgrades({
 });
 
 initDevMenu({
-  els, state, save, renderMain,
-  renderStore: () => {}, openModal, closeModal,
+  els,
+  state,
+  save,
+  renderMain,
+  renderStore: () => {},
+  openModal,
+  closeModal,
+  machines,
 });
 
 initRebirthSystem({
