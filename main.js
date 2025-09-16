@@ -118,7 +118,6 @@ function renderMain() {
   const realPerClick = state.pointsPerClick * getRebirthBoostFactor();
   els.tapBtn.textContent          = `👇 Tapper (+${formatNumberNoZeros(realPerClick)})`;
 
-  els.versionText.textContent     = `Toni’s Studios – v1.1`;
 }
 
 // ─── Animation “+N” ───
