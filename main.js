@@ -153,7 +153,7 @@ function renderMain() {
   els.autoClicksValue.textContent = formatCompact(totalAutoClicksPerSecond());
 
   const realPerClick = state.pointsPerClick * getRebirthBoostFactor();
-  els.tapBtn.textContent = `👇 Tapper (+${formatNumberNoZeros(realPerClick)})`;
+  els.tapBtn.textContent = `👇 Tapper (+${formatNumberTrimZeros(realPerClick)})`;
 
   els.versionText.textContent = `Toni’s Studios – v2.0`;
 }
