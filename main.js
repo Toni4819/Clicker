@@ -19,7 +19,7 @@ const keys = [
 
 const state = Object.fromEntries(keys.map(k => [k, 0]));
 state.pointsPerClick = 1;
-state.rebirths      = 0;
+state.rebirths = 0;
 
 function load() {
   for (const k of keys) {
@@ -45,8 +45,9 @@ function formatNumberNoZeros(n) {
 }
 
 function formatCompact(num) {
-  if (!Number.isFinite(num)) return num.toString();
+  if (!Number.isFinite(num)) return String(num);
   const abs = Math.abs(num);
+  // Échelle longue: K, M, B, T, P, E, Z, Y
   const units = [
     { value: 1e24, symbol: "Y" },
     { value: 1e21, symbol: "Z" },
@@ -109,20 +110,20 @@ import { initStats }         from "./stats.js";
 
 // ─── Sélecteurs DOM ───
 const els = {
-  pointsValue:    document.getElementById("pointsValue"),
-  autoClicksValue:document.getElementById("autoClicksValue"),
-  tapBtn:         document.getElementById("tapBtn"),
-  openStoreBtn:   document.getElementById("openStoreBtn"),
-  shopBtn:        document.getElementById("shopBtn"),
-  rebirthBtn:     document.getElementById("rebirthBtn"),
-  versionText:    document.getElementById("versionText"),
-  storeModal:     document.getElementById("storeModal"),
-  devTrigger:     document.getElementById("devTrigger"),
-  devModal:       document.getElementById("devModal"),
-  closeDevBtn:    document.getElementById("closeDevBtn"),
-  devBody:        document.getElementById("devBody"),
-  resetBtn:       document.getElementById("resetBtn"),
-  // Les listes du modal Améliorations seront définies dans initUpgrades
+  pointsValue:     document.getElementById("pointsValue"),
+  autoClicksValue: document.getElementById("autoClicksValue"),
+  tapBtn:          document.getElementById("tapBtn"),
+  openStoreBtn:    document.getElementById("openStoreBtn"),
+  shopBtn:         document.getElementById("shopBtn"),
+  rebirthBtn:      document.getElementById("rebirthBtn"),
+  versionText:     document.getElementById("versionText"),
+  storeModal:      document.getElementById("storeModal"),
+  devTrigger:      document.getElementById("devTrigger"),
+  devModal:        document.getElementById("devModal"),
+  closeDevBtn:     document.getElementById("closeDevBtn"),
+  devBody:         document.getElementById("devBody"),
+  resetBtn:        document.getElementById("resetBtn"),
+  // upgrades.js attribuera: machinesList, upgradesList, statsList, closeStoreBtn
 };
 
 // ─── Modales ───
@@ -142,7 +143,7 @@ function renderMain() {
   const realPerClick = state.pointsPerClick * getRebirthBoostFactor();
   els.tapBtn.textContent = `👇 Tapper (+${formatNumberNoZeros(realPerClick)})`;
 
-  els.versionText.textContent = `Toni’s Studios – v1.1`;
+  els.versionText.textContent = `Toni’s Studios – v2.0`;
 }
 
 // ─── Animations ───
@@ -159,23 +160,41 @@ function animateClick(amount) {
   span.addEventListener("animationend", () => span.remove());
 }
 
+// Sécurise la récupération d’un rect même si l’élément est absent
+function getSafeRect(el) {
+  if (el && typeof el.getBoundingClientRect === "function") {
+    const r = el.getBoundingClientRect();
+    if (r && Number.isFinite(r.left) && Number.isFinite(r.top)) return r;
+  }
+  return {
+    left: window.innerWidth / 2,
+    top: window.innerHeight / 2,
+    width: 0,
+    height: 0
+  };
+}
+
 function animatePassive(amount) {
   const span = document.createElement("span");
   span.textContent = `+${formatNumberNoZeros(amount)}`;
   span.classList.add("click-burst-passive");
   span.style.position = "fixed";
 
-  const startRect = els.machinesList.getBoundingClientRect();
-  const startX = startRect.left + Math.random() * startRect.width;
-  const startY = startRect.top;
+  // Point de départ: machinesList si dispo, sinon bouton tap, sinon centre écran
+  const startRoot = els.machinesList || els.tapBtn || null;
+  const sr = getSafeRect(startRoot);
+  const startX = sr.left + (sr.width ? Math.random() * sr.width : 0);
+  const startY = sr.top + (sr.height ? 0.3 * sr.height : 0);
+
   span.style.left = `${startX}px`;
   span.style.top  = `${startY}px`;
-
   document.body.appendChild(span);
 
-  const endRect = els.pointsValue.getBoundingClientRect();
-  const endX = endRect.left + endRect.width / 2;
-  const endY = endRect.top + endRect.height / 2;
+  // Point d’arrivée: compteur de points si dispo, sinon centre haut
+  const endRoot = els.pointsValue || null;
+  const er = getSafeRect(endRoot);
+  const endX = er.left + (er.width ? er.width / 2 : 0);
+  const endY = er.top + (er.height ? er.height / 2 : 0);
 
   requestAnimationFrame(() => {
     span.style.transition = "transform 0.8s ease-out, opacity 0.8s ease-out";
@@ -193,7 +212,7 @@ save();
 
 // Gains automatiques chaque seconde
 setInterval(() => {
-  const inc = totalAutoClicksPerSecond();
+  const inc = totalAutoClicksPerSecond(); // déjà boosté
   if (inc > 0) {
     state.points += inc;
     save();
@@ -281,4 +300,3 @@ if ("serviceWorker" in navigator) {
     .then(() => console.log("✅ Service Worker enregistré"))
     .catch(err => console.error("❌ Erreur Service Worker", err));
 }
-```
