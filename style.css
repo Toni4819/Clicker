@@ -141,6 +141,7 @@ html { touch-action: none; }
   position: fixed; inset: 0;
   display: none; align-items: center; justify-content: center;
   background: rgba(0,0,0,0.55);
+  overflow: hidden;
   padding: 16px; z-index: 100;
 }
 .modal[aria-hidden="false"] { display: flex; }
@@ -150,7 +151,7 @@ html { touch-action: none; }
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 16px;
-  overflow: hidden;
+  overflow-y: hidden;
   box-shadow: 0 10px 40px rgba(0,0,0,.5);
 }
 
@@ -159,7 +160,7 @@ html { touch-action: none; }
   padding: 14px 16px; border-bottom: 1px solid var(--border);
 }
 .modal-body {
-  padding: 16px; max-height: 80vh; overflow-y: auto;
+  padding: 16px; max-height: 80vh; overflow: hidden;
 }
 .close-btn {
   background: transparent; border: none; color: var(--fg);
@@ -265,17 +266,20 @@ input[type="text"] {
 
 @keyframes burst {
   0%   { transform: translateY(0) scale(1);    opacity: 1; }
-  50%  { transform: translateY(-20px) scale(1.1); opacity: 0.8; }
+  50%  { transform: translateY(-10px) scale(1.1); opacity: 0.8; }
   100% { transform: translateY(-40px) scale(1);    opacity: 0; }
 }
 
-/* Animation gains passifs (machines) */
+/* ─── Animation gains passifs ─── */
 .click-burst-passive {
   position: fixed;
   color: #9b59b6;
   font-weight: bold;
+  opacity: 1;                  /* visible à 100% */
   pointer-events: none;
-  z-index: 1001;
+  z-index: 900;                /* sous les modals (1000+) */
+  will-change: transform, opacity;
+  font-size: 1.1em;
 }
 
 /* Effet pulse sur le bouton */
