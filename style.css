@@ -11,68 +11,127 @@
   --radius: 14px;
 }
 
-* { box-sizing: border-box; }
-
-html, body {
-  margin: 0; padding: 0;
-  background: var(--bg); color: var(--fg);
-  font-family: -apple-system, system-ui, Segoe UI, Roboto, Inter, sans-serif;
-  user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none;
-  overflow: hidden; height: 100%;
+* {
+  box-sizing: border-box;
 }
 
-html { touch-action: none; }
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: -apple-system, system-ui, "Segoe UI", Roboto, Inter, sans-serif;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  overflow: hidden;
+  height: 100%;
+}
 
-/* Bouton dev caché */
+html {
+  touch-action: none;
+}
+
+/* Bloquer le scroll de la page quand un modal est ouvert */
+body.modal-open {
+  overflow: hidden;
+}
+
+/* Bouton dev caché mais cliquable */
 #devTrigger {
-  position: fixed; top: 0; left: 0;
-  width: 120px; height: 50px;
-  background: transparent; color: transparent; border: none; cursor: pointer;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 120px;
+  height: 50px;
+  background: transparent;
+  color: transparent;
+  border: none;
+  cursor: pointer;
   z-index: 1001;
 }
 
 /* Conteneur principal */
 .game-layout {
-  display: flex; flex-direction: column; align-items: center;
-  width: 100%; max-width: 720px;
-  margin: 0 auto; padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 24px 16px;
   padding-bottom: 96px; /* espace pour footer */
 }
 
 /* Stats */
 .stats-header {
   text-align: center;
-  margin-bottom: 2rem; /* plus d’espace */
+  margin-bottom: 2rem;
 }
+
 .title {
-  font-size: 2.2rem; margin: 0 0 8px; font-weight: 800;
+  font-size: 2.2rem;
+  margin: 0 0 8px;
+  font-weight: 800;
 }
+
 .subtitle {
-  font-size: 1.1rem; margin: 0 0 24px; color: var(--muted);
+  font-size: 1.1rem;
+  margin: 0 0 24px;
+  color: var(--muted);
 }
 
 /* Boutons génériques */
 .btn {
   display: inline-block;
   padding: 14px 16px;
-  border: none; border-radius: var(--radius);
-  font-size: 1.1rem; font-weight: 700;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 1.1rem;
+  font-weight: 700;
   cursor: pointer;
   transition: transform .05s ease, background .2s ease, box-shadow .2s ease;
 }
-.btn:active { transform: translateY(1px); }
 
-.btn-primary { background: var(--primary); color: #000; }
-.btn-secondary { background: var(--secondary); color: #fff; }
-.btn-warning { background: var(--danger); color: #fff; }
-.btn-shop { background: var(--shop); color: #fff; }
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: #000;
+}
+
+.btn-secondary {
+  background: var(--secondary);
+  color: #fff;
+}
+
+.btn-warning {
+  background: var(--danger);
+  color: #fff;
+}
+
+.btn-shop {
+  background: var(--shop);
+  color: #fff;
+}
 
 /* Hover desktop */
 @media (hover: hover) and (pointer: fine) {
-  .btn-primary:hover { box-shadow: 0 6px 16px rgba(245,159,0,0.25); }
-  .btn-secondary:hover { box-shadow: 0 6px 16px rgba(30,102,245,0.25); }
-  .btn-warning:hover { box-shadow: 0 6px 16px rgba(224,49,49,0.25); }
-  .btn-shop:hover { box-shadow: 0 6px 16px rgba(0,184,148,0.25); }
+  .btn-primary:hover {
+    box-shadow: 0 6px 16px rgba(245,159,0,0.25);
+  }
+  .btn-secondary:hover {
+    box-shadow: 0 6px 16px rgba(30,102,245,0.25);
+  }
+  .btn-warning:hover {
+    box-shadow: 0 6px 16px rgba(224,49,49,0.25);
+  }
+  .btn-shop:hover {
+    box-shadow: 0 6px 16px rgba(0,184,148,0.25);
+  }
 }
 
 /* Bouton de clic principal centré */
@@ -80,7 +139,7 @@ html { touch-action: none; }
   font-size: 1.5rem;
   padding: 1rem 2rem;
   width: min(90%, 420px);
-  margin: 0 auto; /* centrage */
+  margin: 0 auto;
   text-align: center;
 }
 
@@ -89,14 +148,14 @@ html { touch-action: none; }
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1.5rem; /* espace vertical un peu plus grand */
+  gap: 1.5rem;
   width: 100%;
 }
 
 /* Séparateur interne */
 .action-divider {
   width: clamp(200px, 60%, 400px);
-  margin: 0; /* supprime margin vertical par défaut */
+  margin: 0;
   border: none;
   border-top: 1px solid var(--border);
 }
@@ -113,14 +172,18 @@ html { touch-action: none; }
 
 /* Footer fixé */
 .footer {
-  position: fixed; bottom: 0; left: 0; width: 100%;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
   background: var(--surface);
   border-top: 1px solid var(--border);
   box-shadow: 0 -8px 24px rgba(0,0,0,0.25);
   padding: 10px 16px;
   z-index: 1000;
-
-  display: flex; align-items: center; justify-content: space-between;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   color: var(--muted);
 }
 
@@ -132,84 +195,145 @@ html { touch-action: none; }
   padding: 10px 14px;
   border-radius: 10px;
 }
+
 @media (hover: hover) and (pointer: fine) {
-  .footer-reset:hover { background: #10141b; }
+  .footer-reset:hover {
+    background: #10141b;
+  }
 }
 
-/* Modales, listes, inputs… (inchangés) */
+/* Modales, listes, inputs… */
 .modal {
-  position: fixed; inset: 0;
-  display: none; align-items: center; justify-content: center;
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
   background: rgba(0,0,0,0.55);
-  overflow: hidden;
-  padding: 16px; z-index: 100;
+  overflow: hidden; /* un seul scroll, géré par .modal-content */
+  padding: 16px;
+  z-index: 100;
 }
-.modal[aria-hidden="false"] { display: flex; }
+
+.modal[aria-hidden="false"] {
+  display: flex;
+}
 
 .modal-content {
-  width: 100%; max-width: 760px;
+  width: 100%;
+  max-width: 760px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 16px;
-  overflow-y: hidden;
+  overflow-y: auto; /* contenu scrollable uniquement */
   box-shadow: 0 10px 40px rgba(0,0,0,.5);
 }
 
 .modal-header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 16px; border-bottom: 1px solid var(--border);
-}
-.modal-body {
-  padding: 16px; max-height: 80vh; overflow: hidden;
-}
-.close-btn {
-  background: transparent; border: none; color: var(--fg);
-  font-size: 20px; cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
 }
 
-.section { margin-bottom: 16px; }
-.section-title { margin: 0 0 8px; font-size: 1rem; color: var(--muted); }
-.list { display: grid; gap: 8px; }
+.modal-body {
+  padding: 16px;
+  max-height: 80vh;
+  overflow: auto; /* laisser défiler si nécessaire */
+}
+
+.close-btn {
+  background: transparent;
+  border: none;
+  color: var(--fg);
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.section {
+  margin-bottom: 16px;
+}
+
+.section-title {
+  margin: 0 0 8px;
+  font-size: 1rem;
+  color: var(--muted);
+}
+
+.list {
+  display: grid;
+  gap: 8px;
+}
 
 .item {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 12px 14px; border-radius: 12px;
-  background: #0e1117; border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #0e1117;
+  border: 1px solid var(--border);
 }
-.item-title { font-weight: 600; }
-.item-meta { color: var(--muted); font-size: .95rem; }
+
+.item-title {
+  font-weight: 600;
+}
+
+.item-meta {
+  color: var(--muted);
+  font-size: .95rem;
+}
 
 .item-btn {
   margin-left: 12px;
-  padding: 8px 12px; border-radius: 10px; border: 1px solid var(--border);
-  background: #10141b; color: var(--fg); cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #10141b;
+  color: var(--fg);
+  cursor: pointer;
 }
-.item-btn[disabled] { opacity: .5; cursor: not-allowed; }
+
+.item-btn[disabled] {
+  opacity: .5;
+  cursor: not-allowed;
+}
 
 .stat {
-  display: flex; justify-content: space-between;
-  padding: 10px 12px; border: 1px dashed var(--border);
-  border-radius: 10px; color: var(--muted);
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  color: var(--muted);
 }
 
 input[type="number"],
 input[type="password"],
 input[type="text"] {
-  background: #0d0f14; color: var(--fg);
+  background: #0d0f14;
+  color: var(--fg);
   border: 1px solid var(--border);
-  padding: 10px 12px; border-radius: 10px; width: 200px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  width: 200px;
 }
 
 /* Responsive */
-/* actions-grid passe à 2 puis 1 colonne */
 @media (max-width: 520px) {
-  .actions-grid { grid-template-columns: repeat(2, minmax(120px, 1fr)); }
-}
-@media (max-width: 380px) {
-  .actions-grid { grid-template-columns: 1fr; }
+  .actions-grid {
+    grid-template-columns: repeat(2, minmax(120px, 1fr));
+  }
 }
 
-/* ─── Animation du "+N" qui flotte ─── */
+@media (max-width: 380px) {
+  .actions-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ─── Animation du "+N" actif ─── */
 @keyframes floatUp {
   0%   { opacity: 1; transform: translateY(0) scale(1); }
   50%  { opacity: 1; transform: translateY(-20px) scale(1.2); }
@@ -217,16 +341,39 @@ input[type="text"] {
 }
 
 .click-burst {
-  position: absolute;
+  position: fixed;
   pointer-events: none;
   font-size: 1.2rem;
   font-weight: bold;
   color: var(--primary);
   animation: floatUp 0.8s ease-out forwards;
   will-change: transform, opacity;
+  z-index: 1001;
 }
 
-/* ─── Pulse du bouton au clic ─── */
+/* ─── Animation gains passifs ─── */
+@keyframes passiveBurst {
+  0%   { transform: translateY(0) scale(1);    opacity: 1; }
+  50%  { transform: translateY(-10px) scale(1.1); opacity: 0.8; }
+  100% { transform: translateY(-40px) scale(1);   opacity: 0; }
+}
+
+.click-burst-passive {
+  position: fixed;
+  color: #9b59b6;
+  font-weight: bold;
+  opacity: 1;
+  pointer-events: none;
+  z-index: 900;
+  will-change: transform, opacity;
+  font-size: 1.1em;
+}
+
+.click-burst-passive.animate {
+  animation: passiveBurst 0.8s ease-out forwards;
+}
+
+/* Effet pulse sur le bouton */
 @keyframes pulseAnim {
   0%   { transform: scale(1); }
   50%  { transform: scale(1.1); }
@@ -235,94 +382,6 @@ input[type="text"] {
 
 .pulse {
   animation: pulseAnim 0.3s ease-out;
-}
-
-.quick-stats {
-  font-size: 0.9em;
-  color: #ccc;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  margin-top: 4px;
-}
-.quick-stats div {
-  display: flex;
-  justify-content: space-between;
-}
-.quick-stats h3 {
-  color: #fff;
-  font-weight: bold;
-}
-
-/* Animation “+N” au clic */
-.click-burst {
-  position: fixed;
-  color: #f1c40f;
-  font-weight: bold;
-  pointer-events: none;
-  z-index: 1001;
-  animation: burst 0.6s ease-out;
-}
-
-@keyframes burst {
-  0%   { transform: translateY(0) scale(1);    opacity: 1; }
-  50%  { transform: translateY(-10px) scale(1.1); opacity: 0.8; }
-  100% { transform: translateY(-40px) scale(1);    opacity: 0; }
-}
-
-/* ─── Animation gains passifs ─── */
-.click-burst-passive {
-  position: fixed;
-  color: #9b59b6;
-  font-weight: bold;
-  opacity: 1;                  /* visible à 100% */
-  pointer-events: none;
-  z-index: 900;                /* sous les modals (1000+) */
-  will-change: transform, opacity;
-  font-size: 1.1em;
-}
-
-/* Effet pulse sur le bouton */
-.pulse {
-  animation: pulseAnim 0.3s ease-out;
-}
-@keyframes pulseAnim {
-  0%   { transform: scale(1);   }
-  50%  { transform: scale(1.1); }
-  100% { transform: scale(1);   }
-}
-
-/* Modal (Améliorations + Dev) */
-.modal {
-  display: none; /* caché par défaut */
-}
-.modal[aria-hidden="false"] {
-  display: grid;
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.5);
-  place-items: center;
-  z-index: 1000;
-}
-.modal-content {
-  background: #1a1a1a;
-  border-radius: 12px;
-  padding: 16px;
-  width: min(600px, 95vw);
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: 0 8px 30px rgba(0,0,0,0.4);
-}
-
-/* Boutons dans les listes */
-.item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
-.item-controls .item-btn {
-  margin-left: 4px;
 }
 
 /* Quick stats sous les boutons */
@@ -334,15 +393,13 @@ input[type="text"] {
   gap: 2px;
   margin-top: 4px;
 }
+
+.quick-stats div {
+  display: flex;
+  justify-content: space-between;
+}
+
 .quick-stats h3 {
   color: #fff;
   font-weight: bold;
 }
-
-/* Statistiques en boutique */
-.stat {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 4px;
-}
-
