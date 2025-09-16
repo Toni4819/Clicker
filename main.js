@@ -1,4 +1,6 @@
 // main.js
+console.log("✅ main.js chargé !");
+
 
 // ─── Clés et état (localStorage) ───
 const keys = [
