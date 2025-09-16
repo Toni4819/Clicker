@@ -202,8 +202,6 @@ function animatePassive(amount) {
   span.addEventListener("animationend", () => span.remove());
 }
 
-
-
   span.addEventListener("transitionend", () => span.remove());
 }
 
