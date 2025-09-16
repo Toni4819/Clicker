@@ -212,7 +212,7 @@ body.modal-open {
   background: rgba(0,0,0,0.55);
   overflow: hidden; /* un seul scroll, géré par .modal-content */
   padding: 16px;
-  z-index: 100;
+  z-index: 1001;
 }
 
 .modal[aria-hidden="false"] {
