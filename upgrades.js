@@ -10,8 +10,6 @@ export function initUpgrades(deps) {
     state,
     save,
     renderMain,
-    openModal,
-    closeModal,
     formatCompact,
     costFor,
     machines: machinesData
@@ -31,15 +29,13 @@ export function initUpgrades(deps) {
   modal.setAttribute("aria-hidden", "true");
   modal.setAttribute("role", "dialog");
   modal.setAttribute("aria-labelledby", "storeTitle");
-  // Styles du modal
   modal.style.cssText = `
     position: fixed;
     inset: 0;
-    display: grid;
+    display: none; /* masqué par défaut */
     place-items: center;
     background: rgba(0,0,0,0.5);
     z-index: 1000;
-    opacity: 0;
     pointer-events: none;
     transition: opacity 0.2s ease;
   `;
@@ -50,9 +46,9 @@ export function initUpgrades(deps) {
       background: #1a1a1a;
       border-radius: 12px;
       padding: 16px;
-      width: min(600px, 95vw); /* ← plus large */
+      width: min(600px, 95vw);
       max-height: 90vh;
-      overflow-y: auto; /* scroll interne uniquement */
+      overflow-y: auto;
       box-shadow: 0 8px 30px rgba(0,0,0,0.4);
     ">
       <header class="modal-header" style="display:flex;justify-content:space-between;align-items:center;">
@@ -99,14 +95,12 @@ export function initUpgrades(deps) {
     document.body.classList.remove("modal-open");
   }
 
-
   // ─── Rendu des items ───
   function renderAmeliorations() {
     els.upgradesList.innerHTML = "";
     els.machinesList.innerHTML = "";
     els.statsList.innerHTML    = "";
 
-    // Helper pour créer un item avec 1x / 10x / Max
     function addItem(title, keyName, baseCost, container) {
       const owned = keyName === "pointsPerClick"
         ? state.pointsPerClick - 1
@@ -153,9 +147,7 @@ export function initUpgrades(deps) {
           state.points -= cost1;
           if (keyName === "pointsPerClick") state.pointsPerClick++;
           else state[keyName]++;
-          save();
-          renderMain();
-          renderAmeliorations();
+          save(); renderMain(); renderAmeliorations();
         }
       });
 
@@ -174,11 +166,7 @@ export function initUpgrades(deps) {
             bought++;
           } else break;
         }
-        if (bought > 0) {
-          save();
-          renderMain();
-          renderAmeliorations();
-        }
+        if (bought > 0) { save(); renderMain(); renderAmeliorations(); }
       });
 
       // Achat Max
@@ -196,11 +184,7 @@ export function initUpgrades(deps) {
             bought++;
           } else break;
         }
-        if (bought > 0) {
-          save();
-          renderMain();
-          renderAmeliorations();
-        }
+        if (bought > 0) { save(); renderMain(); renderAmeliorations(); }
       });
     }
 
@@ -238,7 +222,6 @@ export function initUpgrades(deps) {
     closeStore();
   });
 
-  // Fermer en cliquant hors contenu
   modal.addEventListener("click", (e) => {
     if (e.target === modal) closeStore();
   });
