@@ -286,7 +286,9 @@ body.modal-open {
 }
 
 .item-btn {
-  margin-left: 12px;
+  flex: 1;
+  width: 100%;
+  min-width: 0;
   padding: 8px 12px;
   border-radius: 10px;
   border: 1px solid var(--border);
@@ -294,6 +296,7 @@ body.modal-open {
   color: var(--fg);
   cursor: pointer;
 }
+
 
 .item-btn[disabled] {
   opacity: .5;
