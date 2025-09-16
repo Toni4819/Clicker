@@ -87,16 +87,14 @@ export function initUpgrades(deps) {
   // ─── Fonctions ouverture/fermeture ───
   function openStore() {
     modal.setAttribute("aria-hidden", "false");
-    modal.style.opacity = "1";
-    modal.style.pointerEvents = "auto";
-    document.body.style.overflow = "hidden"; // bloque le scroll de la page derrière
+    modal.style.display = "grid";
+    document.body.classList.add("modal-open");
   }
 
   function closeStore() {
     modal.setAttribute("aria-hidden", "true");
-    modal.style.opacity = "0";
-    modal.style.pointerEvents = "none";
-    document.body.style.overflow = ""; // réactive le scroll de la page
+    modal.style.display = "none";
+    document.body.classList.remove("modal-open");
   }
 
 
