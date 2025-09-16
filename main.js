@@ -1,4 +1,6 @@
-// ─── État et persistance (localStorage) ───
+// main.js
+
+// ─── Clés et état (localStorage) ───
 const keys = [
   "points",
   "autoClickers",
@@ -12,11 +14,12 @@ const keys = [
   "machinesLevel8",
   "machinesLevel9",
   "machinesLevel10",
-  "pointsPerClick",
+  "pointsPerClick"
 ];
+
 const state = Object.fromEntries(keys.map(k => [k, 0]));
 state.pointsPerClick = 1;
-state.rebirths      = 0;  // synchronisé par rebirthSystem
+state.rebirths      = 0;
 
 function load() {
   for (const k of keys) {
@@ -35,25 +38,39 @@ function save() {
   }
 }
 
-// ─── Formatage ───
-const compactFormatter = new Intl.NumberFormat("en-US", {
-  notation: "compact",
-  compactDisplay: "short",
-  maximumFractionDigits: 2
-});
-function formatCompact(num) {
-  return compactFormatter.format(num);
-}
-function formatPercentNoZeros(p) {
-  const s = (Math.round(p * 100) / 100).toFixed(2);
-  return s.replace(/\.00$/, "").replace(/(\.\d)0$/, "$1");
-}
+// ─── Formatage des nombres ───
 function formatNumberNoZeros(n) {
   const s = (Math.round(n * 100) / 100).toFixed(2);
   return s.replace(/\.00$/, "").replace(/(\.\d)0$/, "$1");
 }
 
-// ─── Boost global Rebirth + CPS ───
+function formatCompact(num) {
+  if (!Number.isFinite(num)) return num.toString();
+  const abs = Math.abs(num);
+  const units = [
+    { value: 1e24, symbol: "Y" },
+    { value: 1e21, symbol: "Z" },
+    { value: 1e18, symbol: "E" },
+    { value: 1e15, symbol: "P" },
+    { value: 1e12, symbol: "T" },
+    { value: 1e9,  symbol: "B" },
+    { value: 1e6,  symbol: "M" },
+    { value: 1e3,  symbol: "K" }
+  ];
+  for (const u of units) {
+    if (abs >= u.value) {
+      return formatNumberNoZeros(num / u.value) + u.symbol;
+    }
+  }
+  return formatNumberNoZeros(num);
+}
+
+function formatPercentNoZeros(p) {
+  const s = (Math.round(p * 100) / 100).toFixed(2);
+  return s.replace(/\.00$/, "").replace(/(\.\d)0$/, "$1");
+}
+
+// ─── Boost Rebirth & CPS ───
 function getRebirthBoostFactor() {
   return Math.pow(1.05, state.rebirths);
 }
@@ -82,13 +99,13 @@ function costFor(base, owned) {
   return Math.floor(base * Math.pow(1.15, owned));
 }
 
-// ─── Import des modules ───
-import { machines }             from "./machines.js";
-import { initDevMenu }          from "./dev.js";
-import { initUpgrades }         from "./upgrades.js";
-import { initRebirthSystem }    from "./rebirthSystem.js";
-import { initReset }            from "./reset.js";
-import { initStats }            from "./stats.js";  // <-- UNE SEULE IMPORTATION
+// ─── Imports ───
+import { machines }          from "./machines.js";
+import { initUpgrades }      from "./upgrades.js";
+import { initDevMenu }       from "./dev.js";
+import { initRebirthSystem } from "./rebirthSystem.js";
+import { initReset }         from "./reset.js";
+import { initStats }         from "./stats.js";
 
 // ─── Sélecteurs DOM ───
 const els = {
@@ -96,31 +113,39 @@ const els = {
   autoClicksValue:document.getElementById("autoClicksValue"),
   tapBtn:         document.getElementById("tapBtn"),
   openStoreBtn:   document.getElementById("openStoreBtn"),
+  shopBtn:        document.getElementById("shopBtn"),
   rebirthBtn:     document.getElementById("rebirthBtn"),
   versionText:    document.getElementById("versionText"),
   storeModal:     document.getElementById("storeModal"),
-  closeStoreBtn:  document.getElementById("closeStoreBtn"),
-  upgradesList:   document.getElementById("upgradesList"),
-  machinesList:   document.getElementById("machinesList"),
-  statsList:      document.getElementById("statsList"),
   devTrigger:     document.getElementById("devTrigger"),
   devModal:       document.getElementById("devModal"),
   closeDevBtn:    document.getElementById("closeDevBtn"),
   devBody:        document.getElementById("devBody"),
   resetBtn:       document.getElementById("resetBtn"),
+  // Les listes du modal Améliorations seront définies dans initUpgrades
 };
 
-// ─── Rendu de l’écran principal ───
+// ─── Modales ───
+function openModal(modal) {
+  modal.setAttribute("aria-hidden", "false");
+}
+
+function closeModal(modal) {
+  modal.setAttribute("aria-hidden", "true");
+}
+
+// ─── Rendu principal ───
 function renderMain() {
   els.pointsValue.textContent     = formatCompact(state.points);
   els.autoClicksValue.textContent = formatCompact(totalAutoClicksPerSecond());
 
   const realPerClick = state.pointsPerClick * getRebirthBoostFactor();
-  els.tapBtn.textContent          = `👇 Tapper (+${formatNumberNoZeros(realPerClick)})`;
+  els.tapBtn.textContent = `👇 Tapper (+${formatNumberNoZeros(realPerClick)})`;
 
+  els.versionText.textContent = `Toni’s Studios – v1.1`;
 }
 
-// ─── Animation “+N” ───
+// ─── Animations ───
 function animateClick(amount) {
   const span = document.createElement("span");
   span.textContent = `+${formatNumberNoZeros(amount)}`;
@@ -134,12 +159,31 @@ function animateClick(amount) {
   span.addEventListener("animationend", () => span.remove());
 }
 
-// ─── Modales ───
-function openModal(modal) {
-  modal.setAttribute("aria-hidden", "false");
-}
-function closeModal(modal) {
-  modal.setAttribute("aria-hidden", "true");
+function animatePassive(amount) {
+  const span = document.createElement("span");
+  span.textContent = `+${formatNumberNoZeros(amount)}`;
+  span.classList.add("click-burst-passive");
+  span.style.position = "fixed";
+
+  const startRect = els.machinesList.getBoundingClientRect();
+  const startX = startRect.left + Math.random() * startRect.width;
+  const startY = startRect.top;
+  span.style.left = `${startX}px`;
+  span.style.top  = `${startY}px`;
+
+  document.body.appendChild(span);
+
+  const endRect = els.pointsValue.getBoundingClientRect();
+  const endX = endRect.left + endRect.width / 2;
+  const endY = endRect.top + endRect.height / 2;
+
+  requestAnimationFrame(() => {
+    span.style.transition = "transform 0.8s ease-out, opacity 0.8s ease-out";
+    span.style.transform  = `translate(${endX - startX}px, ${endY - startY}px)`;
+    span.style.opacity    = "0.2";
+  });
+
+  span.addEventListener("transitionend", () => span.remove());
 }
 
 // ─── Initialisation ───
@@ -147,16 +191,18 @@ load();
 renderMain();
 save();
 
+// Gains automatiques chaque seconde
 setInterval(() => {
   const inc = totalAutoClicksPerSecond();
   if (inc > 0) {
     state.points += inc;
     save();
     renderMain();
+    animatePassive(inc);
   }
 }, 1000);
 
-// ─── Clic principal ───
+// Clic manuel
 els.tapBtn.addEventListener("click", () => {
   const realPerClick = state.pointsPerClick * getRebirthBoostFactor();
   state.points += realPerClick;
@@ -164,6 +210,7 @@ els.tapBtn.addEventListener("click", () => {
   renderMain();
   animateClick(realPerClick);
 
+  // Relance l’animation pulse
   els.tapBtn.classList.remove("pulse");
   void els.tapBtn.offsetWidth;
   els.tapBtn.classList.add("pulse");
@@ -171,9 +218,15 @@ els.tapBtn.addEventListener("click", () => {
 
 // ─── Modules ───
 initUpgrades({
-  els, state, save, renderMain,
-  openModal, closeModal,
-  formatCompact, costFor, machines,
+  els,
+  state,
+  save,
+  renderMain,
+  openModal,
+  closeModal,
+  formatCompact,
+  costFor,
+  machines
 });
 
 initDevMenu({
@@ -184,19 +237,34 @@ initDevMenu({
   renderStore: () => {},
   openModal,
   closeModal,
-  machines,
+  machines
 });
 
 initRebirthSystem({
-  els, state, keys, save, renderMain,
-  renderStore: () => {}, formatCompact,
-  getRebirthBoostFactor, formatPercentNoZeros, formatNumberNoZeros
+  els,
+  state,
+  keys,
+  save,
+  renderMain,
+  renderStore: () => {},
+  formatCompact,
+  getRebirthBoostFactor,
+  formatPercentNoZeros,
+  formatNumberNoZeros
 });
 
-initReset({ els, state, keys, save, renderMain });
+initReset({
+  els,
+  state,
+  keys,
+  save,
+  renderMain
+});
 
-initStats({  // <-- UN SEUL APPEL À initStats
-  els, state, formatCompact,
+initStats({
+  els,
+  state,
+  formatCompact,
   totalAutoClicksPerSecond,
   getRebirthBoostFactor,
   formatPercentNoZeros,
@@ -206,9 +274,11 @@ initStats({  // <-- UN SEUL APPEL À initStats
 // Sauvegarde avant fermeture
 window.addEventListener("beforeunload", save);
 
+// Service Worker
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker
     .register("./sw.js")
     .then(() => console.log("✅ Service Worker enregistré"))
-    .catch(err => console.error("❌ Erreur SW", err));
+    .catch(err => console.error("❌ Erreur Service Worker", err));
 }
+```
