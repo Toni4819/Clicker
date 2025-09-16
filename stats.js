@@ -18,7 +18,7 @@ export function initStats({
       <h3 style="margin:4px 0 6px; font-size:1em;">📊 Statistiques</h3>
       <div>💰 Points totaux : <strong>${formatCompact(state.points)}</strong></div>
       <div>⚡ Clics/s automatiques (réels) : <strong>${formatNumberTrimZeros(totalAutoClicksPerSecond())}</strong></div>
-      <div>👆 Points par clic (réels) : <strong>${formatNumbeTrimZeros(state.pointsPerClick * getRebirthBoostFactor())}</strong></div>
+      <div>👆 Points par clic (réels) : <strong>${formatNumberTrimZeros(state.pointsPerClick * getRebirthBoostFactor())}</strong></div>
       <div>🌱 Rebirths : <strong>${state.rebirths || 0}</strong> — 🔼 Boost : <strong>+${formatPercentNoZeros(boostPct)}%</strong></div>
       <div>🏭 Auto-clickers : <strong>${state.autoClickers}</strong></div>
       <div>⚙️ Machines totales : <strong>${
