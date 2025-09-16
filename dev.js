@@ -6,9 +6,7 @@ const base64Code = _devKeyParts.join(""); // "MzRTYXVjZTEy"
 let devUnlocked = false;
 
 /**
- * Affiche le contenu du menu développeur ou le formulaire de code.
- * @param {Object} deps
- *   els, state, save, renderMain, renderStore, openModal, closeModal
+ * Affiche ou met à jour le contenu du menu Dev.
  */
 function renderDev(deps) {
   const {
@@ -17,220 +15,172 @@ function renderDev(deps) {
     save,
     renderMain,
     renderStore,
-    closeModal
+    closeModal,
+    machines
   } = deps;
 
+  // Style de base pour centrer tout
   const body = els.devBody;
-  body.innerHTML = ""; // reset
+  Object.assign(body.style, {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    padding: "16px",
+    gap: "12px",
+  });
+
+  body.innerHTML = ""; // clear
 
   if (!devUnlocked) {
-    // ── Formulaire de code ──
+    // ── Formulaire de code centré ──
     body.innerHTML = `
-      <div class="section">
+      <div style="display:flex; flex-direction:column; align-items:center; gap:8px;">
         <h3 class="section-title">🔐 Code Développeur</h3>
-        <div class="list">
-          <input id="devCodeInput" type="password" placeholder="Entrez le code" />
-          <div style="margin-top:8px; display:flex; gap:8px;">
-            <button id="devValidateBtn" class="btn btn-secondary">Valider</button>
-            <button id="devCancelBtn" class="item-btn">Annuler</button>
-          </div>
+        <input id="devCodeInput" 
+               type="password" 
+               placeholder="Entrez le code" 
+               style="width:200px; text-align:center; padding:6px;" />
+        <div style="display:flex; gap:8px;">
+          <button id="devValidateBtn" class="btn btn-secondary">Valider</button>
+          <button id="devCancelBtn" class="item-btn">Annuler</button>
         </div>
       </div>
     `;
 
-    document
-      .getElementById("devValidateBtn")
-      .addEventListener("click", () => {
-        const code = document.getElementById("devCodeInput").value || "";
-        try {
-          if (btoa(code) === base64Code) {
-            devUnlocked = true;
-            renderDev(deps);
-          } else {
-            document.getElementById("devCodeInput").value = "";
-          }
-        } catch {
-          document.getElementById("devCodeInput").value = "";
+    body.querySelector("#devValidateBtn").addEventListener("click", () => {
+      const code = body.querySelector("#devCodeInput").value || "";
+      try {
+        if (btoa(code) === base64Code) {
+          devUnlocked = true;
+          renderDev(deps);
+        } else {
+          body.querySelector("#devCodeInput").value = "";
         }
-      });
+      } catch {
+        body.querySelector("#devCodeInput").value = "";
+      }
+    });
 
-    document
-      .getElementById("devCancelBtn")
-      .addEventListener("click", () => {
-        devUnlocked = false;
-        closeModal(els.devModal);
-      });
+    body.querySelector("#devCancelBtn").addEventListener("click", () => {
+      devUnlocked = false;
+      closeModal(els.devModal);
+    });
 
   } else {
-    // ── Menu Dev Avancé ──
-    let html = `<div class="section"><h3 class="section-title">🔧 Mode Dev Avancé</h3><div class="list">`;
+    // ── Menu Dev Avancé centré ──
+    let html = `<h3 class="section-title">🔧 Mode Dev Avancé</h3>`;
 
-    // Points
-    html += `
-      <div class="item" style="justify-content:flex-start; gap:8px;">
-        <label for="pointsInput" class="item-title">Points :</label>
-        <input id="pointsInput" type="number" min="0" value="${state.points}" />
-        <button id="setPointsBtn" class="item-btn">Appliquer</button>
+    // Helper pour créer une ligne d'input + bouton
+    const makeLine = (label, id, value, min = 0) => `
+      <div style="display:flex; align-items:center; gap:8px; width:100%; max-width:360px;">
+        <label for="${id}" style="flex:1; text-align:right;">${label}</label>
+        <input id="${id}" 
+               type="number" 
+               min="${min}" 
+               value="${value}" 
+               style="flex:1; padding:4px;" />
+        <button id="btn-${id}" class="item-btn">OK</button>
       </div>
     `;
 
-    // Quick add
+    html += makeLine("Points",            "pointsInput",          state.points,        0);
     html += `
-      <div class="item" style="justify-content:flex-start; gap:4px; flex-wrap:wrap;">
-        <span class="item-title">Ajout rapide :</span>
-        <button id="plus1kBtn" class="item-btn">+1 000</button>
+      <div style="display:flex; align-items:center; gap:8px; max-width:360px;">
+        <span style="flex:1; text-align:right;">Ajout rapide</span>
+        <button id="plus1kBtn"  class="item-btn">+1 000</button>
         <button id="plus10kBtn" class="item-btn">+10 000</button>
-        <button id="plus100kBtn" class="item-btn">+100 000</button>
-        <button id="plus1MBtn" class="item-btn">+1 000 000</button>
+        <button id="plus100kBtn"class="item-btn">+100 000</button>
+        <button id="plus1MBtn"  class="item-btn">+1 000 000</button>
       </div>
     `;
-
-    // Points/Clic
-    html += `
-      <div class="item" style="justify-content:flex-start; gap:8px;">
-        <label for="clickPowerInput" class="item-title">Points/Clic :</label>
-        <input id="clickPowerInput" type="number" min="1" value="${state.pointsPerClick}" />
-        <button id="setClickPowerBtn" class="item-btn">Appliquer</button>
-      </div>
-    `;
-
-    // Auto-clickers
-    html += `
-      <div class="item" style="justify-content:flex-start; gap:8px;">
-        <label for="autoClickersInput" class="item-title">Auto-clickers :</label>
-        <input id="autoClickersInput" type="number" min="0" value="${state.autoClickers}" />
-        <button id="setAutoClickersBtn" class="item-btn">Appliquer</button>
-      </div>
-    `;
+    html += makeLine("Points/Clic",       "clickPowerInput",     state.pointsPerClick,1);
+    html += makeLine("Auto-clickers",     "autoClickersInput",   state.autoClickers,  0);
 
     // Machines N1→N10
-    for (const m of deps.machines) {
-      html += `
-        <div class="item" style="justify-content:flex-start; gap:8px;">
-          <label for="machine-${m.key}-input" class="item-title">${m.title} :</label>
-          <input id="machine-${m.key}-input" type="number" min="0" value="${state[m.key]}" />
-          <button id="setMachine-${m.key}-btn" class="item-btn">Appliquer</button>
-        </div>
-      `;
+    for (const m of machines) {
+      html += makeLine(`${m.title}`, `machine-${m.key}-input`, state[m.key], 0);
     }
 
-    // Réinitialisations
+    // Réinitialisations & sortie
     html += `
-      <div class="item" style="justify-content:flex-start; gap:8px; margin-top:12px;">
-        <button id="resetRebirthsBtn" class="item-btn">Réinitialiser Rebirths</button>
-        <button id="resetAllStorageBtn" class="item-btn">Vider Storage & Reload</button>
+      <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-top:12px;">
+        <button id="resetRebirthsBtn"    class="item-btn">Réinit Rebirths</button>
+        <button id="resetAllStorageBtn"  class="item-btn">Vider Storage & Reload</button>
       </div>
+      <button id="devExitBtn" class="btn btn-secondary" style="margin-top:12px;">
+        🚪 Quitter Mode Dev
+      </button>
     `;
 
-    // Quitter
-    html += `
-      <div class="item" style="margin-top:12px;">
-        <button id="devExitBtn" class="btn btn-secondary">🚪 Quitter Mode Dev</button>
-      </div>
-    `;
-
-    html += `</div></div>`;
     body.innerHTML = html;
 
-    // ── Listeners ──
+    // ── Listeners pour chaque ligne ──
 
     // Points
-    document
-      .getElementById("setPointsBtn")
-      .addEventListener("click", () => {
-        const v = parseInt(document.getElementById("pointsInput").value, 10);
-        if (Number.isFinite(v) && v >= 0) {
-          state.points = v;
-          save();
-          renderMain();
-          renderStore();
-        }
-      });
+    body.querySelector("#btn-pointsInput").addEventListener("click", () => {
+      const v = parseInt(body.querySelector("#pointsInput").value, 10);
+      if (v >= 0) { state.points = v; save(); renderMain(); renderStore(); }
+    });
 
     // Quick adds
-    document.getElementById("plus1kBtn")
-      .addEventListener("click", () => { state.points += 1e3; save(); renderMain(); renderStore(); });
-    document.getElementById("plus10kBtn")
-      .addEventListener("click", () => { state.points += 1e4; save(); renderMain(); renderStore(); });
-    document.getElementById("plus100kBtn")
-      .addEventListener("click", () => { state.points += 1e5; save(); renderMain(); renderStore(); });
-    document.getElementById("plus1MBtn")
-      .addEventListener("click", () => { state.points += 1e6; save(); renderMain(); renderStore(); });
+    body.querySelector("#plus1kBtn").addEventListener("click", () => {
+      state.points += 1e3; save(); renderMain(); renderStore();
+    });
+    body.querySelector("#plus10kBtn").addEventListener("click", () => {
+      state.points += 1e4; save(); renderMain(); renderStore();
+    });
+    body.querySelector("#plus100kBtn").addEventListener("click", () => {
+      state.points += 1e5; save(); renderMain(); renderStore();
+    });
+    body.querySelector("#plus1MBtn").addEventListener("click", () => {
+      state.points += 1e6; save(); renderMain(); renderStore();
+    });
 
     // Points/Clic
-    document
-      .getElementById("setClickPowerBtn")
-      .addEventListener("click", () => {
-        const v = parseInt(document.getElementById("clickPowerInput").value, 10);
-        if (Number.isFinite(v) && v >= 1) {
-          state.pointsPerClick = v;
-          save();
-          renderMain();
-          renderStore();
-        }
-      });
+    body.querySelector("#btn-clickPowerInput").addEventListener("click", () => {
+      const v = parseInt(body.querySelector("#clickPowerInput").value, 10);
+      if (v >= 1) { state.pointsPerClick = v; save(); renderMain(); renderStore(); }
+    });
 
     // Auto-clickers
-    document
-      .getElementById("setAutoClickersBtn")
-      .addEventListener("click", () => {
-        const v = parseInt(document.getElementById("autoClickersInput").value, 10);
-        if (Number.isFinite(v) && v >= 0) {
-          state.autoClickers = v;
-          save();
-          renderMain();
-          renderStore();
-        }
-      });
+    body.querySelector("#btn-autoClickersInput").addEventListener("click", () => {
+      const v = parseInt(body.querySelector("#autoClickersInput").value, 10);
+      if (v >= 0) { state.autoClickers = v; save(); renderMain(); renderStore(); }
+    });
 
     // Machines
-    for (const m of deps.machines) {
-      document
-        .getElementById(`setMachine-${m.key}-btn`)
+    for (const m of machines) {
+      body.querySelector(`#btn-machine-${m.key}-input`)
         .addEventListener("click", () => {
-          const id = `machine-${m.key}-input`;
-          const v = parseInt(document.getElementById(id).value, 10);
-          if (Number.isFinite(v) && v >= 0) {
-            state[m.key] = v;
-            save();
-            renderMain();
-            renderStore();
-          }
+          const id  = `#machine-${m.key}-input`;
+          const v   = parseInt(body.querySelector(id).value, 10);
+          if (v >= 0) { state[m.key] = v; save(); renderMain(); renderStore(); }
         });
     }
 
     // Reset Rebirths
-    document
-      .getElementById("resetRebirthsBtn")
-      .addEventListener("click", () => {
-        state.rebirths = 0;
-        localStorage.removeItem("rebirthCount");
-        save();
-        renderMain();
-        renderStore();
-      });
+    body.querySelector("#resetRebirthsBtn").addEventListener("click", () => {
+      state.rebirths = 0;
+      localStorage.removeItem("rebirthCount");
+      save(); renderMain(); renderStore();
+    });
 
-    // Vider Storage & reload
-    document
-      .getElementById("resetAllStorageBtn")
-      .addEventListener("click", () => {
-        localStorage.clear();
-        location.reload();
-      });
+    // Vider Storage
+    body.querySelector("#resetAllStorageBtn").addEventListener("click", () => {
+      localStorage.clear();
+      location.reload();
+    });
 
     // Quitter
-    document
-      .getElementById("devExitBtn")
-      .addEventListener("click", () => {
-        devUnlocked = false;
-        closeModal(els.devModal);
-      });
+    body.querySelector("#devExitBtn").addEventListener("click", () => {
+      devUnlocked = false;
+      closeModal(els.devModal);
+    });
   }
 }
 
 /**
- * Initialise les écouteurs pour le menu Dev.
- * @param {Object} deps - { els, state, save, renderMain, renderStore, openModal, closeModal }
+ * Initialise le menu Dev.
  */
 export function initDevMenu(deps) {
   const { els, openModal, closeModal } = deps;
