@@ -200,7 +200,6 @@ function animatePassive(amount) {
 
   // Suppression à la fin
   span.addEventListener("animationend", () => span.remove());
-}
 
   span.addEventListener("transitionend", () => span.remove());
 }
