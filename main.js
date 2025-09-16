@@ -178,29 +178,26 @@ function animatePassive(amount) {
   const span = document.createElement("span");
   span.textContent = `+${formatNumberNoZeros(amount)}`;
   span.classList.add("click-burst-passive");
-  span.style.position = "fixed";
 
-  // Point de départ: machinesList si dispo, sinon bouton tap, sinon centre écran
+  // Position de départ
   const startRoot = els.machinesList || els.tapBtn || null;
   const sr = getSafeRect(startRoot);
   const startX = sr.left + (sr.width ? Math.random() * sr.width : 0);
-  const startY = sr.top + (sr.height ? 0.3 * sr.height : 0);
+  const startY = sr.top  + (sr.height ? sr.height * 0.3    : 0);
 
   span.style.left = `${startX}px`;
   span.style.top  = `${startY}px`;
   document.body.appendChild(span);
 
-  // Point d’arrivée: compteur de points si dispo, sinon centre haut
-  const endRoot = els.pointsValue || null;
-  const er = getSafeRect(endRoot);
-  const endX = er.left + (er.width ? er.width / 2 : 0);
-  const endY = er.top + (er.height ? er.height / 2 : 0);
-
+  // Force le déclenchement de l’animation CSS
   requestAnimationFrame(() => {
-    span.style.transition = "transform 0.8s ease-out, opacity 0.8s ease-out";
-    span.style.transform  = `translate(${endX - startX}px, ${endY - startY}px)`;
-    span.style.opacity    = "0.2";
+    span.classList.add("animate");
   });
+
+  // Nettoyage
+  span.addEventListener("animationend", () => span.remove());
+}
+
 
   span.addEventListener("transitionend", () => span.remove());
 }
