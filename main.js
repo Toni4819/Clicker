@@ -241,7 +241,7 @@ initStats({
   totalAutoClicksPerSecond,
   getRebirthBoostFactor,
   formatPercentNoZeros,
-  formatNumberNoZeros
+  formatNumberTrimZeros
 });
 
 // Sauvegarde avant fermeture
