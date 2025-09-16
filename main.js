@@ -39,10 +39,13 @@ function save() {
   }
 }
 
-// ─── Formatage des nombres ───
-function formatNumberNoZeros(n) {
+function formatNumberTrimZeros(n) {
   const s = (Math.round(n * 100) / 100).toFixed(2);
   return s.replace(/\.00$/, "").replace(/(\.\d)0$/, "$1");
+}
+
+function formatNumberFloat(n) {
+  return parseFloat(n.toFixed(2)).toString();
 }
 
 function formatCompact(num) {
@@ -67,22 +70,17 @@ function formatCompact(num) {
   ];
   for (const u of units) {
     if (abs >= u.value) {
-      return formatNumberNoZeros(num / u.value) + " " + u.symbol;
+      return formatNumberTrimZeros(num / u.value) + " " + u.symbol;
     }
   }
-  return formatNumberNoZeros(num);
+  return formatNumberTrimZeros(num);
 }
-
-// Exemple de fonction utilitaire
-function formatNumberNoZeros(n) {
-  return parseFloat(n.toFixed(2)).toString();
-}
-
 
 function formatPercentNoZeros(p) {
   const s = (Math.round(p * 100) / 100).toFixed(2);
   return s.replace(/\.00$/, "").replace(/(\.\d)0$/, "$1");
 }
+
 
 // ─── Boost Rebirth & CPS ───
 function getRebirthBoostFactor() {
