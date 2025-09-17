@@ -23,6 +23,7 @@ const state = Object.fromEntries(keys.map(k => [k, 0]));
 state.pointsPerClick = 1;
 state.rebirths = 0;
 state.shopBoost = 1;
+state.tempShopBoostFactor = 1;
 
 function load() {
   for (const k of keys) {
@@ -47,8 +48,11 @@ function save() {
 }
 
 function getShopBoostFactor() {
-  return state.shopBoost;
+  const perm  = state.shopBoost || 1;
+  const temp  = state.tempShopBoostFactor || 1;
+  return perm * temp;
 }
+
 
 
 function formatCompact(num) {
