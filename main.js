@@ -51,15 +51,6 @@ function getShopBoostFactor() {
 }
 
 
-function formatNumberTrimZeros(n) {
-  const s = (Math.round(n * 100) / 100).toFixed(2);
-  return s.replace(/\.00$/, "").replace(/(\.\d)0$/, "$1");
-}
-
-function formatNumberFloat(n) {
-  return parseFloat(n.toFixed(2)).toString();
-}
-
 function formatCompact(num) {
   if (!Number.isFinite(num)) return String(num);
   const abs = Math.abs(num);
@@ -82,15 +73,10 @@ function formatCompact(num) {
   ];
   for (const u of units) {
     if (abs >= u.value) {
-      return formatNumberTrimZeros(num / u.value) + " " + u.symbol;
+      return (num / u.value).toFixed(2) + " " + u.symbol;
     }
   }
-  return formatNumberTrimZeros(num);
-}
-
-function formatPercentNoZeros(p) {
-  const s = (Math.round(p * 100) / 100).toFixed(2);
-  return s.replace(/\.00$/, "").replace(/(\.\d)0$/, "$1");
+  return num.toFixed(2);
 }
 
 
@@ -172,18 +158,20 @@ function renderMain() {
   els.autoClicksValue.textContent = formatCompact(totalAutoClicksPerSecond());
 
   const realPerClick =
-    state.pointsPerClick
-    * getRebirthBoostFactor()
-    * getShopBoostFactor();
+    state.pointsPerClick *
+    getRebirthBoostFactor() *
+    getShopBoostFactor();
 
-  els.tapBtn.textContent = `👇 Tapper (+${formatNumberTrimZeros(realPerClick)})`;
+  els.tapBtn.textContent = `👇 Tapper (+${realPerClick.toFixed(2)})`;
 
   els.versionText.textContent = `Toni’s Studios – v2.0`;
 
   if (els.boostValue) {
-    els.boostValue.textContent = `x${formatNumberTrimZeros(getRebirthBoostFactor() * getShopBoostFactor())}`;
+    const totalBoost = getRebirthBoostFactor() * getShopBoostFactor();
+    els.boostValue.textContent = `x${totalBoost.toFixed(2)}`;
   }
 }
+
 
 
 // ─── Initialisation ───
@@ -253,9 +241,7 @@ initRebirthSystem({
   renderMain,
   renderStore: () => {},
   formatCompact,
-  getRebirthBoostFactor,
-  formatPercentNoZeros,
-  formatNumberTrimZeros
+  getRebirthBoostFactor
 });
 
 initReset({
@@ -272,8 +258,6 @@ initStats({
   formatCompact,
   totalAutoClicksPerSecond,
   getRebirthBoostFactor,
-  formatPercentNoZeros,
-  formatNumberTrimZeros,
   getShopBoostFactor
 });
 
