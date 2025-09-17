@@ -1,120 +1,180 @@
-// shop.js
-export function initShop({
-  els,
-  state,
-  save,
-  renderMain,
-  formatCompact
-}) {
-  // 1) Récupère le container modal réservé au shop
-  const modal = els.shopModal;
-  if (!modal) {
-    console.error("initShop : #shopModal introuvable");
-    return;
-  }
+// upgrades.js
+import { machines } from "./machines.js";
 
-  // 2) Structure initiale de la modale (idem upgrades.js)
+export function initUpgrades(deps) {
+  const {
+    els,
+    state,
+    save,
+    renderMain,
+    formatCompact,
+    costFor,
+    machines: machinesData,
+  } = deps;
+
+  // Initialise le modal
+  let modal = els.storeModal;
   modal.className = "modal";
-  modal.setAttribute("role", "dialog");
-  modal.setAttribute("aria-labelledby", "shopTitle");
   modal.setAttribute("aria-hidden", "true");
+  modal.setAttribute("role", "dialog");
+  modal.setAttribute("aria-labelledby", "storeTitle");
+
   modal.innerHTML = `
     <div class="modal-content">
       <header class="modal-header">
-        <h2 id="shopTitle">🛍️ Shop</h2>
-        <button id="closeShopBtn" class="close-btn" aria-label="Fermer">✕</button>
+        <h2 id="storeTitle">🆙 Améliorations</h2>
+        <button id="closeStoreBtn" class="close-btn" aria-label="Fermer">✕</button>
       </header>
-      <div class="modal-body gallery" id="shopBody"></div>
+      <div class="modal-body" id="upgradesBody"></div>
     </div>
   `;
+  els.closeStoreBtn = modal.querySelector("#closeStoreBtn");
+  const body = modal.querySelector("#upgradesBody");
 
-  const body     = modal.querySelector("#shopBody");
-  const closeBtn = modal.querySelector("#closeShopBtn");
-  const shopBtn  = els.shopBtn;
+  // Corps du modal : items en colonne pleine largeur
+  Object.assign(body.style, {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "stretch",
+    padding: "16px",
+    gap: "12px",
+  });
 
-  // 3) Helpers d’ouverture/fermeture
-  function openShop() {
+  function openStore() {
     modal.setAttribute("aria-hidden", "false");
     document.body.classList.add("modal-open");
   }
-  function closeShop() {
+
+  function closeStore() {
     modal.setAttribute("aria-hidden", "true");
     document.body.classList.remove("modal-open");
   }
 
-  // 4) Rendu du contenu (2 offres temporaires ×2)
-  function renderShopBody() {
-    const cost1 = 500_000;    // ×2 • 1 min
-    const cost5 = 1_000_000;  // ×2 • 5 min
+  function renderAmeliorations() {
+    body.innerHTML = "";
 
-    body.innerHTML = `
-      <button id="buyTemp1Btn" class="btn btn-primary">
-        🕐 ×2 pour 1 min — ${formatCompact(cost1)}
-      </button>
-      <button id="buyTemp5Btn" class="btn btn-primary">
-        ⏳ ×2 pour 5 min — ${formatCompact(cost5)}
-      </button>
+    // Liste des améliorations basiques
+    const upgradesList = document.createElement("div");
+    upgradesList.id = "upgradesList";
+    upgradesList.className = "list";
+
+    // Liste des machines
+    const machinesList = document.createElement("div");
+    machinesList.id = "machinesList";
+    machinesList.className = "list";
+
+    // Fonction d'ajout d'un item full-width
+    function addItem(title, keyName, baseCost, container) {
+      const owned =
+        keyName === "pointsPerClick"
+          ? state.pointsPerClick - 1
+          : state[keyName];
+      const max = 150;
+      const cost1 = costFor(baseCost, owned);
+      const isBuyable = state.points >= cost1 && owned < max;
+
+      const item = document.createElement("div");
+      item.className = "item" + (isBuyable ? " item-available" : "");
+      item.style.width = "100%";
+
+      item.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div class="item-title">${title}</div>
+            <div class="item-meta">${formatCompact(cost1)} 💰 • x${owned}</div>
+          </div>
+          <div style="display:flex;gap:4px;">
+            <button class="item-btn" ${!isBuyable ? "disabled" : ""}>1x</button>
+            <button class="item-btn" ${!isBuyable ? "disabled" : ""}>10x</button>
+            <button class="item-btn" ${!isBuyable ? "disabled" : ""}>Max</button>
+          </div>
+        </div>
+      `;
+      container.appendChild(item);
+
+      const buttons = item.querySelectorAll(".item-btn");
+      const quantities = [1, 10, "max"];
+      buttons.forEach((btn, i) => {
+        btn.addEventListener("click", () => {
+          let toBuy = 0;
+          const qty = quantities[i];
+          let current =
+            keyName === "pointsPerClick"
+              ? state.pointsPerClick - 1
+              : state[keyName];
+
+          if (qty === "max") {
+            let cost = costFor(baseCost, current);
+            while (state.points >= cost && current + toBuy < max) {
+              state.points -= cost;
+              toBuy++;
+              cost = costFor(baseCost, current + toBuy);
+            }
+          } else {
+            for (let j = 0; j < qty; j++) {
+              const cost = costFor(baseCost, current + toBuy);
+              if (state.points >= cost && current + toBuy < max) {
+                state.points -= cost;
+                toBuy++;
+              } else {
+                break;
+              }
+            }
+          }
+
+          if (toBuy > 0) {
+            if (keyName === "pointsPerClick") {
+              state.pointsPerClick += toBuy;
+            } else {
+              state[keyName] += toBuy;
+            }
+            save();
+            renderAmeliorations();
+            renderMain();
+          }
+        });
+      });
+    }
+
+    // Section Améliorations basiques
+    const sectionUpgrades = document.createElement("section");
+    sectionUpgrades.className = "section";
+    sectionUpgrades.innerHTML = `
+      <h3 class="section-title">💡 Améliorations basiques</h3>
     `;
+    sectionUpgrades.appendChild(upgradesList);
 
-    body
-      .querySelector("#buyTemp1Btn")
-      .addEventListener("click", () => startTempBoost(60_000, cost1));
+    // Section Machines
+    const sectionMachines = document.createElement("section");
+    sectionMachines.className = "section";
+    sectionMachines.innerHTML = `
+      <h3 class="section-title">⚙️ Machines</h3>
+    `;
+    sectionMachines.appendChild(machinesList);
 
-    body
-      .querySelector("#buyTemp5Btn")
-      .addEventListener("click", () => startTempBoost(300_000, cost5));
+    // Ajout au DOM
+    body.append(sectionUpgrades, sectionMachines);
+
+    // Instanciation des items
+    addItem("🔁 Auto-Clicker", "autoClickers", 10, upgradesList);
+    addItem("⌑ Double Clicker", "pointsPerClick", 20, upgradesList);
+    machinesData.forEach((m) =>
+      addItem(m.title, m.key, m.base, machinesList)
+    );
   }
 
-  // 5) Lancement et restauration du boost temporaire
-  let tempTimer;
-  function startTempBoost(durationMs, cost) {
-    if (state.points < cost) return;
-
-    // débit et stockage de l’expiration
-    state.points -= cost;
-    state.tempShopBoostFactor    = 2;
-    state.tempShopBoostExpiresAt = Date.now() + durationMs;
-    localStorage.setItem("shopTempExpiresAt", String(state.tempShopBoostExpiresAt));
-
-    save();
-    renderMain();
-    renderShopBody();
-
-    clearTimeout(tempTimer);
-    tempTimer = setTimeout(() => {
-      state.tempShopBoostFactor    = 1;
-      state.tempShopBoostExpiresAt = 0;
-      localStorage.removeItem("shopTempExpiresAt");
-      save();
-      renderMain();
-      renderShopBody();
-    }, durationMs);
+  // Événements d'ouverture/fermeture
+  if (els.upgradesBtn) {
+    els.upgradesBtn.addEventListener("click", () => {
+      renderAmeliorations();
+      openStore();
+    });
+  } else {
+    console.warn("⚠️ upgradesBtn introuvable dans els");
   }
 
-  // 6) Si reload en cours de boost, on restaure
-  const expires = parseInt(localStorage.getItem("shopTempExpiresAt") || "0", 10);
-  if (expires > Date.now()) {
-    const remaining = expires - Date.now();
-    state.tempShopBoostFactor    = 2;
-    state.tempShopBoostExpiresAt = expires;
-    clearTimeout(tempTimer);
-    tempTimer = setTimeout(() => {
-      state.tempShopBoostFactor    = 1;
-      state.tempShopBoostExpiresAt = 0;
-      localStorage.removeItem("shopTempExpiresAt");
-      save();
-      renderMain();
-      renderShopBody();
-    }, remaining);
-  }
-
-  // 7) Événements
-  shopBtn.addEventListener("click", () => {
-    renderShopBody();
-    openShop();
-  });
-  closeBtn.addEventListener("click", closeShop);
-  modal.addEventListener("click", e => {
-    if (e.target === modal) closeShop();
+  els.closeStoreBtn.addEventListener("click", closeStore);
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) closeStore();
   });
 }
