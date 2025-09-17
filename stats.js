@@ -1,4 +1,3 @@
-// stats.js
 export function initStats({
   els,
   state,
@@ -11,7 +10,6 @@ export function initStats({
     const container = document.getElementById("quickStats");
     if (!container) return;
 
-    // Calcul des boosts
     const rebirthBoostPct = (getRebirthBoostFactor() - 1) * 100;
     const shopBoost       = getShopBoostFactor();
     const shopBoostPct    = (shopBoost - 1) * 100;
@@ -23,15 +21,8 @@ export function initStats({
       <div>⚡ Clics/s automatiques (réels) : <strong>${totalAutoClicksPerSecond().toFixed(2)}</strong></div>
       <div>👆 Points par clic (réels) : <strong>${(state.pointsPerClick * totalBoost).toFixed(2)}</strong></div>
 
-      <!-- Boosts détaillés -->
-      <div>
-        🌱 Rebirths : <strong>${state.rebirths}</strong>
-        — 🔼 Rebirth boost : <strong>+${rebirthBoostPct.toFixed(2)}%</strong>
-      </div>
-      <div>
-        🏪 Shop boost : <strong>x${shopBoost.toFixed(2)}</strong>
-        — 🔼 +${shopBoostPct.toFixed(2)}%
-      </div>
+      <div>🌱 Rebirths : <strong>${state.rebirths}</strong> — 🔼 Boost Rebirth : <strong>+${rebirthBoostPct.toFixed(2)}%</strong></div>
+      <div>🏪 Shop boost : <strong>x${shopBoost.toFixed(2)}</strong> — 🔼 +${shopBoostPct.toFixed(2)}%</div>
       <div>🚀 Boost total : <strong>x${totalBoost.toFixed(2)}</strong></div>
 
       <div>🏭 Auto-clickers : <strong>${state.autoClickers}</strong></div>
@@ -50,9 +41,6 @@ export function initStats({
     `;
   }
 
-  // Premier rendu
-  renderQuickStats();
-
-  // Mise à jour automatique pour éviter de recharger la page
-  setInterval(renderQuickStats, 1000);
+  // Mise à jour automatique toutes les 500 ms
+  setInterval(renderQuickStats, 500);
 }
