@@ -138,7 +138,7 @@ const els = {
   rebirthBtn:      document.getElementById("rebirthBtn"),
   versionText:     document.getElementById("versionText"),
   storeModal:      document.getElementById("storeModal"),
-  shopModal:  document.getElementById("shopModal"),
+  shopModal:       document.getElementById("shopModal"),
   devTrigger:      document.getElementById("devTrigger"),
   devModal:        document.getElementById("devModal"),
   closeDevBtn:     document.getElementById("closeDevBtn"),
