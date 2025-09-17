@@ -164,7 +164,7 @@ export function initUpgrades(deps) {
   }
 
   // Événements d'ouverture/fermeture
-  els.openStoreBtn.addEventListener("click", () => {
+  els.upgradesBtn.addEventListener("click", () => {
     renderAmeliorations();
     openStore();
   });
