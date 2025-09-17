@@ -32,9 +32,13 @@ function load() {
       state[k] = Number.isFinite(n) ? n : 0;
     }
   }
+
+  // Sécuriser les valeurs minimales
   if (state.pointsPerClick < 1) state.pointsPerClick = 1;
   if (state.shopBoost < 1) state.shopBoost = 1;
+  if (!Number.isFinite(state.points)) state.points = 0;
 }
+
 
 function save() {
   for (const k of keys) {
