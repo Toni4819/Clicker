@@ -8,25 +8,43 @@ export function initShop({
   closeModal,
   formatCompact
 }) {
-  // Utiliser la même modal que "storeModal" dans main.js
-  const modal = els.storeModal;
+  const modal = els.shopModal;              // ← utilise shopModal, pas storeModal
 
-  // Multiplicateur temporaire (×1 par défaut)
+  // 1) Charger l’expiration depuis localStorage
+  const expires = parseInt(localStorage.getItem("shopTempExpiresAt") || "0", 10);
+  state.tempShopBoostExpiresAt = expires;
   state.tempShopBoostFactor = 1;
-  let tempBoostTimer = null;
 
-  // Ouvrir la boutique
+  // 2) Initialiser le boost temporaire si toujours valide
+  function restoreTempBoost() {
+    const now = Date.now();
+    if (state.tempShopBoostExpiresAt > now) {
+      state.tempShopBoostFactor = 2;
+      // programmer la fin du boost
+      setTimeout(endTempBoost, state.tempShopBoostExpiresAt - now);
+    } else {
+      endTempBoost();
+    }
+  }
+  function endTempBoost() {
+    state.tempShopBoostFactor      = 1;
+    state.tempShopBoostExpiresAt   = 0;
+    localStorage.removeItem("shopTempExpiresAt");
+    save();
+    renderMain();
+  }
+  restoreTempBoost();
+
+  // 3) Ouvrir la boutique
   els.shopBtn.addEventListener("click", () => {
     renderShop();
     openModal(modal);
   });
 
   function renderShop() {
-    // Coûts fixes
-    const cost1 = 500_000;    // 1 minute
-    const cost5 = 1_000_000;  // 5 minutes
+    const cost1 = 500_000;   // ×2 pendant 1 min
+    const cost5 =1_000_000;  // ×2 pendant 5 min
 
-    // Contenu de la modal en galerie
     modal.innerHTML = `
       <div class="modal-content">
         <header class="modal-header">
@@ -35,51 +53,45 @@ export function initShop({
         </header>
         <div class="modal-body gallery">
           <button id="buyTemp1Btn" class="btn btn-primary">
-            🕐 ×2 pendant 1 min — ${formatCompact(cost1)} pts
+            🕐 ×2 • 1 min — ${formatCompact(cost1)} pts
           </button>
           <button id="buyTemp5Btn" class="btn btn-primary">
-            ⏳ ×2 pendant 5 min — ${formatCompact(cost5)} pts
+            ⏳ ×2 • 5 min — ${formatCompact(cost5)} pts
           </button>
         </div>
       </div>
     `;
 
-    // Fermer la modal
     modal.querySelector("#closeShopBtn")
       .addEventListener("click", () => closeModal(modal));
 
-    // Acheter ×2 pour 1 min
     modal.querySelector("#buyTemp1Btn")
       .addEventListener("click", () => {
-        if (state.points >= cost1) {
-          state.points -= cost1;
-          startTempBoost(60_000);
-        }
+        if (state.points < cost1) return;
+        state.points -= cost1;
+        startTempBoost(60_000);
       });
 
-    // Acheter ×2 pour 5 min
     modal.querySelector("#buyTemp5Btn")
       .addEventListener("click", () => {
-        if (state.points >= cost5) {
-          state.points -= cost5;
-          startTempBoost(300_000);
-        }
+        if (state.points < cost5) return;
+        state.points -= cost5;
+        startTempBoost(300_000);
       });
   }
 
-  // Lance le boost temporaire et planifie sa fin
+  // 4) Démarrer un boost temporaire
   function startTempBoost(durationMs) {
-    state.tempShopBoostFactor = 2;
+    state.tempShopBoostFactor    = 2;
+    state.tempShopBoostExpiresAt = Date.now() + durationMs;
+    localStorage.setItem(
+      "shopTempExpiresAt",
+      String(state.tempShopBoostExpiresAt)
+    );
     save();
     renderMain();
     renderShop();
-
-    if (tempBoostTimer) clearTimeout(tempBoostTimer);
-    tempBoostTimer = setTimeout(() => {
-      state.tempShopBoostFactor = 1;
-      save();
-      renderMain();
-      renderShop();
-    }, durationMs);
+    // programmer fin si reload immédiat
+    setTimeout(endTempBoost, durationMs);
   }
 }
