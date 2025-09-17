@@ -209,7 +209,7 @@ els.tapBtn.addEventListener("click", () => {
   state.points += realPerClick;
   save();
   renderMain();
-  animateClick(realPerClick, els.tapBtn, formatNumberNoZeros);
+  animateClick(realPerClick, els.tapBtn, formatNumberTrimZeros);
 
   els.tapBtn.classList.remove("pulse");
   void els.tapBtn.offsetWidth;
