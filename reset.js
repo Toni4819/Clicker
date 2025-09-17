@@ -26,15 +26,9 @@ export function initReset({ els, state, keys, save, renderMain }) {
     // 4) Rafraîchir l’affichage principal
     renderMain();
 
-    // 5) Rafraîchir les stats dynamiques si présentes
-    const quickStats = document.getElementById("quickStats");
-    if (quickStats && typeof quickStats.innerHTML === "string") {
-      quickStats.innerHTML = ""; // vide avant re-render
-      setTimeout(() => {
-        if (typeof window.renderQuickStats === "function") {
-          window.renderQuickStats(); // si exposé globalement
-        }
-      }, 50);
+    // 5) Rafraîchir les stats dynamiques si disponibles
+    if (typeof window.renderQuickStats === "function") {
+      window.renderQuickStats();
     }
   });
 }
