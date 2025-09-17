@@ -7,54 +7,57 @@ export function initStats({
   getRebirthBoostFactor,
   getShopBoostFactor
 }) {
-  // Formatteur de durée mm:ss
+  // Format mm:ss
   function formatDuration(ms) {
     if (ms <= 0) return "00:00";
     const m = Math.floor(ms / 60000);
     const s = Math.floor((ms % 60000) / 1000);
-    return `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+    return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
   }
 
   function renderQuickStats() {
     const c = document.getElementById("quickStats");
     if (!c) return;
 
-    // Données
-    const points    = state.points;
+    // Valeurs de base
+    const pts       = state.points;
     const cps       = totalAutoClicksPerSecond();
-    const boostReb  = getRebirthBoostFactor();
-    const boostShop = getShopBoostFactor();
-    const boostTemp = state.tempShopBoostFactor || 1;
-    const overall   = boostReb * boostShop * boostTemp;
+    const rebBoost  = getRebirthBoostFactor();
+    const shopBoost = getShopBoostFactor();
+    const tempBoost = state.tempShopBoostFactor || 1;
+    const totalBoost= rebBoost * shopBoost * tempBoost;
 
-    // % gains
-    const pctReb  = ((boostReb - 1) * 100).toFixed(1);
-    const pctShop = ((boostShop - 1) * 100).toFixed(1);
+    // Pourcentages
+    const pctReb  = ((rebBoost - 1) * 100).toFixed(1);
+    const pctShop = ((shopBoost - 1) * 100).toFixed(1);
 
-    // Temps restant temp boost
-    let tempLine = "";
+    // Ligne de temps restant si boost temporaire en cours
+    let timeLine = "";
     if (state.tempShopBoostExpiresAt) {
-      const rem = state.tempShopBoostExpiresAt - Date.now();
-      if (rem > 0) {
-        tempLine = `
+      const remaining = state.tempShopBoostExpiresAt - Date.now();
+      if (remaining > 0) {
+        timeLine = `
           <div class="stat-line">
-            ⏳ Boost ×2 temporaire : 
-            <strong>${formatDuration(rem)}</strong>
+            ⏳ Boost temps restant : 
+            <strong>${formatDuration(remaining)}</strong>
           </div>`;
       }
     }
 
-    // Rendu HTML
     c.innerHTML = `
-      <h3>📊 Production</h3>
-      <div class="stat-line">🪙 Points : <strong>${formatCompact(points)}</strong></div>
+      <h3>📈 Production</h3>
+      <div class="stat-line">🪙 Points : <strong>${formatCompact(pts)}</strong></div>
       <div class="stat-line">⚡ CPS : <strong>${cps.toFixed(2)}</strong></div>
-      <div class="stat-line">👆 PPC : <strong>${(state.pointsPerClick * overall).toFixed(2)}</strong></div>
+      <div class="stat-line">👆 PPC : <strong>${(state.pointsPerClick * totalBoost).toFixed(2)}</strong></div>
 
       <h3>🚀 Boosts</h3>
-      <div class="stat-line">🌱 Rebirth : <strong>x${boostReb.toFixed(2)}</strong> (+${pctReb}%)</div>
-      <div class="stat-line">🏪 Shop permanent : <strong>x${boostShop.toFixed(2)}</strong> (+${pctShop}%)</div>
-      ${tempLine}
+      <div class="stat-line">
+        🌱 Rebirth : <strong>x${rebBoost.toFixed(2)}</strong> (+${pctReb}%)
+      </div>
+      <div class="stat-line">
+        🏪 Shop : <strong>x${shopBoost.toFixed(2)}</strong> (+${pctShop}%)
+      </div>
+      ${timeLine}
 
       <h3>🏭 Infrastructure</h3>
       <div class="stat-line">Auto-clickers : <strong>${state.autoClickers}</strong></div>
@@ -73,6 +76,6 @@ export function initStats({
     `;
   }
 
-  // Auto-rafraîchir toutes les 300 ms
+  // Auto-rafraîchissement léger
   setInterval(renderQuickStats, 300);
 }
