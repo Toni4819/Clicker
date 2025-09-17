@@ -6,17 +6,27 @@ export function initShop({
   renderMain,
   formatCompact
 }) {
-  // 1) Récupère la bonne modale
-  const modal = els.shopBtn;
-  if (!modal) {
+  // 1) Le bouton qui déclenche
+  const shopBtn = els.shopBtn;
+  if (!shopBtn) {
     console.error("initShop : #shopBtn introuvable");
     return;
   }
 
-  // 2) Initialise le container comme pour Upgrades
+  // 2) Cherche d’abord #shopModal, sinon on retombe sur #storeModal
+  const modal =
+    document.getElementById("shopModal") ||
+    document.getElementById("storeModal");
+
+  if (!modal) {
+    console.error("initShop : ni #shopModal ni #storeModal introuvable");
+    return;
+  }
+
+  // 3) Structure de la modale (identique à upgrades.js)
   modal.className = "modal";
   modal.setAttribute("aria-hidden", "true");
-  modal.setAttribute("role", "dialog");
+  modal.setAttribute("role",       "dialog");
   modal.setAttribute("aria-labelledby", "shopTitle");
 
   modal.innerHTML = `
@@ -29,11 +39,10 @@ export function initShop({
     </div>
   `;
 
-  // 3) Sélecteurs internes
   const closeBtn = modal.querySelector("#closeShopBtn");
   const body     = modal.querySelector("#shopBody");
 
-  // 4) Ouvre/ferme la modale
+  // 4) Ouvrir / fermer
   function openShop() {
     modal.setAttribute("aria-hidden", "false");
     document.body.classList.add("modal-open");
@@ -43,38 +52,35 @@ export function initShop({
     document.body.classList.remove("modal-open");
   }
 
-  // 5) Corps de la boutique : deux boosts temporaires
+  // 5) Renderer du contenu (2 boosts temporaires)
   function renderShopBody() {
-    const cost1 = 500_000;    // ×2 pendant 1 min
-    const cost5 = 1_000_000;  // ×2 pendant 5 min
+    const cost1 = 500_000;    // ×2 • 1 min
+    const cost5 = 1_000_000;  // ×2 • 5 min
 
     body.innerHTML = `
       <button id="buyTemp1Btn" class="btn btn-primary">
-        🕐 ×2 • 1 min — ${formatCompact(cost1)}
+        🕐 ×2 pour 1 min — ${formatCompact(cost1)}
       </button>
       <button id="buyTemp5Btn" class="btn btn-primary">
-        ⏳ ×2 • 5 min — ${formatCompact(cost5)}
+        ⏳ ×2 pour 5 min — ${formatCompact(cost5)}
       </button>
     `;
 
-    // 6) Gestion des achats
-    body.querySelector("#buyTemp1Btn").addEventListener("click", () => {
-      if (state.points < cost1) return;
-      state.points -= cost1;
-      startTempBoost(60_000);
-    });
+    body
+      .querySelector("#buyTemp1Btn")
+      .addEventListener("click", () => startTempBoost(60_000, cost1));
 
-    body.querySelector("#buyTemp5Btn").addEventListener("click", () => {
-      if (state.points < cost5) return;
-      state.points -= cost5;
-      startTempBoost(300_000);
-    });
+    body
+      .querySelector("#buyTemp5Btn")
+      .addEventListener("click", () => startTempBoost(300_000, cost5));
   }
 
-  // 7) Démarre un boost temporaire, garde l’UI à jour
+  // 6) Gestion du boost temporaire
   let tempTimer;
-  function startTempBoost(durationMs) {
-    // Définit le multiplicateur et son expiration
+  function startTempBoost(durationMs, cost) {
+    if (state.points < cost) return;
+
+    state.points -= cost;
     state.tempShopBoostFactor    = 2;
     state.tempShopBoostExpiresAt = Date.now() + durationMs;
     localStorage.setItem(
@@ -97,19 +103,34 @@ export function initShop({
     }, durationMs);
   }
 
-  // 8) Restaure le boost après reload si encore valide
-  const expires = parseInt(localStorage.getItem("shopTempExpiresAt") || "0", 10);
+  // 7) Restauration après reload (si boost en cours)
+  const expires = parseInt(
+    localStorage.getItem("shopTempExpiresAt") || "0",
+    10
+  );
   if (expires > Date.now()) {
-    startTempBoost(expires - Date.now());
+    // on relance sans redébiter les points
+    const remaining = expires - Date.now();
+    state.tempShopBoostFactor    = 2;
+    state.tempShopBoostExpiresAt = expires;
+    clearTimeout(tempTimer);
+    tempTimer = setTimeout(() => {
+      state.tempShopBoostFactor    = 1;
+      state.tempShopBoostExpiresAt = 0;
+      localStorage.removeItem("shopTempExpiresAt");
+      save();
+      renderMain();
+      renderShopBody();
+    }, remaining);
   }
 
-  // 9) Brancher l’ouverture / fermeture
-  els.shopBtn.addEventListener("click", () => {
+  // 8) Brancher l’ouverture & la fermeture
+  shopBtn.addEventListener("click", () => {
     renderShopBody();
     openShop();
   });
   closeBtn.addEventListener("click", closeShop);
-  modal.addEventListener("click", e => {
+  modal.addEventListener("click", (e) => {
     if (e.target === modal) closeShop();
   });
 }
