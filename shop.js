@@ -6,29 +6,18 @@ export function initShop({
   renderMain,
   formatCompact
 }) {
-  // 1) Le bouton qui déclenche
-  const shopBtn = els.shopBtn;
-  if (!shopBtn) {
-    console.error("initShop : #shopBtn introuvable");
-    return;
-  }
-
-  // 2) Cherche d’abord #shopModal, sinon on retombe sur #storeModal
-  const modal =
-    document.getElementById("shopModal") ||
-    document.getElementById("storeModal");
-
+  // 1) Récupère le container modal réservé au shop
+  const modal = els.shopModal;
   if (!modal) {
-    console.error("initShop : ni #shopModal ni #storeModal introuvable");
+    console.error("initShop : #shopModal introuvable");
     return;
   }
 
-  // 3) Structure de la modale (identique à upgrades.js)
+  // 2) Structure initiale de la modale (idem upgrades.js)
   modal.className = "modal";
-  modal.setAttribute("aria-hidden", "true");
-  modal.setAttribute("role",       "dialog");
+  modal.setAttribute("role", "dialog");
   modal.setAttribute("aria-labelledby", "shopTitle");
-
+  modal.setAttribute("aria-hidden", "true");
   modal.innerHTML = `
     <div class="modal-content">
       <header class="modal-header">
@@ -39,10 +28,11 @@ export function initShop({
     </div>
   `;
 
-  const closeBtn = modal.querySelector("#closeShopBtn");
   const body     = modal.querySelector("#shopBody");
+  const closeBtn = modal.querySelector("#closeShopBtn");
+  const shopBtn  = els.shopBtn;
 
-  // 4) Ouvrir / fermer
+  // 3) Helpers d’ouverture/fermeture
   function openShop() {
     modal.setAttribute("aria-hidden", "false");
     document.body.classList.add("modal-open");
@@ -52,7 +42,7 @@ export function initShop({
     document.body.classList.remove("modal-open");
   }
 
-  // 5) Renderer du contenu (2 boosts temporaires)
+  // 4) Rendu du contenu (2 offres temporaires ×2)
   function renderShopBody() {
     const cost1 = 500_000;    // ×2 • 1 min
     const cost5 = 1_000_000;  // ×2 • 5 min
@@ -75,18 +65,16 @@ export function initShop({
       .addEventListener("click", () => startTempBoost(300_000, cost5));
   }
 
-  // 6) Gestion du boost temporaire
+  // 5) Lancement et restauration du boost temporaire
   let tempTimer;
   function startTempBoost(durationMs, cost) {
     if (state.points < cost) return;
 
+    // débit et stockage de l’expiration
     state.points -= cost;
     state.tempShopBoostFactor    = 2;
     state.tempShopBoostExpiresAt = Date.now() + durationMs;
-    localStorage.setItem(
-      "shopTempExpiresAt",
-      String(state.tempShopBoostExpiresAt)
-    );
+    localStorage.setItem("shopTempExpiresAt", String(state.tempShopBoostExpiresAt));
 
     save();
     renderMain();
@@ -103,13 +91,9 @@ export function initShop({
     }, durationMs);
   }
 
-  // 7) Restauration après reload (si boost en cours)
-  const expires = parseInt(
-    localStorage.getItem("shopTempExpiresAt") || "0",
-    10
-  );
+  // 6) Si reload en cours de boost, on restaure
+  const expires = parseInt(localStorage.getItem("shopTempExpiresAt") || "0", 10);
   if (expires > Date.now()) {
-    // on relance sans redébiter les points
     const remaining = expires - Date.now();
     state.tempShopBoostFactor    = 2;
     state.tempShopBoostExpiresAt = expires;
@@ -124,13 +108,13 @@ export function initShop({
     }, remaining);
   }
 
-  // 8) Brancher l’ouverture & la fermeture
+  // 7) Événements
   shopBtn.addEventListener("click", () => {
     renderShopBody();
     openShop();
   });
   closeBtn.addEventListener("click", closeShop);
-  modal.addEventListener("click", (e) => {
+  modal.addEventListener("click", e => {
     if (e.target === modal) closeShop();
   });
 }
