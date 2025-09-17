@@ -5,30 +5,17 @@ export function initReset({ els, state, keys, save, renderMain }) {
     );
     if (!confirmReset) return;
 
-    // 1) Réinitialiser chaque clé
-    keys.forEach(k => {
-      if (k === "pointsPerClick") {
-        state[k] = 1; // toujours au moins 1
-      } else if (k === "shopBoost") {
-        // ne pas toucher au boost du shop
-      } else {
-        state[k] = 0;
-      }
-    });
+    // Réinitialisation ciblée
+    for (const k of keys) {
+      if (k === "shopBoost") continue;           // on conserve le boost shop
+      if (k === "pointsPerClick") state[k] = 1;  // clic manuel minimum
+      else state[k] = 0;
+    }
 
-    // 2) Réinitialiser le compteur de Rebirth
     state.rebirths = 0;
     localStorage.removeItem("rebirthCount");
 
-    // 3) Sauvegarder
     save();
-
-    // 4) Rafraîchir l’affichage principal
     renderMain();
-
-    // 5) Rafraîchir les stats dynamiques si disponibles
-    if (typeof window.renderQuickStats === "function") {
-      window.renderQuickStats();
-    }
   });
 }
