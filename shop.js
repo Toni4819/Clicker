@@ -8,7 +8,7 @@ export function initShop({
   closeModal,
   formatCompact
 }) {
-  const modal = els.shopModal;              // ← utilise shopModal, pas storeModal
+  const modal = els.shopBtn;              // ← utilise shopModal, pas storeModal
 
   // 1) Charger l’expiration depuis localStorage
   const expires = parseInt(localStorage.getItem("shopTempExpiresAt") || "0", 10);
