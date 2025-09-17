@@ -133,7 +133,7 @@ const els = {
   pointsValue:     document.getElementById("pointsValue"),
   autoClicksValue: document.getElementById("autoClicksValue"),
   tapBtn:          document.getElementById("tapBtn"),
-  openStoreBtn:    document.getElementById("openStoreBtn"),
+  upgradesBtn:     document.getElementById("upgradesBtn"),
   shopBtn:         document.getElementById("shopBtn"),
   rebirthBtn:      document.getElementById("rebirthBtn"),
   versionText:     document.getElementById("versionText"),
