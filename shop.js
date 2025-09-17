@@ -8,7 +8,12 @@ export function initShop({
   closeModal,
   formatCompact
 }) {
-  const modal = document.getElementById("shopModal");
+  // Utiliser la même modal que "storeModal" dans main.js
+  const modal = els.storeModal;
+
+  // Multiplicateur temporaire (×1 par défaut)
+  state.tempShopBoostFactor = 1;
+  let tempBoostTimer = null;
 
   // Ouvrir la boutique
   els.shopBtn.addEventListener("click", () => {
@@ -16,58 +21,65 @@ export function initShop({
     openModal(modal);
   });
 
-  // Génère le contenu de la modal shop à chaque ouverture/achat
   function renderShop() {
-    // Coût augmenté selon l’effet déjà acheté
-    const x2Cost = 100 * state.shopBoost;
-    const x5Cost = 500 * state.shopBoost;
+    // Coûts fixes
+    const cost1 = 500_000;    // 1 minute
+    const cost5 = 1_000_000;  // 5 minutes
 
+    // Contenu de la modal en galerie
     modal.innerHTML = `
       <div class="modal-content">
         <header class="modal-header">
           <h2>🛍️ Shop</h2>
           <button id="closeShopBtn" class="close-btn" aria-label="Fermer">✕</button>
         </header>
-        <div class="modal-body">
-          <button id="buyX2Btn" class="btn btn-primary">
-            x2 Boost (${formatCompact(x2Cost)} pts)
+        <div class="modal-body gallery">
+          <button id="buyTemp1Btn" class="btn btn-primary">
+            🕐 ×2 pendant 1 min — ${formatCompact(cost1)} pts
           </button>
-          <button id="buyX5Btn" class="btn btn-primary">
-            x5 Boost (${formatCompact(x5Cost)} pts)
+          <button id="buyTemp5Btn" class="btn btn-primary">
+            ⏳ ×2 pendant 5 min — ${formatCompact(cost5)} pts
           </button>
         </div>
       </div>
     `;
 
     // Fermer la modal
-    document
-      .getElementById("closeShopBtn")
+    modal.querySelector("#closeShopBtn")
       .addEventListener("click", () => closeModal(modal));
 
-    // Achat ×2
-    document
-      .getElementById("buyX2Btn")
+    // Acheter ×2 pour 1 min
+    modal.querySelector("#buyTemp1Btn")
       .addEventListener("click", () => {
-        if (state.points >= x2Cost) {
-          state.points -= x2Cost;
-          state.shopBoost *= 2;
-          save();
-          renderMain();
-          renderShop();
+        if (state.points >= cost1) {
+          state.points -= cost1;
+          startTempBoost(60_000);
         }
       });
 
-    // Achat ×5
-    document
-      .getElementById("buyX5Btn")
+    // Acheter ×2 pour 5 min
+    modal.querySelector("#buyTemp5Btn")
       .addEventListener("click", () => {
-        if (state.points >= x5Cost) {
-          state.points -= x5Cost;
-          state.shopBoost *= 5;
-          save();
-          renderMain();
-          renderShop();
+        if (state.points >= cost5) {
+          state.points -= cost5;
+          startTempBoost(300_000);
         }
       });
+  }
+
+  // Lance le boost temporaire et planifie sa fin
+  function startTempBoost(durationMs) {
+    state.tempShopBoostFactor = 2;
+    save();
+    renderMain();
+    renderShop();
+
+    if (tempBoostTimer) clearTimeout(tempBoostTimer);
+    tempBoostTimer = setTimeout(() => {
+      state.tempShopBoostFactor = 1;
+      save();
+      renderMain();
+      renderShop();
+    }, durationMs);
   }
 }
