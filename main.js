@@ -186,27 +186,34 @@ setInterval(() => {
     state.points += inc;
     save();
     renderMain();
-    // on passe soit la liste des machines, soit le bouton
-    animatePassive(inc, els.machinesList || els.tapBtn, formatNumberNoZeros);
+
+    // Animation passive avec format simple
+    const formattedInc = inc.toFixed(2);
+    animatePassive(inc, els.machinesList || els.tapBtn, () => formattedInc);
   }
 }, 1000);
+
 
 // Clic manuel
 els.tapBtn.addEventListener("click", () => {
   const realPerClick =
-    state.pointsPerClick
-    * getRebirthBoostFactor()
-    * getShopBoostFactor();
+    state.pointsPerClick *
+    getRebirthBoostFactor() *
+    getShopBoostFactor();
 
   state.points += realPerClick;
   save();
   renderMain();
-  animateClick(realPerClick, els.tapBtn, formatNumberTrimZeros);
 
+  // Animation avec format simple à 2 décimales
+  animateClick(realPerClick, els.tapBtn, () => realPerClick.toFixed(2));
+
+  // Relance l’animation pulse
   els.tapBtn.classList.remove("pulse");
   void els.tapBtn.offsetWidth;
   els.tapBtn.classList.add("pulse");
 });
+
 
 
 // ─── Modules ───
