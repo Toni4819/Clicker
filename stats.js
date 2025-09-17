@@ -1,3 +1,4 @@
+// stats.js
 export function initStats({
   els,
   state,
@@ -6,27 +7,58 @@ export function initStats({
   getRebirthBoostFactor,
   getShopBoostFactor
 }) {
+  // Formatteur de durée mm:ss
+  function formatDuration(ms) {
+    if (ms <= 0) return "00:00";
+    const m = Math.floor(ms / 60000);
+    const s = Math.floor((ms % 60000) / 1000);
+    return `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+  }
+
   function renderQuickStats() {
-    const container = document.getElementById("quickStats");
-    if (!container) return;
+    const c = document.getElementById("quickStats");
+    if (!c) return;
 
-    const rebirthBoostPct = (getRebirthBoostFactor() - 1) * 100;
-    const shopBoost       = getShopBoostFactor();
-    const shopBoostPct    = (shopBoost - 1) * 100;
-    const totalBoost      = getRebirthBoostFactor() * shopBoost;
+    // Données
+    const points    = state.points;
+    const cps       = totalAutoClicksPerSecond();
+    const boostReb  = getRebirthBoostFactor();
+    const boostShop = getShopBoostFactor();
+    const boostTemp = state.tempShopBoostFactor || 1;
+    const overall   = boostReb * boostShop * boostTemp;
 
-    container.innerHTML = `
-      <h3 style="margin:4px 0 6px; font-size:1em;">📊 Statistiques</h3>
-      <div>💰 Points totaux : <strong>${formatCompact(state.points)}</strong></div>
-      <div>⚡ Clics/s automatiques (réels) : <strong>${totalAutoClicksPerSecond().toFixed(2)}</strong></div>
-      <div>👆 Points par clic (réels) : <strong>${(state.pointsPerClick * totalBoost).toFixed(2)}</strong></div>
+    // % gains
+    const pctReb  = ((boostReb - 1) * 100).toFixed(1);
+    const pctShop = ((boostShop - 1) * 100).toFixed(1);
 
-      <div>🌱 Rebirths : <strong>${state.rebirths}</strong> — 🔼 Boost Rebirth : <strong>+${rebirthBoostPct.toFixed(2)}%</strong></div>
-      <div>🏪 Shop boost : <strong>x${shopBoost.toFixed(2)}</strong> — 🔼 +${shopBoostPct.toFixed(2)}%</div>
-      <div>🚀 Boost total : <strong>x${totalBoost.toFixed(2)}</strong></div>
+    // Temps restant temp boost
+    let tempLine = "";
+    if (state.tempShopBoostExpiresAt) {
+      const rem = state.tempShopBoostExpiresAt - Date.now();
+      if (rem > 0) {
+        tempLine = `
+          <div class="stat-line">
+            ⏳ Boost ×2 temporaire : 
+            <strong>${formatDuration(rem)}</strong>
+          </div>`;
+      }
+    }
 
-      <div>🏭 Auto-clickers : <strong>${state.autoClickers}</strong></div>
-      <div>⚙️ Machines totales : <strong>${
+    // Rendu HTML
+    c.innerHTML = `
+      <h3>📊 Production</h3>
+      <div class="stat-line">🪙 Points : <strong>${formatCompact(points)}</strong></div>
+      <div class="stat-line">⚡ CPS : <strong>${cps.toFixed(2)}</strong></div>
+      <div class="stat-line">👆 PPC : <strong>${(state.pointsPerClick * overall).toFixed(2)}</strong></div>
+
+      <h3>🚀 Boosts</h3>
+      <div class="stat-line">🌱 Rebirth : <strong>x${boostReb.toFixed(2)}</strong> (+${pctReb}%)</div>
+      <div class="stat-line">🏪 Shop permanent : <strong>x${boostShop.toFixed(2)}</strong> (+${pctShop}%)</div>
+      ${tempLine}
+
+      <h3>🏭 Infrastructure</h3>
+      <div class="stat-line">Auto-clickers : <strong>${state.autoClickers}</strong></div>
+      <div class="stat-line">Machines : <strong>${
         state.machinesLevel1 +
         state.machinesLevel2 +
         state.machinesLevel3 +
@@ -41,6 +73,6 @@ export function initStats({
     `;
   }
 
-  // Mise à jour automatique toutes les 500 ms
-  setInterval(renderQuickStats, 500);
+  // Auto-rafraîchir toutes les 300 ms
+  setInterval(renderQuickStats, 300);
 }
