@@ -15,12 +15,14 @@ const keys = [
   "machinesLevel8",
   "machinesLevel9",
   "machinesLevel10",
-  "pointsPerClick"
+  "pointsPerClick",
+  "shopBoost"
 ];
 
 const state = Object.fromEntries(keys.map(k => [k, 0]));
 state.pointsPerClick = 1;
 state.rebirths = 0;
+state.shopBoost = 1;
 
 function load() {
   for (const k of keys) {
@@ -31,6 +33,7 @@ function load() {
     }
   }
   if (state.pointsPerClick < 1) state.pointsPerClick = 1;
+  if (state.shopBoost < 1) state.shopBoost = 1;
 }
 
 function save() {
@@ -38,6 +41,11 @@ function save() {
     localStorage.setItem(k, String(state[k]));
   }
 }
+
+function getShopBoostFactor() {
+  return state.shopBoost;
+}
+
 
 function formatNumberTrimZeros(n) {
   const s = (Math.round(n * 100) / 100).toFixed(2);
@@ -104,8 +112,13 @@ function totalAutoClicksPerSecondBase() {
 }
 
 function totalAutoClicksPerSecond() {
-  return totalAutoClicksPerSecondBase() * getRebirthBoostFactor();
+  return (
+    totalAutoClicksPerSecondBase()
+    * getRebirthBoostFactor()
+    * getShopBoostFactor() 
+  );
 }
+
 
 function costFor(base, owned) {
   return Math.floor(base * Math.pow(1.15, owned));
@@ -119,6 +132,7 @@ import { initRebirthSystem } from "./rebirthSystem.js";
 import { initReset }         from "./reset.js";
 import { initStats }         from "./stats.js";
 import { animateClick, animatePassive } from "./animations.js";
+import { initShop } from "./shop.js";
 
 // ─── Sélecteurs DOM ───
 const els = {
@@ -135,6 +149,7 @@ const els = {
   closeDevBtn:     document.getElementById("closeDevBtn"),
   devBody:         document.getElementById("devBody"),
   resetBtn:        document.getElementById("resetBtn"),
+  boostValue:      document.getElementById("boostValue"),
   // upgrades.js attribuera: machinesList, upgradesList, statsList, closeStoreBtn
 };
 
@@ -152,11 +167,20 @@ function renderMain() {
   els.pointsValue.textContent     = formatCompact(state.points);
   els.autoClicksValue.textContent = formatCompact(totalAutoClicksPerSecond());
 
-  const realPerClick = state.pointsPerClick * getRebirthBoostFactor();
+  const realPerClick =
+    state.pointsPerClick
+    * getRebirthBoostFactor()
+    * getShopBoostFactor();
+
   els.tapBtn.textContent = `👇 Tapper (+${formatNumberTrimZeros(realPerClick)})`;
 
   els.versionText.textContent = `Toni’s Studios – v2.0`;
+
+  if (els.boostValue) {
+    els.boostValue.textContent = `x${formatNumberTrimZeros(getRebirthBoostFactor() * getShopBoostFactor())}`;
+  }
 }
+
 
 // ─── Initialisation ───
 load();
@@ -177,17 +201,21 @@ setInterval(() => {
 
 // Clic manuel
 els.tapBtn.addEventListener("click", () => {
-  const realPerClick = state.pointsPerClick * getRebirthBoostFactor();
+  const realPerClick =
+    state.pointsPerClick
+    * getRebirthBoostFactor()
+    * getShopBoostFactor();
+
   state.points += realPerClick;
   save();
   renderMain();
   animateClick(realPerClick, els.tapBtn, formatNumberNoZeros);
 
-  // Relance l’animation pulse
   els.tapBtn.classList.remove("pulse");
   void els.tapBtn.offsetWidth;
   els.tapBtn.classList.add("pulse");
 });
+
 
 // ─── Modules ───
 initUpgrades({
@@ -241,7 +269,18 @@ initStats({
   totalAutoClicksPerSecond,
   getRebirthBoostFactor,
   formatPercentNoZeros,
-  formatNumberTrimZeros
+  formatNumberTrimZeros,
+  getShopBoostFactor
+});
+
+initShop({
+  els,
+  state,
+  save,
+  renderMain,
+  openModal,
+  closeModal,
+  formatCompact
 });
 
 // Sauvegarde avant fermeture
