@@ -42,9 +42,9 @@ body.modal-open {
 #devTrigger {
   position: fixed;
   top: 0;
-  left: 0;
-  width: 120px;
-  height: 50px;
+  right: 0;
+  width: 10px;
+  height: 10px;
   background: transparent;
   color: transparent;
   border: none;
