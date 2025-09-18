@@ -41,8 +41,8 @@ body.modal-open {
 /* Bouton dev caché mais cliquable */
 #devTrigger {
   position: fixed;
-  top: 0;
-  right: 0;
+  top: 100;
+  left: 0;
   width: 10px;
   height: 10px;
   background: transparent;
