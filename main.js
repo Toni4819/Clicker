@@ -108,7 +108,7 @@ function costFor(base, owned) {
 }
 
 // ─── Imports ───
-import { formatCompact }              from "./formatters.js";
+import { formatCompact, toggleFormatMode }              from "./formatters.js";
 import { machines }                   from "./machines.js";
 import { initUpgrades }               from "./upgrades.js";
 import { initDevMenu }                from "./dev.js";
@@ -165,6 +165,12 @@ function renderMain() {
     els.boostValue.textContent = `x${totalBoost.toFixed(2)}`;
   }
 }
+
+// switch formatter
+els.pointsValue.closest("h1").addEventListener("click", () => {
+  toggleFormatMode();
+  renderMain();
+});
 
 // ─── Initialisation ───
 load();
