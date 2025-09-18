@@ -80,18 +80,19 @@ function totalAutoClicksPerSecondBase() {
     state.machinesLevel8 * 1000 +
     state.machinesLevel9 * 2500 +
     state.machinesLevel10 * 5000 +
-    state.machinesLevel11 * 12500 +
-    state.machinesLevel12 * 25000 +
-    state.machinesLevel13 * 50000 +
-    state.machinesLevel14 * 125000 +
-    state.machinesLevel15 * 250000 +
-    state.machinesLevel16 * 500000 +
-    state.machinesLevel17 * 1000000 +
-    state.machinesLevel18 * 2500000 +
-    state.machinesLevel19 * 5000000 +
-    state.machinesLevel20 * 10000000
+    state.machinesLevel11 * 50000 +
+    state.machinesLevel12 * 125000 +
+    state.machinesLevel13 * 300000 +
+    state.machinesLevel14 * 750000 +
+    state.machinesLevel15 * 2000000 +
+    state.machinesLevel16 * 5000000 +
+    state.machinesLevel17 * 12500000 +
+    state.machinesLevel18 * 30000000 +
+    state.machinesLevel19 * 75000000 +
+    state.machinesLevel20 * 200000000
   );
 }
+
 
 
 function totalAutoClicksPerSecond() {
