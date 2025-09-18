@@ -437,7 +437,7 @@ input[type="text"] {
 
 .gallery { display: flex; flex-direction: column; gap: 1rem; }
 .shop-tile {
-  background: #f8f8f8;
+  background: #0e1117;
   padding: 1rem;
   border-radius: 8px;
   text-align: center;
