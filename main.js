@@ -202,14 +202,15 @@ els.tapBtn.addEventListener("click", () => {
   save();
   renderMain();
 
-  // Animation avec format simple à 2 décimales
-  animateClick(realPerClick, els.tapBtn, () => realPerClick.toFixed(2));
+  // Animation : du bouton vers le compteur de points
+  animateClick(realPerClick, els.tapBtn, els.pointsValue);
 
   // Relance l’animation pulse
   els.tapBtn.classList.remove("pulse");
   void els.tapBtn.offsetWidth;
   els.tapBtn.classList.add("pulse");
 });
+
 
 // ─── Modules ───
 initUpgrades({
