@@ -15,9 +15,20 @@ const keys = [
   "machinesLevel8",
   "machinesLevel9",
   "machinesLevel10",
+  "machinesLevel11",
+  "machinesLevel12",
+  "machinesLevel13",
+  "machinesLevel14",
+  "machinesLevel15",
+  "machinesLevel16",
+  "machinesLevel17",
+  "machinesLevel18",
+  "machinesLevel19",
+  "machinesLevel20",
   "pointsPerClick",
   "shopBoost"
 ];
+
 
 const state = Object.fromEntries(keys.map(k => [k, 0]));
 state.pointsPerClick = 1;
@@ -68,9 +79,20 @@ function totalAutoClicksPerSecondBase() {
     state.machinesLevel7 * 500 +
     state.machinesLevel8 * 1000 +
     state.machinesLevel9 * 2500 +
-    state.machinesLevel10 * 5000
+    state.machinesLevel10 * 5000 +
+    state.machinesLevel11 * 12500 +
+    state.machinesLevel12 * 25000 +
+    state.machinesLevel13 * 50000 +
+    state.machinesLevel14 * 125000 +
+    state.machinesLevel15 * 250000 +
+    state.machinesLevel16 * 500000 +
+    state.machinesLevel17 * 1000000 +
+    state.machinesLevel18 * 2500000 +
+    state.machinesLevel19 * 5000000 +
+    state.machinesLevel20 * 10000000
   );
 }
+
 
 function totalAutoClicksPerSecond() {
   return (
@@ -81,7 +103,7 @@ function totalAutoClicksPerSecond() {
 }
 
 function costFor(base, owned) {
-  return Math.floor(base * Math.pow(1.15, owned));
+  return Math.floor(base * Math.pow(1.10, owned));
 }
 
 // ─── Imports ───
