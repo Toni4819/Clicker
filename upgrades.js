@@ -68,7 +68,7 @@ export function initUpgrades(deps) {
         keyName === "pointsPerClick"
           ? state.pointsPerClick - 1
           : state[keyName];
-      const max = 150;
+      const max = 1000;
       const cost1 = costFor(baseCost, owned);
       const isBuyable = state.points >= cost1 && owned < max;
 
@@ -157,7 +157,7 @@ export function initUpgrades(deps) {
 
     // Instanciation des items
     addItem("🔁 Auto-Clicker", "autoClickers", 10, upgradesList);
-    addItem("⌑ Double Clicker", "pointsPerClick", 20, upgradesList);
+    addItem("⌑ Double Clicker", "pointsPerClick", 50, upgradesList);
     machinesData.forEach((m) =>
       addItem(m.title, m.key, m.base, machinesList)
     );
