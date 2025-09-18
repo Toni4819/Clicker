@@ -1,53 +1,51 @@
 // animations.js
+import { formatCompact } from "./formatters.js";
 
-// Affiche l’animation de clic manuel
-export function animateClick(amount, tapBtn, formatNumberNoZeros) {
+// Couleur par défaut des bursts
+let burstColor = "#FFD700"; // or par défaut
+
+export function setBurstColor(color) {
+  burstColor = color;
+}
+
+// Animation de clic manuel (spawn aléatoire sur l'écran)
+export function animateClick(amount, tapBtn, color = burstColor) {
   const span = document.createElement("span");
-  span.textContent = `+${formatNumberNoZeros(amount)}`;
+  span.textContent = `+${formatCompact(amount)}`;
   span.classList.add("click-burst");
 
-  const rect = tapBtn.getBoundingClientRect();
-  span.style.left = `${rect.left + rect.width / 2}px`;
-  span.style.top  = `${rect.top - 10}px`;
+  // Position aléatoire sur tout l'écran
+  const randX = Math.random() * window.innerWidth;
+  const randY = Math.random() * window.innerHeight;
+
+  span.style.left = `${randX}px`;
+  span.style.top = `${randY}px`;
+  span.style.position = "fixed";
+  span.style.zIndex = 50;
+  span.style.color = color;
 
   document.body.appendChild(span);
+  requestAnimationFrame(() => span.classList.add("animate"));
   span.addEventListener("animationend", () => span.remove());
 }
 
-// Fallback de position si l’élément n’existe pas ou retourne un rect invalide
-function getSafeRect(el) {
-  if (el && typeof el.getBoundingClientRect === "function") {
-    const r = el.getBoundingClientRect();
-    if (Number.isFinite(r.left) && Number.isFinite(r.top)) {
-      return r;
-    }
-  }
-  return {
-    left: window.innerWidth  / 2,
-    top:  window.innerHeight / 2,
-    width:  0,
-    height: 0
-  };
-}
-
-// Affiche l’animation des gains passifs
-export function animatePassive(amount, startEl, formatNumberNoZeros) {
+// Animation passive (spawn aléatoire sur l'écran)
+export function animatePassive(amount, startEl, color = burstColor) {
   const span = document.createElement("span");
-  span.textContent = `+${formatNumberNoZeros(amount)}`;
+  span.textContent = `+${formatCompact(amount)}`;
   span.classList.add("click-burst-passive");
+
+  // Position aléatoire sur tout l'écran
+  const randX = Math.random() * window.innerWidth;
+  const randY = Math.random() * window.innerHeight;
+
+  span.style.left = `${randX}px`;
+  span.style.top = `${randY}px`;
   span.style.position = "fixed";
+  span.style.zIndex = 50;
+  span.style.color = color;
 
-  const sr = getSafeRect(startEl);
-  const startX = sr.left + (sr.width  ? Math.random() * sr.width  : 0);
-  const startY = sr.top  + (sr.height ? sr.height * 0.3         : 0);
-
-  span.style.left = `${startX}px`;
-  span.style.top  = `${startY}px`;
   document.body.appendChild(span);
-
-  // Lance l’animation CSS
   requestAnimationFrame(() => span.classList.add("animate"));
-
-  span.addEventListener("animationend",   () => span.remove());
-  span.addEventListener("transitionend",  () => span.remove());
+  span.addEventListener("animationend", () => span.remove());
 }
