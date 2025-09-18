@@ -40,7 +40,6 @@ function load() {
   if (!Number.isFinite(state.points)) state.points = 0;
 }
 
-
 function save() {
   for (const k of keys) {
     localStorage.setItem(k, String(state[k]));
@@ -48,43 +47,11 @@ function save() {
 }
 
 function getShopBoostFactor() {
-  const perm  = state.shopBoost || 1;
-  const temp  = state.tempShopBoostFactor || 1;
+  const perm = state.shopBoost || 1;
+  const temp = state.tempShopBoostFactor || 1;
   return perm * temp;
 }
 
-
-
-function formatCompact(num) {
-  if (!Number.isFinite(num)) return String(num);
-  const abs = Math.abs(num);
-  const units = [
-    { value: 1e45, symbol: "QNT (10^45)" },
-    { value: 1e42, symbol: "TT (10^42)" },
-    { value: 1e39, symbol: "DD (10^39)" },
-    { value: 1e36, symbol: "U (10^36)" },
-    { value: 1e33, symbol: "D (10^33)" },
-    { value: 1e30, symbol: "N (10^30)" },
-    { value: 1e27, symbol: "OC (10^27)" },
-    { value: 1e24, symbol: "SP (10^24)" },
-    { value: 1e21, symbol: "SXT (10^21)" },
-    { value: 1e18, symbol: "QT (10^18)" },
-    { value: 1e15, symbol: "Q (10^15)" },
-    { value: 1e12, symbol: "T (10^12)" },
-    { value: 1e9,  symbol: "B (10^9)" },
-    { value: 1e6,  symbol: "M (10^6)" },
-    { value: 1e3,  symbol: "K (10^3)" }
-  ];
-  for (const u of units) {
-    if (abs >= u.value) {
-      return (num / u.value).toFixed(2) + " " + u.symbol;
-    }
-  }
-  return num.toFixed(2);
-}
-
-
-// ─── Boost Rebirth & CPS ───
 function getRebirthBoostFactor() {
   return Math.pow(1.05, state.rebirths);
 }
@@ -107,26 +74,26 @@ function totalAutoClicksPerSecondBase() {
 
 function totalAutoClicksPerSecond() {
   return (
-    totalAutoClicksPerSecondBase()
-    * getRebirthBoostFactor()
-    * getShopBoostFactor() 
+    totalAutoClicksPerSecondBase() *
+    getRebirthBoostFactor() *
+    getShopBoostFactor()
   );
 }
-
 
 function costFor(base, owned) {
   return Math.floor(base * Math.pow(1.15, owned));
 }
 
 // ─── Imports ───
-import { machines }          from "./machines.js";
-import { initUpgrades }      from "./upgrades.js";
-import { initDevMenu }       from "./dev.js";
-import { initRebirthSystem } from "./rebirthSystem.js";
-import { initReset }         from "./reset.js";
-import { initStats }         from "./stats.js";
+import { formatCompact }              from "./formatters.js";
+import { machines }                   from "./machines.js";
+import { initUpgrades }               from "./upgrades.js";
+import { initDevMenu }                from "./dev.js";
+import { initRebirthSystem }          from "./rebirthSystem.js";
+import { initReset }                  from "./reset.js";
+import { initStats }                  from "./stats.js";
 import { animateClick, animatePassive } from "./animations.js";
-import { initShop } from "./shop.js";
+import { initShop }                   from "./shop.js";
 
 // ─── Sélecteurs DOM ───
 const els = {
@@ -168,7 +135,6 @@ function renderMain() {
     getShopBoostFactor();
 
   els.tapBtn.textContent = `👇 Tapper (+${realPerClick.toFixed(2)})`;
-
   els.versionText.textContent = `Toni’s Studios – v2.0`;
 
   if (els.boostValue) {
@@ -176,8 +142,6 @@ function renderMain() {
     els.boostValue.textContent = `x${totalBoost.toFixed(2)}`;
   }
 }
-
-
 
 // ─── Initialisation ───
 load();
@@ -198,7 +162,6 @@ setInterval(() => {
   }
 }, 1000);
 
-
 // Clic manuel
 els.tapBtn.addEventListener("click", () => {
   const realPerClick =
@@ -218,8 +181,6 @@ els.tapBtn.addEventListener("click", () => {
   void els.tapBtn.offsetWidth;
   els.tapBtn.classList.add("pulse");
 });
-
-
 
 // ─── Modules ───
 initUpgrades({
