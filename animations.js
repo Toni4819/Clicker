@@ -56,8 +56,9 @@ export function animateClick(amount, tapBtn, pointsEl) {
  * - Évite les boutons
  * - Effet pop + fade lent
  * - Passe sous les modales
+ * - Suppression après durée fixe (pas coupée)
  */
-export function animatePassive(amount, pointsEl) {
+export function animatePassive(amount) {
   const span = document.createElement("span");
   span.textContent = `+${formatCompact(amount)}`;
   span.classList.add("click-burst-passive");
@@ -90,17 +91,20 @@ export function animatePassive(amount, pointsEl) {
 
   // Apparition (pop)
   requestAnimationFrame(() => {
-    span.style.transition = "transform 1.2s ease-out, opacity 1.2s ease-out";
+    span.style.transition = "transform 1.5s ease-out, opacity 1.5s ease-out";
     span.style.transform = "scale(1.3)";
     span.style.opacity = "1";
   });
 
-  // Disparition progressive
+  // Disparition progressive après un délai
   setTimeout(() => {
-    span.style.transition = "transform 1s ease-in, opacity 1s ease-in";
+    span.style.transition = "transform 1.5s ease-in, opacity 1.5s ease-in";
     span.style.transform = "scale(0.8)";
     span.style.opacity = "0";
-  }, 1200);
+  }, 1500);
 
-  span.addEventListener("transitionend", () => span.remove());
+  // Suppression après la durée totale (apparition + disparition)
+  setTimeout(() => {
+    span.remove();
+  }, 3000); // 1.5s + 1.5s
 }
