@@ -276,8 +276,7 @@ initShop({
   formatCompact
 });
 initSettings({
-    els,
-    resetProgress
+    els
   });
 
 // Sauvegarde avant fermeture
