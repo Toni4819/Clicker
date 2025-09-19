@@ -1,4 +1,3 @@
-// settings.js
 export function initSettings({ els, state, keys, save, renderMain }) {
   // Création/configuration du modal
   const modal = document.getElementById("settingsModal");
@@ -50,55 +49,42 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     document.body.classList.remove("modal-open");
   }
 
-  // Événement ouverture via ⚙️
-  els.settingsBtn.addEventListener("click", openSettings);
+  // Reset total du localStorage + clics à 1
+  function performFullReset() {
+    const confirmReset = confirm(
+      "⚠️ Réinitialiser TOUT le stockage local et remettre les clics à 1 ? Cette action est irréversible."
+    );
+    if (!confirmReset) return;
 
-  // Fermeture
+    localStorage.clear();
+
+    state.pointsPerClick = 1;
+    state.tempShopBoostFactor = 1;
+    state.tempShopBoostExpiresAt = 0;
+
+    save();
+    renderMain();
+    closeSettings();
+  }
+
+  // Événements
+  els.settingsBtn.addEventListener("click", openSettings);
   els.closeSettingsBtn.addEventListener("click", closeSettings);
   modal.addEventListener("click", (e) => {
     if (e.target === modal) closeSettings();
   });
 
-  // Bouton Se connecter (fonction vide)
   els.loginBtn.addEventListener("click", () => {
     console.log("Fonction de connexion à implémenter");
   });
 
-  // Bouton Exporter (fonction vide)
   els.exportBtn.addEventListener("click", () => {
     console.log("Fonction d'export à implémenter");
   });
 
-  // Bouton Importer (fonction vide)
   els.importBtn.addEventListener("click", () => {
     console.log("Fonction d'import à implémenter");
   });
 
-  // Logique de reset (inclut reset des boosts temporaires du shop)
-  els.resetBtn.addEventListener("click", () => {
-    const confirmReset = confirm(
-      "⚠️ Réinitialiser TOUT, y compris les Rebirths et boosts ? Cette action est irréversible."
-    );
-    if (!confirmReset) return;
-
-    // Réinitialisation ciblée
-    for (const k of keys) {
-      if (k === "shopBoost") continue;           // on conserve le boost shop permanent
-      if (k === "pointsPerClick") state[k] = 1;  // clic manuel minimum
-      else state[k] = 0;
-    }
-
-    state.rebirths = 0;
-    localStorage.removeItem("rebirthCount");
-
-    // 🔄 Réinitialisation des boosts temporaires du shop
-    state.tempShopBoostFactor    = 1;
-    state.tempShopBoostExpiresAt = 0;
-    localStorage.removeItem("shopTempExpiresAt");
-    localStorage.removeItem("shopTempBoostFactor");
-
-    save();
-    renderMain();
-    closeSettings();
-  });
+  els.resetBtn.addEventListener("click", performFullReset);
 }
