@@ -3,9 +3,7 @@
   "short_name": "Clicker",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#ffcc00",
-  "orientation": "portrait",
+  "background_color": "#000000",
   "icons": [
     {
       "src": "/images/android-icon-36x36.png",
