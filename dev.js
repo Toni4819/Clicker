@@ -197,3 +197,12 @@ export function initDevMenu(deps) {
   console.log(await checkDevCode("56sAUCE12"));
 })();
 
+(async () => {
+  const code = "56sAUCE12";
+  const salt = "X9!a#";
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(code + salt));
+  const hash = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+  console.log(hash);
+})();
+
+
