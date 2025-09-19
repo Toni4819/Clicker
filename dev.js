@@ -17,6 +17,28 @@ async function checkDevCode(input) {
   return hash === expectedHash;
 }
 
+// Prépare la structure du modal Dev à partir du conteneur vide
+function prepareDevModal(els) {
+  if (!els.devModal) return;
+  els.devModal.className = "modal";
+  els.devModal.setAttribute("aria-hidden", "true");
+  els.devModal.setAttribute("role", "dialog");
+  els.devModal.setAttribute("aria-labelledby", "devTitle");
+
+  els.devModal.innerHTML = `
+    <div class="modal-content">
+      <header class="modal-header">
+        <h2 id="devTitle">🔧 Mode Développeur</h2>
+        <button id="closeDevBtn" class="close-btn" aria-label="Fermer">✕</button>
+      </header>
+      <div class="modal-body" id="devBody"></div>
+    </div>
+  `;
+
+  els.closeDevBtn = els.devModal.querySelector("#closeDevBtn");
+  els.devBody     = els.devModal.querySelector("#devBody");
+}
+
 export function renderDev(deps) {
   const {
     els,
@@ -148,26 +170,4 @@ export function renderDev(deps) {
     save(); renderMain(); renderStore();
   });
 
-  body.querySelector("#resetAllStorageBtn").addEventListener("click", () => {
-    localStorage.clear();
-    location.reload();
-  });
-
-  body.querySelector("#devExitBtn").addEventListener("click", () => {
-    devUnlocked = false;
-    closeModal(els.devModal);
-  });
-}
-
-export function initDevMenu(deps) {
-  const { els, openModal, closeModal } = deps;
-  els.devTrigger.addEventListener("click", () => {
-    devUnlocked = false;
-    renderDev(deps);
-    openModal(els.devModal);
-  });
-  els.closeDevBtn.addEventListener("click", () => {
-    devUnlocked = false;
-    closeModal(els.devModal);
-  });
-}
+  body.query
