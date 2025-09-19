@@ -103,7 +103,7 @@ export function initRebirthSystem({
             </button>
           </div>
           <div style="font-size:.85rem;color:#9aa;">
-            • Reset complet des points, upgrades & machines • Boost permanent +5% par niveau
+            • Reset complet des points, upgrades, machines et boosts achetés • Boost permanent +10% par niveau
           </div>
         </div>
       </div>`;
