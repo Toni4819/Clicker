@@ -74,21 +74,28 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     console.log("Fonction d'import à implémenter");
   });
 
-  // Logique de reset
+  // Logique de reset (inclut reset des boosts temporaires du shop)
   els.resetBtn.addEventListener("click", () => {
     const confirmReset = confirm(
-      "⚠️ Réinitialiser TOUT, y compris les Rebirths ? Cette action est irréversible."
+      "⚠️ Réinitialiser TOUT, y compris les Rebirths et boosts ? Cette action est irréversible."
     );
     if (!confirmReset) return;
 
+    // Réinitialisation ciblée
     for (const k of keys) {
-      if (k === "shopBoost") continue;
-      if (k === "pointsPerClick") state[k] = 1;
+      if (k === "shopBoost") continue;           // on conserve le boost shop permanent
+      if (k === "pointsPerClick") state[k] = 1;  // clic manuel minimum
       else state[k] = 0;
     }
 
     state.rebirths = 0;
     localStorage.removeItem("rebirthCount");
+
+    // 🔄 Réinitialisation des boosts temporaires du shop
+    state.tempShopBoostFactor    = 1;
+    state.tempShopBoostExpiresAt = 0;
+    localStorage.removeItem("shopTempExpiresAt");
+    localStorage.removeItem("shopTempBoostFactor");
 
     save();
     renderMain();
