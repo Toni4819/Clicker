@@ -1,5 +1,5 @@
 // animations.js
-import { formatCompact } from "./formatters.js";
+import { formatCompact } from "./modules/formatters.js";
 
 // Couleur par défaut pour les bursts passifs
 let passiveBurstColor = "#00FFAA"; // vert clair
