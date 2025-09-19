@@ -64,7 +64,7 @@ function getShopBoostFactor() {
 }
 
 function getRebirthBoostFactor() {
-  return Math.pow(1.05, state.rebirths);
+  return Math.pow(1.10, state.rebirths);
 }
 
 function totalAutoClicksPerSecondBase() {
@@ -104,7 +104,7 @@ function totalAutoClicksPerSecond() {
 }
 
 function costFor(base, owned) {
-  return Math.floor(base * Math.pow(1.10, owned));
+  return Math.floor(base * Math.pow(1.25, owned));
 }
 
 // ─── Imports ───
