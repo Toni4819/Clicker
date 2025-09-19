@@ -1,5 +1,7 @@
 import { machines } from "./machines.js";
 
+let storeInterval = null;
+
 export function initUpgrades(deps) {
   const {
     els,
@@ -17,7 +19,6 @@ export function initUpgrades(deps) {
   modal.setAttribute("aria-hidden", "true");
   modal.setAttribute("role", "dialog");
   modal.setAttribute("aria-labelledby", "storeTitle");
-
   modal.innerHTML = `
     <div class="modal-content">
       <header class="modal-header">
@@ -29,8 +30,6 @@ export function initUpgrades(deps) {
   `;
   els.closeStoreBtn = modal.querySelector("#closeStoreBtn");
   const body = modal.querySelector("#upgradesBody");
-
-  // Corps du modal : items en colonne pleine largeur
   Object.assign(body.style, {
     display: "flex",
     flexDirection: "column",
@@ -42,27 +41,38 @@ export function initUpgrades(deps) {
   function openStore() {
     modal.setAttribute("aria-hidden", "false");
     document.body.classList.add("modal-open");
+
+    // Lancement de l'actualisation continue
+    if (storeInterval === null) {
+      storeInterval = setInterval(renderAmeliorations, 500);
+    }
   }
 
   function closeStore() {
     modal.setAttribute("aria-hidden", "true");
     document.body.classList.remove("modal-open");
+
+    // Arrêt de l'actualisation continue
+    if (storeInterval !== null) {
+      clearInterval(storeInterval);
+      storeInterval = null;
+    }
   }
 
   function renderAmeliorations() {
+    const prevScroll = body.scrollTop;
     body.innerHTML = "";
 
-    // Liste des améliorations basiques
+    // Conteneurs
     const upgradesList = document.createElement("div");
     upgradesList.id = "upgradesList";
     upgradesList.className = "list";
 
-    // Liste des machines
     const machinesList = document.createElement("div");
     machinesList.id = "machinesList";
     machinesList.className = "list";
 
-    // Fonction d'ajout d'un item full-width
+    // Ajout d'un item full-width
     function addItem(title, keyName, baseCost, container) {
       const owned =
         keyName === "pointsPerClick"
@@ -74,9 +84,7 @@ export function initUpgrades(deps) {
 
       const item = document.createElement("div");
       item.className = "item" + (isBuyable ? " item-available" : "");
-      // force pleine largeur
       item.style.width = "100%";
-
       item.innerHTML = `
         <div style="display:flex;justify-content:space-between;align-items:center;">
           <div>
@@ -136,23 +144,17 @@ export function initUpgrades(deps) {
       });
     }
 
-    // Section Améliorations basiques
+    // Sections DOM
     const sectionUpgrades = document.createElement("section");
     sectionUpgrades.className = "section";
-    sectionUpgrades.innerHTML = `
-      <h3 class="section-title">💡 Améliorations basiques</h3>
-    `;
+    sectionUpgrades.innerHTML = `<h3 class="section-title">💡 Améliorations basiques</h3>`;
     sectionUpgrades.appendChild(upgradesList);
 
-    // Section Machines
     const sectionMachines = document.createElement("section");
     sectionMachines.className = "section";
-    sectionMachines.innerHTML = `
-      <h3 class="section-title">⚙️ Machines</h3>
-    `;
+    sectionMachines.innerHTML = `<h3 class="section-title">⚙️ Machines</h3>`;
     sectionMachines.appendChild(machinesList);
 
-    // Ajout au DOM
     body.append(sectionUpgrades, sectionMachines);
 
     // Instanciation des items
@@ -161,9 +163,12 @@ export function initUpgrades(deps) {
     machinesData.forEach((m) =>
       addItem(m.title, m.key, m.base, machinesList)
     );
+
+    // Restauration du scroll
+    body.scrollTop = prevScroll;
   }
 
-  // Événements d'ouverture/fermeture
+  // Événements
   els.upgradesBtn.addEventListener("click", () => {
     renderAmeliorations();
     openStore();
