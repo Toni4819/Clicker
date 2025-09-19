@@ -1,9 +1,7 @@
 // dev.js — Menu développeur sécurisé, autonome et modulaire
 
 const salt = "X9!a#";
-const expectedHash = "bb58f0471dac25dc294e8af3f16b8dba28c302dee303ce24a69c1914462dee954";
-
-
+const expectedHash = "bb58f0471dac25dc294e8af3f16b8dba28c302dee3b3ce24a69c1914462dee954";
 let devUnlocked = false;
 
 async function hashString(str) {
