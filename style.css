@@ -451,7 +451,7 @@ input[type="text"] {
 .shop-tile .emoji { font-size: 2rem; }
 .shop-tile h3 { margin: 0.5rem 0; }
 
-/* Bouton Paramètres (roue crantée) */
+/* Bouton Paramètres – styles étendus */
 #settingsBtn {
   position: fixed;
   top: 1rem;
@@ -460,28 +460,36 @@ input[type="text"] {
 
   background: none;
   border: none;
-  padding: 0.5rem;
+  padding: 0.8rem;
   border-radius: 50%;
-
-  font-size: 1.5rem;
+  font-size: 2rem;
   line-height: 1;
   color: #ffffff;
   cursor: pointer;
 
-  transition: background-color 0.2s ease, transform 0.1s ease;
+  /* Pour le contour au clic */
+  position: relative;
+  overflow: visible;
 }
 
+/* Contour statique invisible pour la mesure */
+#settingsBtn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  transition: box-shadow 0.2s ease;
+  box-shadow: none;
+}
+
+/* Au clic on “spawn” un contour lumineux */
+#settingsBtn:active::before {
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.8);
+}
+
+/* Optionnel : effet au survol */
 #settingsBtn:hover {
   background-color: rgba(255, 255, 255, 0.1);
-  transform: rotate(20deg);
 }
 
-#settingsBtn:active {
-  transform: rotate(0deg) scale(0.95);
-}
-
-#settingsBtn:focus {
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
-}
 
