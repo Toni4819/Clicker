@@ -1,12 +1,9 @@
-// dev.js — Menu développeur sécurisé, organisé et complet
+// dev.js — Menu développeur sécurisé, autonome et modulaire
 
-// 🔐 Sécurité : hash SHA-256 du code "TU34S." + sel "X9!a#"
 const salt = "X9!a#";
 const expectedHash = "e3a3c1a7a5e4e1d6f2b9c9a1d7e6f8c3a4b2e1f9c8d7a6b5c4e3f2a1b0c9d8e7";
-
 let devUnlocked = false;
 
-// 🔧 Hash SHA-256 en hex
 async function hashString(str) {
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
@@ -17,7 +14,6 @@ async function checkDevCode(input) {
   return hash === expectedHash;
 }
 
-// Prépare la structure du modal Dev à partir du conteneur vide
 function prepareDevModal(els) {
   if (!els.devModal) return;
   els.devModal.className = "modal";
@@ -40,16 +36,9 @@ function prepareDevModal(els) {
 }
 
 export function renderDev(deps) {
-  const {
-    els,
-    state,
-    save,
-    renderMain,
-    renderStore,
-    closeModal,
-    machines
-  } = deps;
+  const { els, state, save, renderMain, renderStore, closeModal, machines } = deps;
 
+  if (!els.devBody) prepareDevModal(els);
   const body = els.devBody;
   Object.assign(body.style, {
     display: "flex",
@@ -167,7 +156,39 @@ export function renderDev(deps) {
   body.querySelector("#resetRebirthsBtn").addEventListener("click", () => {
     state.rebirths = 0;
     localStorage.removeItem("rebirthCount");
-    save(); renderMain(); renderStore();
+    save();
+    renderMain();
+    renderStore();
   });
 
-  body.querySelector("#resetRebirthsBtn").addEventListener("click", () => { state.rebirths = 0; localStorage.removeItem("rebirthCount"); save(); renderMain(); renderStore(); }); body.querySelector("#resetAllStorageBtn").addEventListener("click", () => { localStorage.clear(); location.reload(); }); body.querySelector("#devExitBtn").addEventListener("click", () => { devUnlocked = false; closeModal(els.devModal); }); } export function initDevMenu(deps) { const { els, openModal, closeModal } = deps; els.devTrigger.addEventListener("click", () => { devUnlocked = false; renderDev(deps); openModal(els.devModal); }); els.closeDevBtn.addEventListener("click", () => { devUnlocked = false; closeModal(els.devModal); }); }
+  body.querySelector("#resetAllStorageBtn").addEventListener("click", () => {
+    localStorage.clear();
+    location.reload();
+  });
+
+  body.querySelector("#devExitBtn").addEventListener("click", () => {
+    devUnlocked = false;
+    closeModal(els.devModal);
+  });
+}
+
+export function initDevMenu(deps) {
+  const { els, openModal, closeModal } = deps;
+
+  // Préparer la structure du modal si besoin
+  if (!els.devBody) {
+    prepareDevModal(els);
+  }
+
+  els.devTrigger.addEventListener("click", () => {
+    devUnlocked = false;
+    renderDev(deps);
+    openModal(els.devModal);
+  });
+
+  els.closeDevBtn.addEventListener("click", () => {
+    devUnlocked = false;
+    closeModal(els.devModal);
+  });
+}
+
