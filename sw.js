@@ -42,7 +42,7 @@ const iconPaths = [
   'apple-icon.png',
   'apple-icon-precomposed.png',
   'browserconfig.xml',
-  'favicon.svg',
+  'favicon.ico',
   ...androidSizes.map(size => `android-icon-${size}x${size}.png`),
   ...appleSizes.map(size => `apple-icon-${size}x${size}.png`),
   ...msSizes.map(size => `ms-icon-${size}x${size}.png`),
