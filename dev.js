@@ -194,9 +194,15 @@ export function initDevMenu(deps) {
   });
 }
 
-(async () => {
-  console.log(await checkDevCode("56sAUCE12"));
-})();
+async function checkDevCode(input) {
+  const code = input.trim();                     // enlève espaces avant/après
+  const computedHash = await hashString(code + salt);
+  console.log("🔍 code saisi      :", `"${code}"`);
+  console.log("🔍 hash calculé   :", computedHash);
+  console.log("🔍 hash attendu   :", expectedHash);
+  return computedHash === expectedHash;
+}
+
 
 (async () => {
   const code = "56sAUCE12";
