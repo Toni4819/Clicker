@@ -110,13 +110,13 @@ function costFor(base, owned) {
 // ─── Imports ───
 import { formatCompact, toggleFormatMode }              from "./modules/formatters.js";
 import { machines }                   from "./machines.js";
-import { initUpgrades }               from "./upgrades.js";
-import { initDevMenu }                from "./dev.js";
+import { initUpgrades }               from "./menus/upgrades.js";
+import { initDevMenu }                from "./menus/dev.js";
 import { initRebirthSystem }          from "./rebirthSystem.js";
 import { initStats }                  from "./modules/stats.js";
 import { animateClick, animatePassive } from "./modules/animations.js";
-import { initShop }                   from "./shop.js";
-import { initSettings } from "./settings.js";
+import { initShop }                   from "./menus/shop.js";
+import { initSettings } from "./menus/settings.js";
 import { initCoinDrop } from "./modules/initCoinDrop.js";
 
 // ─── Sélecteurs DOM ───
