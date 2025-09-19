@@ -117,6 +117,7 @@ import { initReset }                  from "./reset.js";
 import { initStats }                  from "./stats.js";
 import { animateClick, animatePassive } from "./animations.js";
 import { initShop }                   from "./shop.js";
+import { initSettings } from "./settings.js";
 
 // ─── Sélecteurs DOM ───
 const els = {
@@ -135,6 +136,7 @@ const els = {
   devBody:         document.getElementById("devBody"),
   resetBtn:        document.getElementById("resetBtn"),
   boostValue:      document.getElementById("boostValue"),
+  settingsBtn:     document.getElementById("settingsBtn"),
   // upgrades.js attribuera: machinesList, upgradesList, statsList, closeStoreBtn
 };
 
@@ -273,6 +275,10 @@ initShop({
   closeModal,
   formatCompact
 });
+initSettings({
+    els,
+    resetProgress
+  });
 
 // Sauvegarde avant fermeture
 window.addEventListener("beforeunload", save);
