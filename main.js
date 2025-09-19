@@ -276,7 +276,11 @@ initShop({
   formatCompact
 });
 initSettings({
-    els
+    els,
+    state,
+    keys,
+    save,
+    renderMain
   });
 
 // Sauvegarde avant fermeture
