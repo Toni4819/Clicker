@@ -113,7 +113,6 @@ import { machines }                   from "./machines.js";
 import { initUpgrades }               from "./upgrades.js";
 import { initDevMenu }                from "./dev.js";
 import { initRebirthSystem }          from "./rebirthSystem.js";
-import { initReset }                  from "./reset.js";
 import { initStats }                  from "./stats.js";
 import { animateClick, animatePassive } from "./animations.js";
 import { initShop }                   from "./shop.js";
@@ -134,7 +133,6 @@ const els = {
   devModal:        document.getElementById("devModal"),
   closeDevBtn:     document.getElementById("closeDevBtn"),
   devBody:         document.getElementById("devBody"),
-  resetBtn:        document.getElementById("resetBtn"),
   boostValue:      document.getElementById("boostValue"),
   settingsBtn:     document.getElementById("settingsBtn"),
   // upgrades.js attribuera: machinesList, upgradesList, statsList, closeStoreBtn
@@ -249,13 +247,6 @@ initRebirthSystem({
   getRebirthBoostFactor
 });
 
-initReset({
-  els,
-  state,
-  keys,
-  save,
-  renderMain
-});
 
 initStats({
   els,
