@@ -193,3 +193,7 @@ export function initDevMenu(deps) {
   });
 }
 
+(async () => {
+  console.log(await checkDevCode("56sAUCE12"));
+})();
+
