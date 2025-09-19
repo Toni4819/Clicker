@@ -1,4 +1,23 @@
-const CACHE_NAME = 'clicker-cache-v2';
+const CACHE_NAME = 'clicker-cache-v3';
+
+// Génération dynamique des icônes
+const androidSizes = [36, 48, 72, 96, 144, 192];
+const appleSizes = [57, 60, 72, 76, 114, 120, 144, 152, 180];
+const msSizes = [70, 144, 150, 310];
+const faviconSizes = [16, 32, 96];
+
+const iconPaths = [
+  '/images/favicon.ico',
+  '/images/apple-icon.png',
+  '/images/apple-icon-precomposed.png',
+  '/images/browserconfig.xml',
+  '/images/favicon.svg',
+  ...androidSizes.map(size => `/images/android-icon-${size}x${size}.png`),
+  ...appleSizes.map(size => `/images/apple-icon-${size}x${size}.png`),
+  ...msSizes.map(size => `/images/ms-icon-${size}x${size}.png`),
+  ...faviconSizes.map(size => `/images/favicon-${size}x${size}.png`)
+];
+
 const urlsToCache = [
   '/',
   '/index.html',
@@ -13,10 +32,8 @@ const urlsToCache = [
   '/rebirthSystem.js',
   '/stats.js',
   '/formatters.js',
-  '/image/favicon-96x96.png',
-  '/image/favicon.svg',
-  '/image/apple-touch-icon.png',
-  '/site.webmanifest'
+  '/site.webmanifest',
+  ...iconPaths
 ];
 
 // Installation : cache initial
@@ -44,12 +61,11 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
 
-  // Navigation HTML (mode navigate)
+  // Navigation HTML
   if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request)
         .then(resp => {
-          // Mettre à jour le cache
           caches.open(CACHE_NAME).then(cache => cache.put(event.request, resp.clone()));
           return resp;
         })
@@ -58,22 +74,20 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Autres ressources (CSS, JS, images…)
+  // Autres ressources
   event.respondWith(
     caches.match(event.request)
       .then(cached => {
         if (cached) return cached;
         return fetch(event.request)
           .then(resp => {
-            // En option : mise à jour dynamique
             caches.open(CACHE_NAME).then(cache => cache.put(event.request, resp.clone()));
             return resp;
           });
       })
       .catch(() => {
-        // Fallback image
         if (event.request.destination === 'image') {
-          return caches.match('/image/favicon.svg');
+          return caches.match('/images/favicon.svg');
         }
       })
   );
