@@ -9,7 +9,7 @@ export function initRebirthSystem({
   formatCompact
 }) {
   const STORAGE_KEY = "rebirthCount";
-  const BOOST_RATE  = 1.05;       // +5% par Rebirth
+  const BOOST_RATE  = 1.10;       // +5% par Rebirth
   const costTable   = [           // coûts par palier
     1e6,    // 1 M
     1e8,    // 100 M
