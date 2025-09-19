@@ -8,6 +8,7 @@ const urlsToCache = [
   '/upgrades.js',
   '/animations.js',
   '/dev.js',
+  '/settings.js',
   '/shop.js',
   '/rebirthSystem.js',
   '/reset.js',
