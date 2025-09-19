@@ -1,12 +1,12 @@
 const CACHE_NAME = 'clicker-cache-v4';
 
-// Fichiers JS dans la racine
+// JS à la racine
 const rootJS = [
   'main.js',
   'rebirthSystem.js'
-];
+].map(file => `/${file}`);
 
-// Fichiers JS dans /menus/
+// JS dans /menus/
 const menuJS = [
   'dev.js',
   'machines.js',
@@ -15,7 +15,7 @@ const menuJS = [
   'upgrades.js'
 ].map(file => `/menus/${file}`);
 
-// Fichiers JS dans /modules/
+// JS dans /modules/
 const moduleJS = [
   'animations.js',
   'formatters.js',
@@ -52,18 +52,32 @@ const iconPaths = [
 // Liste finale à cacher
 const urlsToCache = [
   ...staticFiles,
-  ...rootJS.map(file => `/${file}`),
+  ...rootJS,
   ...menuJS,
   ...moduleJS,
   ...iconPaths
 ];
 
-// Installation : cache initial
+// Installation : cache initial (tolérant aux fichiers manquants)
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(urlsToCache))
-      .then(() => self.skipWaiting())
+    caches.open(CACHE_NAME).then(async cache => {
+      const results = await Promise.allSettled(
+        urlsToCache.map(async url => {
+          try {
+            const resp = await fetch(url);
+            if (resp.ok) {
+              await cache.put(url, resp.clone());
+            } else {
+              console.warn(`❌ Skip: ${url} (status ${resp.status})`);
+            }
+          } catch (err) {
+            console.warn(`❌ Skip: ${url} (${err})`);
+          }
+        })
+      );
+      self.skipWaiting();
+    })
   );
 });
 
