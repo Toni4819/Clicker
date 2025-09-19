@@ -1,4 +1,3 @@
-// shop.js
 export function initShop({
   els,
   state,
@@ -12,7 +11,7 @@ export function initShop({
     return;
   }
 
-  // Crée ou récupère la modale
+  // --- Création / récupération de la modale ---
   let modal = els.shopModal;
   if (!modal) {
     modal = document.createElement("div");
@@ -25,7 +24,6 @@ export function initShop({
     els.shopModal = modal;
   }
 
-  // Squelette de la modale
   modal.innerHTML = `
     <div class="modal-content">
       <header class="modal-header">
@@ -39,7 +37,6 @@ export function initShop({
   const body     = modal.querySelector("#shopBody");
   const closeBtn = modal.querySelector(".close-btn");
 
-  // Ouvrir / fermer
   function openShop() {
     renderShopBody();
     modal.setAttribute("aria-hidden", "false");
@@ -50,10 +47,20 @@ export function initShop({
     document.body.classList.remove("modal-open");
   }
 
-  // Contenu de la boutique
+  // --- Paramètres du boost temporaire ---
+  const MAX_BOOST_MS = 60 * 60 * 1000; // 1h
+  let tempTimer;
+
   function renderShopBody() {
-    const cost1 = 25_000_000;   // ×2 • 1 min
-    const cost5 = 100_000_000;  // ×2 • 5 min
+    const cost1 = 25_000_000;   // 1 min
+    const cost5 = 100_000_000;  // 5 min
+
+    // Calcul du temps restant
+    const now       = Date.now();
+    const expiresAt = state.tempShopBoostExpiresAt > now
+      ? state.tempShopBoostExpiresAt
+      : now;
+    const remaining = expiresAt - now;
 
     body.innerHTML = `
       <div class="shop-tile">
@@ -72,46 +79,45 @@ export function initShop({
       </div>
     `;
 
-    body.querySelector(".buy-temp-1")
-        .addEventListener("click", () => startTempBoost(60_000,  cost1));
-    body.querySelector(".buy-temp-5")
-        .addEventListener("click", () => startTempBoost(300_000, cost5));
+    const btn1 = body.querySelector(".buy-temp-1");
+    const btn5 = body.querySelector(".buy-temp-5");
+
+    // Activation / désactivation selon fonds et plafond horaire
+    const canBuy1 = state.points >= cost1 && (remaining + 60_000) <= MAX_BOOST_MS;
+    const canBuy5 = state.points >= cost5 && (remaining + 300_000) <= MAX_BOOST_MS;
+
+    btn1.disabled = !canBuy1;
+    btn5.disabled = !canBuy5;
+
+    if (canBuy1) btn1.addEventListener("click", () => startTempBoost(60_000,  cost1));
+    if (canBuy5) btn5.addEventListener("click", () => startTempBoost(300_000, cost5));
   }
 
-  // Gestion du boost cumulable
-  let tempTimer;
   function startTempBoost(durationMs, cost) {
     if (state.points < cost) return;
 
     state.points -= cost;
 
-    // calcul de la nouvelle expiration
-    const now = Date.now();
+    const now       = Date.now();
     const baseExpire = state.tempShopBoostExpiresAt > now
       ? state.tempShopBoostExpiresAt
       : now;
-    state.tempShopBoostExpiresAt = baseExpire + durationMs;
 
-    // empilement du multiplicateur
-    const currentFactor = state.tempShopBoostFactor > 1
-      ? state.tempShopBoostFactor
-      : 1;
-    state.tempShopBoostFactor = currentFactor * 2;
+    // On cumule le temps, mais on plafonne à 1h
+    const newExpire = Math.min(baseExpire + durationMs, now + MAX_BOOST_MS);
+    state.tempShopBoostExpiresAt = newExpire;
 
-    // persistence
-    localStorage.setItem(
-      "shopTempExpiresAt",
-      String(state.tempShopBoostExpiresAt)
-    );
-    localStorage.setItem(
-      "shopTempBoostFactor",
-      String(state.tempShopBoostFactor)
-    );
+    // On pose un facteur fixe ×2 (pas de stacking)
+    state.tempShopBoostFactor = 2;
+
+    // Sauvegarde
+    localStorage.setItem("shopTempExpiresAt", String(state.tempShopBoostExpiresAt));
+    localStorage.setItem("shopTempBoostFactor", String(state.tempShopBoostFactor));
 
     save();
     renderMain();
 
-    // relancer le timer
+    // Reset après expiration
     clearTimeout(tempTimer);
     tempTimer = setTimeout(() => {
       state.tempShopBoostFactor    = 1;
@@ -120,22 +126,15 @@ export function initShop({
       localStorage.removeItem("shopTempBoostFactor");
       save();
       renderMain();
-    }, state.tempShopBoostExpiresAt - now);
+    }, newExpire - now);
   }
 
   // Restauration après reload
-  const expiresAtStored = parseInt(
-    localStorage.getItem("shopTempExpiresAt") || "0",
-    10
-  );
-  const factorStored = parseInt(
-    localStorage.getItem("shopTempBoostFactor") || "1",
-    10
-  );
+  const expiresAtStored = parseInt(localStorage.getItem("shopTempExpiresAt") || "0", 10);
+  const factorStored    = parseInt(localStorage.getItem("shopTempBoostFactor") || "1",  10);
   if (expiresAtStored > Date.now()) {
     state.tempShopBoostFactor    = factorStored;
     state.tempShopBoostExpiresAt = expiresAtStored;
-
     clearTimeout(tempTimer);
     tempTimer = setTimeout(() => {
       state.tempShopBoostFactor    = 1;
@@ -147,7 +146,7 @@ export function initShop({
     }, expiresAtStored - Date.now());
   }
 
-  // Événements d'ouverture / fermeture
+  // Liens d’ouverture / fermeture
   shopBtn.addEventListener("click", openShop);
   closeBtn.addEventListener("click", closeShop);
   modal.addEventListener("click", e => {
