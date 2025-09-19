@@ -170,4 +170,4 @@ export function renderDev(deps) {
     save(); renderMain(); renderStore();
   });
 
-  body.query
+  body.querySelector("#resetRebirthsBtn").addEventListener("click", () => { state.rebirths = 0; localStorage.removeItem("rebirthCount"); save(); renderMain(); renderStore(); }); body.querySelector("#resetAllStorageBtn").addEventListener("click", () => { localStorage.clear(); location.reload(); }); body.querySelector("#devExitBtn").addEventListener("click", () => { devUnlocked = false; closeModal(els.devModal); }); } export function initDevMenu(deps) { const { els, openModal, closeModal } = deps; els.devTrigger.addEventListener("click", () => { devUnlocked = false; renderDev(deps); openModal(els.devModal); }); els.closeDevBtn.addEventListener("click", () => { devUnlocked = false; closeModal(els.devModal); }); }
