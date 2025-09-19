@@ -4,7 +4,7 @@ const CACHE_NAME = 'clicker-cache-v4';
 const rootJS = [
   'main.js',
   'rebirthSystem.js'
-].map(file => `/${file}`);
+].map(file => `./${file}`);
 
 // JS dans /menus/
 const menuJS = [
@@ -13,7 +13,7 @@ const menuJS = [
   'settings.js',
   'shop.js',
   'upgrades.js'
-].map(file => `/menus/${file}`);
+].map(file => `./menus/${file}`);
 
 // JS dans /modules/
 const moduleJS = [
@@ -21,14 +21,14 @@ const moduleJS = [
   'formatters.js',
   'initCoinDrop.js',
   'stats.js'
-].map(file => `/modules/${file}`);
+].map(file => `./modules/${file}`);
 
 // Fichiers statiques
 const staticFiles = [
-  '/',
-  '/index.html',
-  '/style.css',
-  '/site.webmanifest'
+  './',
+  './index.html',
+  './style.css',
+  './site.webmanifest'
 ];
 
 // Icônes Android, Apple, MS, favicon
@@ -47,7 +47,7 @@ const iconPaths = [
   ...appleSizes.map(size => `apple-icon-${size}x${size}.png`),
   ...msSizes.map(size => `ms-icon-${size}x${size}.png`),
   ...faviconSizes.map(size => `favicon-${size}x${size}.png`)
-].map(file => `/images/${file}`);
+].map(file => `./images/${file}`);
 
 // Liste finale à cacher
 const urlsToCache = [
