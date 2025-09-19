@@ -2,8 +2,6 @@
 export function initStats({
   els,
   state,
-  formatCompact,
-  totalAutoClicksPerSecond,
   getRebirthBoostFactor,
   getShopBoostFactor
 }) {
@@ -19,9 +17,7 @@ export function initStats({
     const c = document.getElementById("quickStats");
     if (!c) return;
 
-    // Valeurs de base
-    const pts       = state.points;
-    const cps       = totalAutoClicksPerSecond();
+    // Calcul des boosts
     const rebBoost  = getRebirthBoostFactor();
     const shopBoost = getShopBoostFactor();
     const tempBoost = state.tempShopBoostFactor || 1;
@@ -31,49 +27,54 @@ export function initStats({
     const pctReb  = ((rebBoost - 1) * 100).toFixed(1);
     const pctShop = ((shopBoost - 1) * 100).toFixed(1);
 
-    // Ligne de temps restant si boost temporaire en cours
+    // Durée restante du boost temporaire
     let timeLine = "";
     if (state.tempShopBoostExpiresAt) {
       const remaining = state.tempShopBoostExpiresAt - Date.now();
       if (remaining > 0) {
         timeLine = `
-          <div class="stat-line">
-            ⏳ Boost temps restant : 
-            <strong>${formatDuration(remaining)}</strong>
-          </div>`;
+  <div class="stat-line">
+    ⏳ Boost temporaire : <strong>${formatDuration(remaining)}</strong>
+  </div>`;
       }
     }
 
+    // Total machines
+    const totalMachines =
+      state.machinesLevel1 +
+      state.machinesLevel2 +
+      state.machinesLevel3 +
+      state.machinesLevel4 +
+      state.machinesLevel5 +
+      state.machinesLevel6 +
+      state.machinesLevel7 +
+      state.machinesLevel8 +
+      state.machinesLevel9 +
+      state.machinesLevel10;
+
+    // Mise à jour du DOM
     c.innerHTML = `
-      <h3>📈 Production</h3>
-      <div class="stat-line">🪙 Points : <strong>${formatCompact(pts)}</strong></div>
-      <div class="stat-line">⚡ CPS : <strong>${cps.toFixed(2)}</strong></div>
-      <div class="stat-line">👆 PPC : <strong>${(state.pointsPerClick * totalBoost).toFixed(2)}</strong></div>
+  <section class="stats-section">
+    <h3>🚀 Boosts</h3>
+    <div class="stat-line">
+      🌱 Rebirth : <strong>x${rebBoost.toFixed(2)}</strong> (+${pctReb}%)
+    </div>
+    <div class="stat-line">
+      🏪 Shop : <strong>x${shopBoost.toFixed(2)}</strong> (+${pctShop}%)
+    </div>
+    ${timeLine}
+  </section>
 
-      <h3>🚀 Boosts</h3>
-      <div class="stat-line">
-        🌱 Rebirth : <strong>x${rebBoost.toFixed(2)}</strong> (+${pctReb}%)
-      </div>
-      <div class="stat-line">
-        🏪 Shop : <strong>x${shopBoost.toFixed(2)}</strong> (+${pctShop}%)
-      </div>
-      ${timeLine}
-
-      <h3>🏭 Infrastructure</h3>
-      <div class="stat-line">Auto-clickers : <strong>${state.autoClickers}</strong></div>
-      <div class="stat-line">Machines : <strong>${
-        state.machinesLevel1 +
-        state.machinesLevel2 +
-        state.machinesLevel3 +
-        state.machinesLevel4 +
-        state.machinesLevel5 +
-        state.machinesLevel6 +
-        state.machinesLevel7 +
-        state.machinesLevel8 +
-        state.machinesLevel9 +
-        state.machinesLevel10
-      }</strong></div>
-    `;
+  <section class="stats-section">
+    <h3>🏭 Infrastructure</h3>
+    <div class="stat-line">
+      Auto-clickers : <strong>${state.autoClickers}</strong>
+    </div>
+    <div class="stat-line">
+      Machines : <strong>${totalMachines}</strong>
+    </div>
+  </section>
+`;
   }
 
   // Auto-rafraîchissement léger
