@@ -94,6 +94,12 @@ body.modal-open {
   transition: transform .05s ease, background .2s ease, box-shadow .2s ease;
 }
 
+.btn[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+
 .btn:active {
   transform: translateY(1px);
 }
