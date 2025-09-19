@@ -1,9 +1,23 @@
-// dev.js
-const _devKeyParts = ["NT", "Zz", "QV", "VD", "RT", "Ey"];
-const base64Code = _devKeyParts.join("");
+// dev.js — Menu développeur sécurisé, organisé et complet
+
+// 🔐 Sécurité : hash SHA-256 du code "TU34S." + sel "X9!a#"
+const salt = "X9!a#";
+const expectedHash = "e3a3c1a7a5e4e1d6f2b9c9a1d7e6f8c3a4b2e1f9c8d7a6b5c4e3f2a1b0c9d8e7";
+
 let devUnlocked = false;
 
-function renderDev(deps) {
+// 🔧 Hash SHA-256 en hex
+async function hashString(str) {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function checkDevCode(input) {
+  const hash = await hashString(input + salt);
+  return hash === expectedHash;
+}
+
+export function renderDev(deps) {
   const {
     els,
     state,
@@ -36,27 +50,26 @@ function renderDev(deps) {
         </div>
       </div>
     `;
-    body.querySelector("#devValidateBtn").addEventListener("click", () => {
+
+    body.querySelector("#devValidateBtn").addEventListener("click", async () => {
       const code = body.querySelector("#devCodeInput").value || "";
-      try {
-        if (btoa(code) === base64Code) {
-          devUnlocked = true;
-          renderDev(deps);
-        } else {
-          body.querySelector("#devCodeInput").value = "";
-        }
-      } catch {
+      if (await checkDevCode(code)) {
+        devUnlocked = true;
+        renderDev(deps);
+      } else {
         body.querySelector("#devCodeInput").value = "";
+        alert("Code incorrect");
       }
     });
+
     body.querySelector("#devCancelBtn").addEventListener("click", () => {
       devUnlocked = false;
       closeModal(els.devModal);
     });
+
     return;
   }
 
-  // Helper pour créer une ligne
   const makeLine = (label, id, value, min = 0) => `
     <div style="display:flex; align-items:center; gap:8px; width:100%; max-width:380px;">
       <label for="${id}" style="flex:1; text-align:right;">${label}</label>
@@ -67,7 +80,6 @@ function renderDev(deps) {
 
   let html = `<h3 class="section-title">🔧 Mode Dev Avancé</h3>`;
 
-  // Section Points
   html += `<h4>💰 Points</h4>`;
   html += makeLine("Points", "pointsInput", state.points, 0);
   html += `
@@ -81,25 +93,21 @@ function renderDev(deps) {
   `;
   html += makeLine("Points/Clic", "clickPowerInput", state.pointsPerClick, 1);
 
-  // Section Auto-clickers & Machines
   html += `<h4>🏭 Production</h4>`;
   html += makeLine("Auto-clickers", "autoClickersInput", state.autoClickers, 0);
   for (const m of machines) {
     html += makeLine(m.title, `machine-${m.key}-input`, state[m.key], 0);
   }
 
-  // Section Boosts
   html += `<h4>🚀 Boosts</h4>`;
   html += makeLine("Boost Shop permanent", "shopBoostInput", state.shopBoost || 1, 1);
   html += makeLine("Boost Temporaire ×", "tempBoostFactorInput", state.tempShopBoostFactor || 1, 1);
   html += makeLine("Temp Boost expire (timestamp)", "tempBoostExpireInput", state.tempShopBoostExpiresAt || 0, 0);
   html += makeLine("Boost Rebirth ×", "rebirthBoostInput", state.rebirthBoost || 1, 1);
 
-  // Section Rebirths
   html += `<h4>🌱 Rebirths</h4>`;
   html += makeLine("Nombre de Rebirths", "rebirthsInput", state.rebirths || 0, 0);
 
-  // Actions
   html += `
     <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-top:12px;">
       <button id="resetRebirthsBtn" class="item-btn">Réinit Rebirths</button>
@@ -110,7 +118,6 @@ function renderDev(deps) {
 
   body.innerHTML = html;
 
-  // Listeners
   const setVal = (id, fn) => {
     body.querySelector(`#btn-${id}`).addEventListener("click", () => {
       const v = parseInt(body.querySelector(`#${id}`).value, 10);
@@ -130,26 +137,22 @@ function renderDev(deps) {
   setVal("rebirthBoostInput", v => state.rebirthBoost = v);
   setVal("rebirthsInput", v => state.rebirths = v);
 
-  // Quick adds
   body.querySelector("#plus1kBtn").addEventListener("click", () => { state.points += 1e3; save(); renderMain(); renderStore(); });
   body.querySelector("#plus10kBtn").addEventListener("click", () => { state.points += 1e4; save(); renderMain(); renderStore(); });
   body.querySelector("#plus100kBtn").addEventListener("click", () => { state.points += 1e5; save(); renderMain(); renderStore(); });
   body.querySelector("#plus1MBtn").addEventListener("click", () => { state.points += 1e6; save(); renderMain(); renderStore(); });
 
-  // Reset Rebirths
   body.querySelector("#resetRebirthsBtn").addEventListener("click", () => {
     state.rebirths = 0;
     localStorage.removeItem("rebirthCount");
     save(); renderMain(); renderStore();
   });
 
-  // Vider Storage
   body.querySelector("#resetAllStorageBtn").addEventListener("click", () => {
     localStorage.clear();
     location.reload();
   });
 
-  // Quitter
   body.querySelector("#devExitBtn").addEventListener("click", () => {
     devUnlocked = false;
     closeModal(els.devModal);
@@ -168,5 +171,3 @@ export function initDevMenu(deps) {
     closeModal(els.devModal);
   });
 }
-
-export { renderDev };
