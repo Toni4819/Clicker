@@ -109,7 +109,7 @@ function costFor(base, owned) {
 
 // ─── Imports ───
 import { formatCompact, toggleFormatMode }              from "./modules/formatters.js";
-import { machines }                   from "./machines.js";
+import { machines }                   from "./menus/machines.js";
 import { initUpgrades }               from "./menus/upgrades.js";
 import { initDevMenu }                from "./menus/dev.js";
 import { initRebirthSystem }          from "./rebirthSystem.js";
