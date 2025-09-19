@@ -62,7 +62,7 @@ const urlsToCache = [
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(async cache => {
-      const results = await Promise.allSettled(
+      await Promise.allSettled(
         urlsToCache.map(async url => {
           try {
             const resp = await fetch(url);
@@ -102,7 +102,8 @@ self.addEventListener('fetch', event => {
     event.respondWith(
       fetch(event.request)
         .then(resp => {
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, resp.clone()));
+          const respClone = resp.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, respClone));
           return resp;
         })
         .catch(() => caches.match('/index.html'))
@@ -117,7 +118,8 @@ self.addEventListener('fetch', event => {
         if (cached) return cached;
         return fetch(event.request)
           .then(resp => {
-            caches.open(CACHE_NAME).then(cache => cache.put(event.request, resp.clone()));
+            const respClone = resp.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, respClone));
             return resp;
           });
       })
