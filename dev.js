@@ -194,14 +194,14 @@ export function initDevMenu(deps) {
   });
 }
 
-async function checkDevCode(input) {
+((async function checkDevCode(input) {
   const code = input.trim();                     // enlève espaces avant/après
   const computedHash = await hashString(code + salt);
   console.log("🔍 code saisi      :", `"${code}"`);
   console.log("🔍 hash calculé   :", computedHash);
   console.log("🔍 hash attendu   :", expectedHash);
   return computedHash === expectedHash;
-}
+})();
 
 
 (async () => {
