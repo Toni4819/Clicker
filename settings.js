@@ -1,13 +1,13 @@
 // settings.js
-export function initSettings({ els, resetProgress }) {
-  // Récupère le placeholder
+export function initSettings({ els, state, keys, save, renderMain }) {
+  // Création/configuration du modal
   const modal = document.getElementById("settingsModal");
   modal.className = "modal";
   modal.setAttribute("aria-hidden", "true");
   modal.setAttribute("role", "dialog");
   modal.setAttribute("aria-labelledby", "settingsTitle");
 
-  // Injecte le markup du modal
+  // Contenu du modal
   modal.innerHTML = `
     <div class="modal-content">
       <header class="modal-header">
@@ -36,10 +36,8 @@ export function initSettings({ els, resetProgress }) {
     document.body.classList.remove("modal-open");
   }
 
-  // Bind sur le ⚙️
-  els.settingsBtn.addEventListener("click", () => {
-    openSettings();
-  });
+  // Événement ouverture via ⚙️
+  els.settingsBtn.addEventListener("click", openSettings);
 
   // Fermeture
   els.closeSettingsBtn.addEventListener("click", closeSettings);
@@ -47,11 +45,25 @@ export function initSettings({ els, resetProgress }) {
     if (e.target === modal) closeSettings();
   });
 
-  // Reset
+  // Logique de reset (fusionnée depuis reset.js)
   els.resetBtn.addEventListener("click", () => {
-    if (confirm("⚠️ Tout votre progrès sera perdu. Voulez-vous vraiment réinitialiser ?")) {
-      closeSettings();
-      resetProgress();
+    const confirmReset = confirm(
+      "⚠️ Réinitialiser TOUT, y compris les Rebirths ? Cette action est irréversible."
+    );
+    if (!confirmReset) return;
+
+    // Réinitialisation ciblée
+    for (const k of keys) {
+      if (k === "shopBoost") continue;           // on conserve le boost shop
+      if (k === "pointsPerClick") state[k] = 1;  // clic manuel minimum
+      else state[k] = 0;
     }
+
+    state.rebirths = 0;
+    localStorage.removeItem("rebirthCount");
+
+    save();
+    renderMain();
+    closeSettings();
   });
 }
