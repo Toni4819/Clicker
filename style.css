@@ -451,7 +451,7 @@ input[type="text"] {
 .shop-tile .emoji { font-size: 2rem; }
 .shop-tile h3 { margin: 0.5rem 0; }
 
-/* Bouton Paramètres – styles étendus */
+/* Bouton Paramètres – remonté en haut à droite, sans aucun contour */
 #settingsBtn {
   position: fixed;
   top: 1rem;
@@ -460,36 +460,26 @@ input[type="text"] {
 
   background: none;
   border: none;
-  padding: 0.8rem;
-  border-radius: 50%;
-  font-size: 2rem;
+  padding: 1rem;
+  border-radius: var(--radius);
+  font-size: 2.5rem;
   line-height: 1;
-  color: #ffffff;
+  color: var(--fg);
   cursor: pointer;
 
-  /* Pour le contour au clic */
-  position: relative;
-  overflow: visible;
-}
-
-/* Contour statique invisible pour la mesure */
-#settingsBtn::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  transition: box-shadow 0.2s ease;
+  outline: none;
   box-shadow: none;
 }
 
-/* Au clic on “spawn” un contour lumineux */
-#settingsBtn:active::before {
-  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.8);
-}
-
-/* Optionnel : effet au survol */
 #settingsBtn:hover {
   background-color: rgba(255, 255, 255, 0.1);
 }
+
+#settingsBtn:focus,
+#settingsBtn:active {
+  outline: none;
+  box-shadow: none;
+}
+
 
 
