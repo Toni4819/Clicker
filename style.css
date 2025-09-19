@@ -494,5 +494,8 @@ input[type="text"] {
 /* ———————————————————————————— */
 
 
+.coin-drop:hover {
+  transform: scale(1.2);
+}
 
 
