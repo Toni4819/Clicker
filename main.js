@@ -108,15 +108,16 @@ function costFor(base, owned) {
 }
 
 // ─── Imports ───
-import { formatCompact, toggleFormatMode }              from "./formatters.js";
+import { formatCompact, toggleFormatMode }              from "./modules/formatters.js";
 import { machines }                   from "./machines.js";
 import { initUpgrades }               from "./upgrades.js";
 import { initDevMenu }                from "./dev.js";
 import { initRebirthSystem }          from "./rebirthSystem.js";
-import { initStats }                  from "./stats.js";
-import { animateClick, animatePassive } from "./animations.js";
+import { initStats }                  from "./modules/stats.js";
+import { animateClick, animatePassive } from "./modules/animations.js";
 import { initShop }                   from "./shop.js";
 import { initSettings } from "./settings.js";
+import { initCoinDrop } from "./modules/initCoinDrop.js";
 
 // ─── Sélecteurs DOM ───
 const els = {
@@ -273,6 +274,7 @@ initSettings({
     save,
     renderMain
   });
+initCoinDrop({ els, state, save, renderMain });
 
 // Sauvegarde avant fermeture
 window.addEventListener("beforeunload", save);
