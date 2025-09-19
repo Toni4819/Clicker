@@ -451,35 +451,48 @@ input[type="text"] {
 .shop-tile .emoji { font-size: 2rem; }
 .shop-tile h3 { margin: 0.5rem 0; }
 
-/* Bouton Paramètres – remonté en haut à droite, sans aucun contour */
+/* ————— Bouton Paramètres ————— */
 #settingsBtn {
   position: fixed;
   top: 1rem;
   right: 1rem;
   z-index: 1000;
 
+  width: 3rem;
+  height: 3rem;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
   background: none;
   border: none;
-  padding: 1rem;
-  border-radius: var(--radius);
-  font-size: 2.5rem;
-  line-height: 1;
+  border-radius: 50%;
+  font-size: 1.75rem;
   color: var(--fg);
   cursor: pointer;
 
   outline: none;
   box-shadow: none;
+
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 #settingsBtn:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: rgba(255, 255, 255, 0.08);
 }
 
-#settingsBtn:focus,
 #settingsBtn:active {
-  outline: none;
-  box-shadow: none;
+  background-color: rgba(255, 255, 255, 0.15);
 }
+
+#settingsBtn:focus {
+  outline: none;
+}
+/* ———————————————————————————— */
+
 
 
 
