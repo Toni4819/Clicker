@@ -1,38 +1,60 @@
-const CACHE_NAME = 'clicker-cache-v3';
+const CACHE_NAME = 'clicker-cache-v4';
 
-// Génération dynamique des icônes
+// Fichiers JS dans la racine
+const rootJS = [
+  'main.js',
+  'rebirthSystem.js'
+];
+
+// Fichiers JS dans /menus/
+const menuJS = [
+  'dev.js',
+  'machines.js',
+  'settings.js',
+  'shop.js',
+  'upgrades.js'
+].map(file => `/menus/${file}`);
+
+// Fichiers JS dans /modules/
+const moduleJS = [
+  'animations.js',
+  'formatters.js',
+  'initCoinDrop.js',
+  'stats.js'
+].map(file => `/modules/${file}`);
+
+// Fichiers statiques
+const staticFiles = [
+  '/',
+  '/index.html',
+  '/style.css',
+  '/site.webmanifest'
+];
+
+// Icônes Android, Apple, MS, favicon
 const androidSizes = [36, 48, 72, 96, 144, 192];
 const appleSizes = [57, 60, 72, 76, 114, 120, 144, 152, 180];
 const msSizes = [70, 144, 150, 310];
 const faviconSizes = [16, 32, 96];
 
 const iconPaths = [
-  '/images/favicon.ico',
-  '/images/apple-icon.png',
-  '/images/apple-icon-precomposed.png',
-  '/images/browserconfig.xml',
-  '/images/favicon.svg',
-  ...androidSizes.map(size => `/images/android-icon-${size}x${size}.png`),
-  ...appleSizes.map(size => `/images/apple-icon-${size}x${size}.png`),
-  ...msSizes.map(size => `/images/ms-icon-${size}x${size}.png`),
-  ...faviconSizes.map(size => `/images/favicon-${size}x${size}.png`)
-];
+  'favicon.ico',
+  'apple-icon.png',
+  'apple-icon-precomposed.png',
+  'browserconfig.xml',
+  'favicon.svg',
+  ...androidSizes.map(size => `android-icon-${size}x${size}.png`),
+  ...appleSizes.map(size => `apple-icon-${size}x${size}.png`),
+  ...msSizes.map(size => `ms-icon-${size}x${size}.png`),
+  ...faviconSizes.map(size => `favicon-${size}x${size}.png`)
+].map(file => `/images/${file}`);
 
+// Liste finale à cacher
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/style.css',
-  '/main.js',
-  '/machines.js',
-  '/upgrades.js',
-  '/animations.js',
-  '/dev.js',
-  '/settings.js',
-  '/shop.js',
-  '/rebirthSystem.js',
-  '/stats.js',
-  '/formatters.js',
-  '/site.webmanifest',
+  ...staticFiles,
+  ...rootJS.map(file => `/${file}`),
+  ...menuJS,
+  ...moduleJS,
   ...iconPaths
 ];
 
