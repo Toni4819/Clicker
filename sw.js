@@ -11,7 +11,6 @@ const urlsToCache = [
   '/settings.js',
   '/shop.js',
   '/rebirthSystem.js',
-  '/reset.js',
   '/stats.js',
   '/formatters.js',
   '/image/favicon-96x96.png',
