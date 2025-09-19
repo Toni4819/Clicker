@@ -1,4 +1,4 @@
-import { machines } from "../machines.js";
+import { machines } from "/machines.js";
 
 let storeInterval = null;
 
