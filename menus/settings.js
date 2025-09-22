@@ -1,6 +1,6 @@
 // menus/settings.js
 
-// ─── Utilitaires AES-GCM / PBKDF2 ───
+// ─── 🔐 Utilitaires AES-GCM / PBKDF2 ───
 const enc = new TextEncoder();
 const dec = new TextDecoder();
 
@@ -61,9 +61,8 @@ async function decryptData(b64Combined, password) {
   return dec.decode(plainBuffer);
 }
 
-// ─── Initialisation du menu Settings ───
+// ─── ⚙️ Initialisation du menu Settings ───
 export function initSettings({ els, state, keys, save, renderMain }) {
-  // Création du modal et de son contenu
   const modal = document.getElementById("settingsModal");
   modal.className = "modal";
   modal.setAttribute("aria-hidden", "true");
@@ -77,10 +76,8 @@ export function initSettings({ els, state, keys, save, renderMain }) {
       </header>
       <div class="modal-body" id="settingsBody" style="flex:1;display:flex;flex-direction:column;gap:16px;">
         <button id="loginBtn" class="btn">🔑 Se connecter</button>
-        <div style="display:flex;gap:8px;">
-          <button id="saveExportBtn" class="btn" style="margin-top:8px;width:100%;">Enregistrer</button>
-          <button id="applyImportBtn" class="btn" style="margin-top:8px;width:100%;">Importer</button>
-        </div>
+        <button id="exportBtn" class="btn" style="width:100%;">📤 Exporter</button>
+        <button id="importBtn" class="btn" style="width:100%;">📥 Importer</button>
         <div style="flex:1;"></div>
         <div style="display:flex;justify-content:center;">
           <button id="resetBtn" class="btn footer-reset">↺ Reset total</button>
@@ -89,19 +86,19 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     </div>
   `;
 
-  // Références DOM
+  // 🔗 Références DOM
   els.closeSettingsBtn = modal.querySelector("#closeSettingsBtn");
   els.resetBtn         = modal.querySelector("#resetBtn");
   els.loginBtn         = modal.querySelector("#loginBtn");
   els.exportBtn        = modal.querySelector("#exportBtn");
   els.importBtn        = modal.querySelector("#importBtn");
 
-  // Containers cachés pour Export/Import
+  // 📦 Containers dynamiques
   const exportContainer = document.createElement("div");
   exportContainer.style.display = "none";
   exportContainer.innerHTML = `
     <textarea id="exportText" rows="5" style="width:100%;margin-top:8px;"></textarea>
-    <button id="saveExportBtn" class="btn" style="margin-top:8px;">Enregistrer</button>
+    <button id="saveExportBtn" class="btn" style="margin-top:8px;width:100%;">💾 Enregistrer</button>
   `;
   modal.querySelector(".modal-body").appendChild(exportContainer);
 
@@ -109,11 +106,11 @@ export function initSettings({ els, state, keys, save, renderMain }) {
   importContainer.style.display = "none";
   importContainer.innerHTML = `
     <textarea id="importText" rows="5" style="width:100%;margin-top:8px;"></textarea>
-    <button id="applyImportBtn" class="btn" style="margin-top:8px;">Importer</button>
+    <button id="applyImportBtn" class="btn" style="margin-top:8px;width:100%;">📂 Importer</button>
   `;
   modal.querySelector(".modal-body").appendChild(importContainer);
 
-  // Ouvre/ferme
+  // 🪟 Ouvre/ferme le modal
   function openSettings() {
     modal.setAttribute("aria-hidden", "false");
     document.body.classList.add("modal-open");
@@ -121,30 +118,27 @@ export function initSettings({ els, state, keys, save, renderMain }) {
   function closeSettings() {
     modal.setAttribute("aria-hidden", "true");
     document.body.classList.remove("modal-open");
-    // Cacher les containers après fermeture
     exportContainer.style.display = "none";
     importContainer.style.display = "none";
   }
 
-  // Reset total (inchangé)
+  // 🔄 Reset total
   function performFullReset() {
-    const confirmReset = confirm(
-      "⚠️ Réinitialiser TOUT le stockage local et remettre les clics à 1 ?"
-    );
+    const confirmReset = confirm("⚠️ Réinitialiser TOUT le stockage local et remettre les clics à 1 ?");
     if (!confirmReset) return;
     localStorage.clear();
     for (const k of keys) state[k] = 0;
-    state.pointsPerClick      = 1;
-    state.shopBoost           = 1;
-    state.tempShopBoostFactor = 1;
+    state.pointsPerClick         = 1;
+    state.shopBoost              = 1;
+    state.tempShopBoostFactor    = 1;
     state.tempShopBoostExpiresAt = 0;
-    state.rebirths            = 0;
+    state.rebirths               = 0;
     save();
     renderMain();
     closeSettings();
   }
 
-  // Événements globaux
+  // 🧠 Événements
   els.settingsBtn.addEventListener("click", openSettings);
   els.closeSettingsBtn.addEventListener("click", closeSettings);
   modal.addEventListener("click", e => {
@@ -155,12 +149,12 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     console.log("Fonction de connexion à implémenter");
   });
 
-  // ─── Export chiffré ───
+  // 📤 Export chiffré
   els.exportBtn.addEventListener("click", async () => {
     const password = prompt("🔑 Mot de passe pour chiffrer l’export :");
     if (!password) return;
 
-    importContainer.style.display = "none"; // cacher l’import
+    importContainer.style.display = "none";
     try {
       const dataStr = JSON.stringify(state);
       const encrypted = await encryptData(dataStr, password);
@@ -180,17 +174,17 @@ export function initSettings({ els, state, keys, save, renderMain }) {
         URL.revokeObjectURL(url);
       };
     } catch (err) {
-      console.error("Chiffrement impossible", err);
+      console.error("❌ Chiffrement impossible", err);
       alert("Erreur lors de l’export chiffré.");
     }
   });
 
-  // ─── Import chiffré ───
+  // 📥 Import chiffré
   els.importBtn.addEventListener("click", () => {
     const password = prompt("🔑 Mot de passe pour déchiffrer l’import :");
     if (!password) return;
 
-    exportContainer.style.display = "none"; // cacher l’export
+    exportContainer.style.display = "none";
     importContainer.style.display = "flex";
 
     const applyBtn = importContainer.querySelector("#applyImportBtn");
@@ -212,9 +206,9 @@ export function initSettings({ els, state, keys, save, renderMain }) {
         save();
         renderMain();
         closeSettings();
-        alert("Import réussi !");
+        alert("✅ Import réussi !");
       } catch (err) {
-        console.error("Déchiffrement/parse impossible", err);
+        console.error("❌ Déchiffrement/parse impossible", err);
         alert("Mot de passe incorrect ou texte invalide.");
       }
     };
