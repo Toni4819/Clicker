@@ -209,33 +209,54 @@ body.modal-open {
 }
 
 /* Modales, listes, inputs… */
-.modal {
+.modal,
+.modal-second {
   position: fixed;
   inset: 0;
   display: none;
   align-items: center;
   justify-content: center;
   background: rgba(0,0,0,0.55);
-  overflow: hidden; /* un seul scroll, géré par .modal-content */
+  overflow: hidden;
   padding: 16px;
-  z-index: 1001;
 }
 
-.modal[aria-hidden="false"] {
+.modal[aria-hidden="false"],
+.modal-second[aria-hidden="false"] {
   display: flex;
 }
 
-.modal-content {
+.modal {
+  z-index: 1001;
+}
+
+.modal-second {
+  z-index: 2000; /* au-dessus de .modal */
+  background: rgba(0,0,0,0.6);
+}
+
+/* Contenu des modales */
+.modal-content,
+.modal-second .modal-content {
   width: 100%;
   max-width: 760px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 16px;
-  overflow-y: auto; /* contenu scrollable uniquement */
   box-shadow: 0 10px 40px rgba(0,0,0,.5);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: 0; /* padding géré par header/body/footer */
 }
 
-.modal-header {
+.modal-second .modal-content {
+  max-width: 720px;
+}
+
+/* En-tête */
+.modal-header,
+.modal-second .modal-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -243,12 +264,24 @@ body.modal-open {
   border-bottom: 1px solid var(--border);
 }
 
-.modal-body {
+/* Corps */
+.modal-body,
+.modal-second .modal-body {
   padding: 16px;
   max-height: 80vh;
-  overflow: auto; /* laisser défiler si nécessaire */
+  overflow: auto;
 }
 
+/* Pied de page (secondaire uniquement) */
+.modal-second .modal-footer {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  padding: 14px 16px;
+  border-top: 1px solid var(--border);
+}
+
+/* Bouton de fermeture */
 .close-btn {
   background: transparent;
   border: none;
@@ -257,6 +290,7 @@ body.modal-open {
   cursor: pointer;
 }
 
+/* Sections et éléments */
 .section {
   margin-bottom: 16px;
 }
@@ -282,29 +316,6 @@ body.modal-open {
   gap: 6px;
   width: 100%;
   margin-top: 8px;
-}
-
-/* Modal secondaire (au-dessus du settings) */
-.modal-second {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2000; /* plus haut que le modal normal */
-}
-
-.modal-second .modal-content {
-  background: var(--bg, #fff);
-  border-radius: 8px;
-  max-width: 600px;
-  width: 90%;
-  padding: 16px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
 }
 
 
