@@ -53,7 +53,7 @@ async function decryptData(b64Combined, password) {
   return dec.decode(plainBuffer);
 }
 
-// 🛠 Création de modal
+// 🛠 Helper de création de modal
 function createModal({ title, content, buttons }) {
   const overlay = document.createElement("div");
   overlay.className = "modal-overlay";
@@ -98,19 +98,22 @@ export function initSettings({ els, state, keys, save, renderMain }) {
         <h2 id="settingsTitle">⚙️ Paramètres</h2>
         <button id="closeSettingsBtn" class="close-btn" aria-label="Fermer">✕</button>
       </header>
-      <div id="settingsBody" class="modal-body" style="flex:1;display:flex;flex-direction:column;gap:16px;">
+      <div class="modal-body" style="flex:1;display:flex;flex-direction:column;gap:16px;">
         
-        <!-- Ligne Export / Import -->
+        <!-- Se connecter (sans fonction) -->
+        <button id="loginBtn" class="btn" style="width:100%;">🔒 Se connecter</button>
+        
+        <!-- Exporter / Importer côte à côte -->
         <div id="rowEI" style="display:flex;gap:8px;">
           <button id="exportBtn" class="btn" style="flex:1;">📤 Exporter</button>
           <button id="importBtn" class="btn" style="flex:1;">📥 Importer</button>
         </div>
 
-        <!-- Liste des autres actions -->
-        <ul id="otherSettingsList" style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px;">
-          <li><button id="reloadBtn" class="btn">🔄 Recharger</button></li>
-          <li><button id="themeBtn" class="btn">🎨 Thème</button></li>
-          <li><button id="codesBtn" class="btn">💳 Codes</button></li>
+        <!-- Liste des autres actions (plein largeur) -->
+        <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px;">
+          <li><button id="reloadBtn" class="btn" style="width:100%;">🔄 Recharger</button></li>
+          <li><button id="themeBtn" class="btn" style="width:100%;">🌙 Thème</button></li>
+          <li><button id="codesBtn" class="btn" style="width:100%;">💳 Codes</button></li>
         </ul>
 
         <div style="flex:1;"></div>
@@ -123,6 +126,7 @@ export function initSettings({ els, state, keys, save, renderMain }) {
 
   // Références DOM
   els.closeSettingsBtn = modal.querySelector("#closeSettingsBtn");
+  els.loginBtn         = modal.querySelector("#loginBtn");
   els.resetBtn         = modal.querySelector("#resetBtn");
   els.exportBtn        = modal.querySelector("#exportBtn");
   els.importBtn        = modal.querySelector("#importBtn");
@@ -142,12 +146,12 @@ export function initSettings({ els, state, keys, save, renderMain }) {
   function performFullReset() {
     if (!confirm("⚠️ Réinitialiser TOUT le stockage local ?")) return;
     localStorage.clear();
-    keys.forEach(k => state[k] = 0);
-    state.pointsPerClick     = 1;
-    state.shopBoost          = 1;
-    state.tempShopBoostFactor= 1;
+    keys.forEach(k => (state[k] = 0));
+    state.pointsPerClick      = 1;
+    state.shopBoost           = 1;
+    state.tempShopBoostFactor = 1;
     state.tempShopBoostExpiresAt = 0;
-    state.rebirths           = 0;
+    state.rebirths            = 0;
     save();
     renderMain();
     closeSettings();
@@ -158,50 +162,96 @@ export function initSettings({ els, state, keys, save, renderMain }) {
   modal.addEventListener("click", e => { if (e.target === modal) closeSettings(); });
   els.resetBtn.addEventListener("click", performFullReset);
 
-  // Export chiffré
-  els.exportBtn.addEventListener("click", async () => {
-    const pwd = prompt("🔒 Mot de passe pour chiffrer l’export :");
-    if (!pwd) return;
-    try {
-      const dataStr   = JSON.stringify(state, null, 2);
-      const encrypted = await encryptData(dataStr, pwd);
-      createModal({
-        title: "Export chiffré",
-        content: `<textarea rows="10" style="width:100%;" readonly>${encrypted}</textarea>`,
-        buttons: [
-          {
-            text: "💾 Enregistrer",
-            onClick: () => {
-              const blob = new Blob([encrypted], { type: "text/plain" });
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement("a");
-              a.href = url; a.download = "clicker-state.txt"; a.click();
-              URL.revokeObjectURL(url);
-            }
-          },
-          { text: "Fermer", onClick: () => {}, closeOnClick: true }
-        ]
-      }).open();
-    } catch {
-      alert("Erreur lors de l’export chiffré.");
-    }
-  });
-
-  // Import chiffré
-  els.importBtn.addEventListener("click", () => {
-    const pwd = prompt("🔒 Mot de passe pour déchiffrer l’import :");
-    if (!pwd) return;
-    createModal({
-      title: "Import chiffré",
-      content: `<textarea id="importData" rows="10" style="width:100%;" placeholder="Collez le texte chiffré"></textarea>`,
+  // 📤 Exporter : un seul modal avec mot de passe → raw chiffré + copier + télécharger
+  els.exportBtn.addEventListener("click", () => {
+    const modalExport = createModal({
+      title: "Exporter les données",
+      content: `
+        <input id="pwdExport" type="password" placeholder="Mot de passe" style="width:100%;"/>
+        <textarea id="rawExport" rows="10" style="width:100%;margin-top:8px;display:none;" readonly></textarea>
+      `,
       buttons: [
         {
-          text: "Importer",
+          text: "Chiffrer",
           onClick: async () => {
+            const pwd = document.getElementById("pwdExport").value;
+            if (!pwd) return;
+            const dataStr = JSON.stringify(state, null, 2);
+            const encrypted = await encryptData(dataStr, pwd);
+            const ta = document.getElementById("rawExport");
+            ta.value = encrypted;
+            ta.style.display = "block";
+          },
+          closeOnClick: false
+        },
+        {
+          text: "Copier",
+          onClick: () => {
+            const ta = document.getElementById("rawExport");
+            navigator.clipboard.writeText(ta.value);
+          },
+          closeOnClick: false
+        },
+        {
+          text: "Télécharger",
+          onClick: () => {
+            const ta = document.getElementById("rawExport");
+            const blob = new Blob([ta.value], { type: "text/plain" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "export-clicker.txt";
+            a.click();
+            URL.revokeObjectURL(url);
+          },
+          closeOnClick: false
+        },
+        { text: "Fermer", onClick: () => {}, closeOnClick: true }
+      ]
+    });
+    modalExport.open();
+  });
+
+  // 📥 Importer : un seul modal avec mot de passe + raw chiffré → raw JSON déchiffré + copier + appliquer
+  els.importBtn.addEventListener("click", () => {
+    const modalImport = createModal({
+      title: "Importer les données",
+      content: `
+        <input id="pwdImport" type="password" placeholder="Mot de passe" style="width:100%;"/>
+        <textarea id="rawImport" rows="6" style="width:100%;margin-top:8px;" placeholder="Collez le texte chiffré"></textarea>
+        <textarea id="jsonImport" rows="10" style="width:100%;margin-top:8px;display:none;" readonly></textarea>
+      `,
+      buttons: [
+        {
+          text: "Déchiffrer",
+          onClick: async () => {
+            const pwd = document.getElementById("pwdImport").value;
+            const encrypted = document.getElementById("rawImport").value.trim();
+            if (!pwd || !encrypted) return;
             try {
-              const encrypted = document.getElementById("importData").value.trim();
               const decrypted = await decryptData(encrypted, pwd);
-              const imported  = JSON.parse(decrypted);
+              const ta2 = document.getElementById("jsonImport");
+              ta2.value = decrypted;
+              ta2.style.display = "block";
+            } catch {
+              alert("Mot de passe incorrect ou données invalides.");
+            }
+          },
+          closeOnClick: false
+        },
+        {
+          text: "Copier",
+          onClick: () => {
+            const ta2 = document.getElementById("jsonImport");
+            navigator.clipboard.writeText(ta2.value);
+          },
+          closeOnClick: false
+        },
+        {
+          text: "Appliquer",
+          onClick: () => {
+            try {
+              const imported = JSON.parse(document.getElementById("jsonImport").value);
               keys.forEach(k => { if (imported[k] != null) state[k] = imported[k]; });
               state.pointsPerClick      = imported.pointsPerClick      ?? 1;
               state.shopBoost           = imported.shopBoost           ?? 1;
@@ -211,22 +261,23 @@ export function initSettings({ els, state, keys, save, renderMain }) {
               save();
               renderMain();
               closeSettings();
-              alert("✅ Import réussi !");
             } catch {
-              alert("Mot de passe incorrect ou texte invalide.");
+              alert("Erreur en appliquant les données.");
             }
-          }
+          },
+          closeOnClick: true
         },
-        { text: "Annuler", onClick: () => {}, closeOnClick: true }
+        { text: "Fermer", onClick: () => {}, closeOnClick: true }
       ]
-    }).open();
+    });
+    modalImport.open();
   });
 
-  // Reload
+  // 🔄 Recharger
   els.reloadBtn.addEventListener("click", () => {
     createModal({
-      title: "Recharger les ressources",
-      content: `<p>Voulez-vous vraiment recharger la page ?</p>`,
+      title: "Recharger la page",
+      content: `<p>Voulez-vous vraiment recharger ?</p>`,
       buttons: [
         { text: "Recharger", onClick: () => window.location.reload() },
         { text: "Annuler", onClick: () => {}, closeOnClick: true }
@@ -234,7 +285,7 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     }).open();
   });
 
-  // Thème
+  // 🌙 Thème
   els.themeBtn.addEventListener("click", () => {
     createModal({
       title: "Choisir un thème",
@@ -247,7 +298,7 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     }).open();
   });
 
-  // Codes
+  // 💳 Codes
   els.codesBtn.addEventListener("click", () => {
     const validCodes = ["FREE"];
     function refreshList(ul) {
