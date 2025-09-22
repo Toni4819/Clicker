@@ -18,9 +18,9 @@ async function deriveKey(password, salt) {
 }
 
 async function encryptData(plainText, password) {
-  const salt = crypto.getRandomValues(new Uint8Array(16));
-  const iv   = crypto.getRandomValues(new Uint8Array(12));
-  const key  = await deriveKey(password, salt);
+  const salt   = crypto.getRandomValues(new Uint8Array(16));
+  const iv     = crypto.getRandomValues(new Uint8Array(12));
+  const key    = await deriveKey(password, salt);
   const cipher = await crypto.subtle.encrypt(
     { name: "AES-GCM", iv }, key, enc.encode(plainText)
   );
@@ -33,11 +33,11 @@ async function encryptData(plainText, password) {
 
 async function decryptData(b64, password) {
   const data    = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
-  const salt    = data.slice(0,16);
-  const iv      = data.slice(16,28);
+  const salt    = data.slice(0, 16);
+  const iv      = data.slice(16, 28);
   const payload = data.slice(28);
   const key     = await deriveKey(password, salt);
-  const plain   = await crypto.subtle.decrypt({ name:"AES-GCM", iv }, key, payload);
+  const plain   = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, payload);
   return dec.decode(plain);
 }
 
@@ -108,14 +108,14 @@ async function hardReload() {
   location.reload();
 }
 
-// ⚙️ Init Settings
+// ⚙️ Initialize Settings
 export function initSettings({ els, state, keys, save, renderMain }) {
-  // ==== SETTINGS MODAL (principal) ====
+  // SETTINGS MODAL (principal)
   const settingsModal = document.getElementById("settingsModal");
   settingsModal.className = "modal";
-  settingsModal.setAttribute("role","dialog");
-  settingsModal.setAttribute("aria-hidden","true");
-  settingsModal.setAttribute("aria-labelledby","settingsTitle");
+  settingsModal.setAttribute("role", "dialog");
+  settingsModal.setAttribute("aria-hidden", "true");
+  settingsModal.setAttribute("aria-labelledby", "settingsTitle");
   settingsModal.innerHTML = `
     <div class="modal-content" style="display:flex;flex-direction:column;height:100%;">
       <header class="modal-header">
@@ -141,7 +141,7 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     </div>
   `;
 
-  // Références DOM
+  // DOM references
   els.settingsBtn      = document.getElementById("settingsBtn");
   els.closeSettingsBtn = settingsModal.querySelector("#closeSettingsBtn");
   els.loginBtn         = settingsModal.querySelector("#loginBtn");
@@ -153,11 +153,11 @@ export function initSettings({ els, state, keys, save, renderMain }) {
   els.resetBtn         = settingsModal.querySelector("#resetBtn");
 
   function openSettings() {
-    settingsModal.setAttribute("aria-hidden","false");
+    settingsModal.setAttribute("aria-hidden", "false");
     document.body.classList.add("modal-open");
   }
   function closeSettings() {
-    settingsModal.setAttribute("aria-hidden","true");
+    settingsModal.setAttribute("aria-hidden", "true");
     document.body.classList.remove("modal-open");
   }
 
@@ -167,7 +167,7 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     if (e.target === settingsModal) closeSettings();
   });
 
-  // ==== RESET TOTAL ====
+  // Reset total
   els.resetBtn.addEventListener("click", () => {
     if (!confirm("⚠️ Tout réinitialiser ?")) return;
     localStorage.clear();
@@ -180,18 +180,34 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     save(); renderMain(); closeSettings();
   });
 
-  // ==== EXPORT (chiffré) ====
+  // EXPORT (chiffré)
   els.exportBtn.addEventListener("click", () => {
-    const uid     = generateUID();
-    const pwdId   = `exportPwd-${uid}`;
-    const rawId   = `exportRaw-${uid}`;
+    const uid   = generateUID();
+    const pwdId = `exportPwd-${uid}`;
+    const rawId = `exportRaw-${uid}`;
 
     createModal({
       title: "Exporter les données (chiffré)",
       content: `
-        <p>Entrez un mot de passe :</p>
-        <input id="${pwdId}" type="password" placeholder="Mot de passe" style="width:100%;" />
-        <textarea id="${rawId}" rows="8" style="width:100%;margin-top:8px;" readonly></textarea>
+        <form autocomplete="off" style="display:flex;flex-direction:column;gap:8px;">
+          <label for="${pwdId}">Mot de passe</label>
+          <input
+            id="${pwdId}"
+            name="new-password"
+            type="password"
+            autocomplete="new-password"
+            placeholder="Mot de passe"
+            style="width:100%;"
+          />
+          <label for="${rawId}">Bloc chiffré (Base64)</label>
+          <textarea
+            id="${rawId}"
+            name="export-data"
+            rows="8"
+            style="width:100%;"
+            readonly
+          ></textarea>
+        </form>
       `,
       buttons: [
         {
@@ -200,11 +216,10 @@ export function initSettings({ els, state, keys, save, renderMain }) {
           onClick: async () => {
             const pwdEl = document.getElementById(pwdId);
             const outEl = document.getElementById(rawId);
-            const pwd = pwdEl.value.trim();
+            const pwd   = pwdEl.value.trim();
             if (!pwd) { alert("Mot de passe requis"); return false; }
-            const plain = JSON.stringify(state, null, 2);
-            outEl.value = await encryptData(plain, pwd);
-            return false; // ne ferme pas
+            outEl.value = await encryptData(JSON.stringify(state, null, 2), pwd);
+            return false;
           },
           closeOnClick: false
         },
@@ -225,7 +240,7 @@ export function initSettings({ els, state, keys, save, renderMain }) {
           onClick: () => {
             const outEl = document.getElementById(rawId);
             if (!outEl.value) { alert("Générez d’abord"); return false; }
-            const blob = new Blob([outEl.value],{type:"text/plain"});
+            const blob = new Blob([outEl.value], { type: "text/plain" });
             const url  = URL.createObjectURL(blob);
             const a    = document.createElement("a");
             a.href = url; a.download = "clicker-export.enc"; a.click();
@@ -239,18 +254,34 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     }).open();
   });
 
-  // ==== IMPORT (chiffré) ====
+  // IMPORT (chiffré)
   els.importBtn.addEventListener("click", () => {
-    const uid     = generateUID();
-    const encId   = `importEnc-${uid}`;
-    const pwdId   = `importPwd-${uid}`;
+    const uid   = generateUID();
+    const encId = `importEnc-${uid}`;
+    const pwdId = `importPwd-${uid}`;
 
     createModal({
       title: "Importer les données (chiffré)",
       content: `
-        <p>Collez le texte chiffré puis le mot de passe :</p>
-        <textarea id="${encId}" rows="8" style="width:100%;" placeholder="Bloc base64"></textarea>
-        <input id="${pwdId}" type="password" placeholder="Mot de passe" style="width:100%;margin-top:8px;" />
+        <form autocomplete="off" style="display:flex;flex-direction:column;gap:8px;">
+          <label for="${encId}">Bloc chiffré (Base64)</label>
+          <textarea
+            id="${encId}"
+            name="encrypted-data"
+            rows="8"
+            style="width:100%;"
+            placeholder="Collez le texte chiffré"
+          ></textarea>
+          <label for="${pwdId}">Mot de passe</label>
+          <input
+            id="${pwdId}"
+            name="current-password"
+            type="password"
+            autocomplete="current-password"
+            placeholder="Mot de passe"
+            style="width:100%;"
+          />
+        </form>
       `,
       buttons: [
         {
@@ -284,7 +315,7 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     }).open();
   });
 
-  // ==== CODES promo ====
+  // CODES promotionnels
   els.codesBtn.addEventListener("click", () => {
     const uid        = generateUID();
     const inputId    = `codeInput-${uid}`;
@@ -302,9 +333,9 @@ export function initSettings({ els, state, keys, save, renderMain }) {
           text: "Valider",
           className: "btn btn-primary",
           onClick: () => {
-            const inp = document.getElementById(inputId);
+            const inp  = document.getElementById(inputId);
             const code = inp.value.trim().toUpperCase();
-            let used   = JSON.parse(localStorage.getItem("usedCodes")||"[]");
+            let used   = JSON.parse(localStorage.getItem("usedCodes") || "[]");
             if (!code) return false;
             if (used.includes(code)) {
               alert("Déjà utilisé");
@@ -329,8 +360,7 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     });
 
     modal.open();
-    // remplir la liste existante
-    const used = JSON.parse(localStorage.getItem("usedCodes")||"[]");
+    const used = JSON.parse(localStorage.getItem("usedCodes") || "[]");
     const ul   = document.getElementById(usedListId);
     ul.innerHTML = "";
     used.forEach(c => {
@@ -340,13 +370,13 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     });
   });
 
-  // ==== RELOAD (confirm natif + cleanup) ====
+  // RELOAD (confirm natif + cleanup)
   els.reloadBtn.addEventListener("click", async () => {
     if (!confirm("Voulez-vous vraiment vider le cache et recharger ?")) return;
     await hardReload();
   });
 
-  // ==== Stubs Login & Thème ====
+  // Stubs Login & Thème
   els.loginBtn.addEventListener("click", () => {
     alert("Connexion à implémenter");
   });
