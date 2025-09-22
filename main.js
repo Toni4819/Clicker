@@ -116,7 +116,7 @@ import { initRebirthSystem }          from "./rebirthSystem.js";
 import { initStats }                  from "./modules/stats.js";
 import { animateClick, animatePassive } from "./modules/animations.js";
 import { initShop }                   from "./menus/shop.js";
-import { initSettings } from "./menus/settings.js";
+import { initSettings, openSettings } from "./menus/settings.js";
 import { initCoinDrop } from "./modules/initCoinDrop.js";
 
 // ─── Sélecteurs DOM ───
@@ -268,12 +268,12 @@ initShop({
   formatCompact
 });
 initSettings({
-    els,
-    state,
-    keys,
-    save,
-    renderMain
-  });
+  state,
+  save,
+  renderMain,
+  performHardReload, // si présent
+});
+
 initCoinDrop({ els, state, save, renderMain });
 
 // Sauvegarde avant fermeture
