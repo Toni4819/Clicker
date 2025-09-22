@@ -41,7 +41,7 @@ async function decryptData(b64, password) {
   return dec.decode(plain);
 }
 
-// 🛠 createModal helper (second modal)
+// 🛠 createModal helper (second modal, au-dessus du settings)
 function createModal({ title, content, buttons }) {
   const overlay = document.createElement("div");
   overlay.className = "modal-second";
@@ -183,4 +183,116 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     createModal({
       title: "Importer les données",
       content: `
-        <textarea id="importRaw" rows="8" style="width:100%;" placeholder="Collez le JSON brut
+        <textarea id="importRaw" rows="8" style="width:100%;" placeholder="Collez le JSON brut"></textarea>
+      `,
+      buttons: [
+        {
+          text: "Appliquer",
+          onClick: () => {
+            try {
+              const raw = document.getElementById("importRaw").value.trim();
+              const data = JSON.parse(raw);
+              keys.forEach(k => { if (data[k] != null) state[k] = data[k]; });
+              state.pointsPerClick         = data.pointsPerClick         ?? 1;
+              state.shopBoost              = data.shopBoost              ?? 1;
+              state.tempShopBoostFactor    = data.tempShopBoostFactor    ?? 1;
+              state.tempShopBoostExpiresAt = data.tempShopBoostExpiresAt ?? 0;
+              state.rebirths               = data.rebirths               ?? 0;
+              save(); renderMain(); closeSettings();
+            } catch {
+              alert("JSON invalide");
+            }
+          },
+          closeOnClick: true
+        },
+        { text: "Fermer", onClick: () => {}, closeOnClick: true }
+      ]
+    }).open();
+  });
+
+  // CODES modal
+  els.codesBtn.addEventListener("click", () => {
+    const modal = createModal({
+      title: "Codes promotionnels",
+      content: `
+        <input id="codeInput" style="width:100%;" placeholder="Entrez le code" />
+        <h4>Déjà utilisés :</h4>
+        <ul id="usedList" style="padding-left:20px;"></ul>
+      `,
+      buttons: [
+        {
+          text: "Valider",
+          onClick: () => {
+            const code = document.getElementById("codeInput").value.trim().toUpperCase();
+            let used   = JSON.parse(localStorage.getItem("usedCodes")||"[]");
+            if (!code) return;
+            if (used.includes(code)) {
+              alert("Déjà utilisé");
+            } else {
+              used.push(code);
+              localStorage.setItem("usedCodes", JSON.stringify(used));
+              alert("Code appliqué !");
+              const ul = document.getElementById("usedList");
+              ul.innerHTML = "";
+              used.forEach(c => {
+                const li = document.createElement("li");
+                li.textContent = c;
+                ul.appendChild(li);
+              });
+            }
+          },
+          closeOnClick: false
+        },
+        { text: "Fermer", onClick: () => {}, closeOnClick: true }
+      ]
+    });
+    modal.open();
+    // Remplir la liste des codes déjà utilisés à l’ouverture
+    const ul = document.getElementById("usedList");
+    const used = JSON.parse(localStorage.getItem("usedCodes")||"[]");
+    ul.innerHTML = "";
+    used.forEach(c => {
+      const li = document.createElement("li");
+      li.textContent = c;
+      ul.appendChild(li);
+    });
+  });
+
+  // RELOAD modal (vide caches + SW + localStorage, puis reload)
+  els.reloadBtn.addEventListener("click", () => {
+    createModal({
+      title: "Recharger la page",
+      content: `<p>Voulez-vous vraiment vider le cache et recharger ?</p>`,
+      buttons: [
+        {
+          text: "Recharger",
+          onClick: async () => {
+            try {
+              if ('caches' in window) {
+                const names = await caches.keys();
+                await Promise.all(names.map(n => caches.delete(n)));
+              }
+              if ('serviceWorker' in navigator) {
+                const regs = await navigator.serviceWorker.getRegistrations();
+                await Promise.all(regs.map(reg => reg.unregister()));
+              }
+            } catch (e) {
+              console.warn("Nettoyage cache/SW a échoué (non bloquant):", e);
+            }
+            localStorage.clear();
+            location.reload(true);
+          }
+        },
+        { text: "Annuler", onClick: () => {}, closeOnClick: true }
+      ]
+    }).open();
+  });
+
+  // Se connecter & Thème (stubs)
+  els.loginBtn.addEventListener("click", () => {
+    alert("Fonction de connexion à implémenter");
+  });
+  els.themeBtn.addEventListener("click", () => {
+    alert("Changement de thème à implémenter");
+  });
+}
