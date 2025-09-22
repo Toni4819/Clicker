@@ -20,7 +20,7 @@ html, body {
   padding: 0;
   background: var(--bg);
   color: var(--fg);
-  font-family: -apple-system, system-ui, sans-serif;
+  font-family: -apple-system, system-ui, "Segoe UI", Roboto, Inter, sans-serif;
   -ms-user-select: none;
   -moz-user-select: none;
   -webkit-user-select: none;
@@ -28,6 +28,7 @@ html, body {
   overflow: hidden;
   height: 100%;
 }
+
 
 
 html {
