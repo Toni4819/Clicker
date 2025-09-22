@@ -1,5 +1,5 @@
 // main.js
-console.log("✅ main.js chargé !");
+console.log("✅ script principal chargé !");
 
 // ─── Clés et état (localStorage) ───
 const keys = [
@@ -267,6 +267,9 @@ initShop({
   closeModal,
   formatCompact
 });
+
+const els = {}; // ← ajoute cette ligne AVANT
+
 initSettings({ els, state, keys, save, renderMain });
 
 initCoinDrop({ els, state, save, renderMain });
