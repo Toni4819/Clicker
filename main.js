@@ -267,11 +267,7 @@ initShop({
   closeModal,
   formatCompact
 });
-initSettings({
-  state,
-  save,
-  renderMain
-});
+initSettings({ els, state, keys, save, renderMain });
 
 initCoinDrop({ els, state, save, renderMain });
 
