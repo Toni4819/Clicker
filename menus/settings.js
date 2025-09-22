@@ -32,7 +32,7 @@ async function encryptData(plainText, password) {
 }
 
 async function decryptData(b64, password) {
-  const data    = Uint8Array.from(atob(b64), c=>c.charCodeAt(0));
+  const data    = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
   const salt    = data.slice(0,16);
   const iv      = data.slice(16,28);
   const payload = data.slice(28);
@@ -41,7 +41,36 @@ async function decryptData(b64, password) {
   return dec.decode(plain);
 }
 
-// 🛠 createModal helper (second modal, au-dessus du settings)
+// 🧹 Hard reload helpers (native confirm + full cleanup)
+async function hardReload() {
+  try {
+    if ("caches" in window) {
+      const names = await caches.keys();
+      await Promise.all(names.map(n => caches.delete(n)));
+    }
+    if ("serviceWorker" in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(reg => reg.unregister()));
+    }
+    // Clear localStorage and sessionStorage
+    try { localStorage.clear(); } catch {}
+    try { sessionStorage.clear(); } catch {}
+    // Attempt IndexedDB clear (if supported)
+    const idb = indexedDB;
+    if (idb && idb.databases) {
+      const dbs = await idb.databases();
+      await Promise.all((dbs || []).map(db => db && db.name ? new Promise(res => {
+        const req = idb.deleteDatabase(db.name);
+        req.onsuccess = req.onerror = req.onblocked = () => res();
+      }) : Promise.resolve()));
+    }
+  } catch (e) {
+    console.warn("Cleanup encountered a non-blocking error:", e);
+  }
+  location.reload();
+}
+
+// 🛠 createModal helper (secondary modal, styled buttons)
 function createModal({ title, content, buttons }) {
   const overlay = document.createElement("div");
   overlay.className = "modal-second";
@@ -61,9 +90,10 @@ function createModal({ title, content, buttons }) {
   buttons.forEach(cfg => {
     const btn = document.createElement("button");
     btn.textContent = cfg.text;
-    btn.addEventListener("click", () => {
-      cfg.onClick();
-      if (cfg.closeOnClick !== false) document.body.removeChild(overlay);
+    btn.className = cfg.className || "btn btn-secondary";
+    btn.addEventListener("click", async () => {
+      const res = await cfg.onClick?.();
+      if (cfg.closeOnClick !== false && res !== false) document.body.removeChild(overlay);
     });
     footer.appendChild(btn);
   });
@@ -81,9 +111,9 @@ function createModal({ title, content, buttons }) {
 export function initSettings({ els, state, keys, save, renderMain }) {
   const settingsModal = document.getElementById("settingsModal");
   settingsModal.className = "modal";
-  settingsModal.setAttribute("role","dialog");
-  settingsModal.setAttribute("aria-hidden","true");
-  settingsModal.setAttribute("aria-labelledby","settingsTitle");
+  settingsModal.setAttribute("role", "dialog");
+  settingsModal.setAttribute("aria-hidden", "true");
+  settingsModal.setAttribute("aria-labelledby", "settingsTitle");
   settingsModal.innerHTML = `
     <div class="modal-content" style="display:flex;flex-direction:column;height:100%;">
       <header class="modal-header">
@@ -91,15 +121,15 @@ export function initSettings({ els, state, keys, save, renderMain }) {
         <button id="closeSettingsBtn" class="close-btn" aria-label="Fermer">✕</button>
       </header>
       <div class="modal-body" style="flex:1;display:flex;flex-direction:column;gap:16px;">
-        <button id="loginBtn" class="btn" style="width:100%;">🔒 Se connecter</button>
+        <button id="loginBtn" class="btn btn-secondary" style="width:100%;">🔒 Se connecter</button>
         <div id="rowEI" style="display:flex;gap:8px;">
-          <button id="exportBtn" class="btn" style="flex:1;">📤 Exporter</button>
-          <button id="importBtn" class="btn" style="flex:1;">📥 Importer</button>
+          <button id="exportBtn" class="btn btn-primary" style="flex:1;">📤 Exporter (chiffré)</button>
+          <button id="importBtn" class="btn btn-primary" style="flex:1;">📥 Importer (chiffré)</button>
         </div>
         <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px;">
-          <li><button id="reloadBtn" class="btn" style="width:100%;">🔄 Recharger</button></li>
-          <li><button id="themeBtn" class="btn" style="width:100%;">🌙 Thème</button></li>
-          <li><button id="codesBtn" class="btn" style="width:100%;">💳 Codes</button></li>
+          <li><button id="reloadBtn" class="btn btn-warning" style="width:100%;">🔄 Recharger (confirm natif)</button></li>
+          <li><button id="themeBtn" class="btn btn-secondary" style="width:100%;">🌙 Thème</button></li>
+          <li><button id="codesBtn" class="btn btn-shop" style="width:100%;">💳 Codes</button></li>
         </ul>
         <div style="flex:1;"></div>
         <div style="display:flex;justify-content:center;">
@@ -121,11 +151,11 @@ export function initSettings({ els, state, keys, save, renderMain }) {
   els.resetBtn         = settingsModal.querySelector("#resetBtn");
 
   function openSettings() {
-    settingsModal.setAttribute("aria-hidden","false");
+    settingsModal.setAttribute("aria-hidden", "false");
     document.body.classList.add("modal-open");
   }
   function closeSettings() {
-    settingsModal.setAttribute("aria-hidden","true");
+    settingsModal.setAttribute("aria-hidden", "true");
     document.body.classList.remove("modal-open");
   }
 
@@ -148,50 +178,85 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     save(); renderMain(); closeSettings();
   });
 
-  // EXPORT modal
+  // EXPORT modal (encrypted with password)
   els.exportBtn.addEventListener("click", () => {
     createModal({
-      title: "Exporter les données",
+      title: "Exporter les données (chiffré)",
       content: `
-        <textarea id="exportRaw" rows="8" style="width:100%;" readonly>${JSON.stringify(state,null,2)}</textarea>
+        <p>Entrez un mot de passe pour chiffrer votre sauvegarde.</p>
+        <input id="exportPwd" type="password" placeholder="Mot de passe" style="width:100%;" />
+        <textarea id="exportRaw" rows="8" style="width:100%;margin-top:8px;" readonly></textarea>
       `,
       buttons: [
         {
+          text: "Générer",
+          className: "btn btn-primary",
+          onClick: async () => {
+            const pwdEl = document.getElementById("exportPwd");
+            const outEl = document.getElementById("exportRaw");
+            const pwd = (pwdEl.value || "").trim();
+            if (!pwd) { alert("Mot de passe requis"); return false; }
+            const plain = JSON.stringify(state, null, 2);
+            const encB64 = await encryptData(plain, pwd);
+            outEl.value = encB64;
+            return false; // keep modal open
+          },
+          closeOnClick: false
+        },
+        {
           text: "Copier",
-          onClick: () => navigator.clipboard.writeText(document.getElementById("exportRaw").value),
+          className: "btn btn-secondary",
+          onClick: async () => {
+            const outEl = document.getElementById("exportRaw");
+            if (!outEl.value) { alert("Rien à copier. Cliquez d'abord sur Générer."); return false; }
+            await navigator.clipboard.writeText(outEl.value);
+            return false;
+          },
           closeOnClick: false
         },
         {
           text: "Télécharger",
+          className: "btn btn-secondary",
           onClick: () => {
-            const data = document.getElementById("exportRaw").value;
-            const blob = new Blob([data],{type:"application/json"});
+            const outEl = document.getElementById("exportRaw");
+            if (!outEl.value) { alert("Rien à télécharger. Cliquez d'abord sur Générer."); return false; }
+            const blob = new Blob([outEl.value], { type: "text/plain" });
             const url = URL.createObjectURL(blob);
             const a   = document.createElement("a");
-            a.href = url; a.download = "clicker-export.json"; a.click();
+            a.href = url; a.download = "clicker-export.enc"; a.click();
             URL.revokeObjectURL(url);
+            return false;
           },
           closeOnClick: false
         },
-        { text: "Fermer", onClick: () => {}, closeOnClick: true }
+        { text: "Fermer", className: "btn btn-secondary", onClick: () => {} }
       ]
     }).open();
   });
 
-  // IMPORT modal
+  // IMPORT modal (decrypt with password)
   els.importBtn.addEventListener("click", () => {
     createModal({
-      title: "Importer les données",
+      title: "Importer les données (chiffré)",
       content: `
-        <textarea id="importRaw" rows="8" style="width:100%;" placeholder="Collez le JSON brut"></textarea>
+        <p>Collez votre export chifré et entrez le même mot de passe.</p>
+        <textarea id="importEnc" rows="8" style="width:100%;" placeholder="Collez le bloc chiffré (base64)"></textarea>
+        <input id="importPwd" type="password" placeholder="Mot de passe" style="width:100%;margin-top:8px;" />
       `,
       buttons: [
         {
-          text: "Appliquer",
-          onClick: () => {
+          text: "Déchiffrer et appliquer",
+          className: "btn btn-primary",
+          onClick: async () => {
+            const encEl = document.getElementById("importEnc");
+            const pwdEl = document.getElementById("importPwd");
+            const b64 = (encEl.value || "").trim();
+            const pwd = (pwdEl.value || "").trim();
+            if (!b64) { alert("Collez le bloc chiffré."); return false; }
+            if (!pwd) { alert("Mot de passe requis."); return false; }
             try {
-              const raw = document.getElementById("importRaw").value.trim();
-              const data = JSON.parse(raw);
+              const plain = await decryptData(b64, pwd);
+              const data = JSON.parse(plain);
               keys.forEach(k => { if (data[k] != null) state[k] = data[k]; });
               state.pointsPerClick         = data.pointsPerClick         ?? 1;
               state.shopBoost              = data.shopBoost              ?? 1;
@@ -199,13 +264,13 @@ export function initSettings({ els, state, keys, save, renderMain }) {
               state.tempShopBoostExpiresAt = data.tempShopBoostExpiresAt ?? 0;
               state.rebirths               = data.rebirths               ?? 0;
               save(); renderMain(); closeSettings();
-            } catch {
-              alert("JSON invalide");
+            } catch (e) {
+              alert("Impossible de déchiffrer. Vérifiez le mot de passe et le contenu.");
+              return false;
             }
-          },
-          closeOnClick: true
+          }
         },
-        { text: "Fermer", onClick: () => {}, closeOnClick: true }
+        { text: "Fermer", className: "btn btn-secondary", onClick: () => {} }
       ]
     }).open();
   });
@@ -215,17 +280,18 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     const modal = createModal({
       title: "Codes promotionnels",
       content: `
-        <input id="codeInput" style="width:100%;" placeholder="Entrez le code" />
+        <input id="codeInput" type="text" style="width:100%;" placeholder="Entrez le code" />
         <h4>Déjà utilisés :</h4>
         <ul id="usedList" style="padding-left:20px;"></ul>
       `,
       buttons: [
         {
           text: "Valider",
+          className: "btn btn-primary",
           onClick: () => {
             const code = document.getElementById("codeInput").value.trim().toUpperCase();
-            let used   = JSON.parse(localStorage.getItem("usedCodes")||"[]");
-            if (!code) return;
+            let used   = JSON.parse(localStorage.getItem("usedCodes") || "[]");
+            if (!code) return false;
             if (used.includes(code)) {
               alert("Déjà utilisé");
             } else {
@@ -240,16 +306,16 @@ export function initSettings({ els, state, keys, save, renderMain }) {
                 ul.appendChild(li);
               });
             }
+            return false; // keep modal open
           },
           closeOnClick: false
         },
-        { text: "Fermer", onClick: () => {}, closeOnClick: true }
+        { text: "Fermer", className: "btn btn-secondary", onClick: () => {} }
       ]
     });
     modal.open();
-    // Remplir la liste des codes déjà utilisés à l’ouverture
     const ul = document.getElementById("usedList");
-    const used = JSON.parse(localStorage.getItem("usedCodes")||"[]");
+    const used = JSON.parse(localStorage.getItem("usedCodes") || "[]");
     ul.innerHTML = "";
     used.forEach(c => {
       const li = document.createElement("li");
@@ -258,34 +324,11 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     });
   });
 
-  // RELOAD modal (vide caches + SW + localStorage, puis reload)
-  els.reloadBtn.addEventListener("click", () => {
-    createModal({
-      title: "Recharger la page",
-      content: `<p>Voulez-vous vraiment vider le cache et recharger ?</p>`,
-      buttons: [
-        {
-          text: "Recharger",
-          onClick: async () => {
-            try {
-              if ('caches' in window) {
-                const names = await caches.keys();
-                await Promise.all(names.map(n => caches.delete(n)));
-              }
-              if ('serviceWorker' in navigator) {
-                const regs = await navigator.serviceWorker.getRegistrations();
-                await Promise.all(regs.map(reg => reg.unregister()));
-              }
-            } catch (e) {
-              console.warn("Nettoyage cache/SW a échoué (non bloquant):", e);
-            }
-            localStorage.clear();
-            location.reload(true);
-          }
-        },
-        { text: "Annuler", onClick: () => {}, closeOnClick: true }
-      ]
-    }).open();
+  // RELOAD with native confirm + cleanup
+  els.reloadBtn.addEventListener("click", async () => {
+    const ok = confirm("Voulez-vous vraiment vider le cache (PWA, SW, storage) et recharger ?");
+    if (!ok) return;
+    await hardReload();
   });
 
   // Se connecter & Thème (stubs)
