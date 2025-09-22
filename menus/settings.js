@@ -78,8 +78,8 @@ export function initSettings({ els, state, keys, save, renderMain }) {
       <div class="modal-body" id="settingsBody" style="flex:1;display:flex;flex-direction:column;gap:16px;">
         <button id="loginBtn" class="btn">🔑 Se connecter</button>
         <div style="display:flex;gap:8px;">
-          <button id="exportBtn" class="btn">📤 Exporter</button>
-          <button id="importBtn" class="btn">📥 Importer</button>
+          <button id="saveExportBtn" class="btn" style="margin-top:8px;width:100%;">Enregistrer</button>
+          <button id="applyImportBtn" class="btn" style="margin-top:8px;width:100%;">Importer</button>
         </div>
         <div style="flex:1;"></div>
         <div style="display:flex;justify-content:center;">
