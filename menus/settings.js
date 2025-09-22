@@ -36,15 +36,13 @@ async function encryptData(plainText, password) {
     enc.encode(plainText)
   );
 
-  // Concatène salt + iv + ciphertext
   const combined = new Uint8Array(
     salt.byteLength + iv.byteLength + cipherBuffer.byteLength
   );
   combined.set(salt, 0);
-  combined.set(iv,   salt.byteLength);
+  combined.set(iv, salt.byteLength);
   combined.set(new Uint8Array(cipherBuffer), salt.byteLength + iv.byteLength);
 
-  // Retourne en Base64
   return btoa(String.fromCharCode(...combined));
 }
 
@@ -80,8 +78,8 @@ export function initSettings({ els, state, keys, save, renderMain }) {
       <div class="modal-body" id="settingsBody" style="flex:1;display:flex;flex-direction:column;gap:16px;">
         <button id="loginBtn" class="btn">🔑 Se connecter</button>
         <div style="display:flex;gap:8px;">
-          <button id="exportBtn" class="btn">📤 Exporter (chiffré)</button>
-          <button id="importBtn" class="btn">📥 Importer (chiffré)</button>
+          <button id="exportBtn" class="btn">📤 Exporter</button>
+          <button id="importBtn" class="btn">📥 Importer</button>
         </div>
         <div style="flex:1;"></div>
         <div style="display:flex;justify-content:center;">
@@ -98,12 +96,22 @@ export function initSettings({ els, state, keys, save, renderMain }) {
   els.exportBtn        = modal.querySelector("#exportBtn");
   els.importBtn        = modal.querySelector("#importBtn");
 
-  // Input file caché pour l’import
-  const fileInput = document.createElement("input");
-  fileInput.type = "file";
-  fileInput.accept = ".txt";
-  fileInput.style.display = "none";
-  document.body.appendChild(fileInput);
+  // Containers cachés pour Export/Import
+  const exportContainer = document.createElement("div");
+  exportContainer.style.display = "none";
+  exportContainer.innerHTML = `
+    <textarea id="exportText" rows="5" style="width:100%;margin-top:8px;"></textarea>
+    <button id="saveExportBtn" class="btn" style="margin-top:8px;">Enregistrer</button>
+  `;
+  modal.querySelector(".modal-body").appendChild(exportContainer);
+
+  const importContainer = document.createElement("div");
+  importContainer.style.display = "none";
+  importContainer.innerHTML = `
+    <textarea id="importText" rows="5" style="width:100%;margin-top:8px;"></textarea>
+    <button id="applyImportBtn" class="btn" style="margin-top:8px;">Importer</button>
+  `;
+  modal.querySelector(".modal-body").appendChild(importContainer);
 
   // Ouvre/ferme
   function openSettings() {
@@ -113,30 +121,30 @@ export function initSettings({ els, state, keys, save, renderMain }) {
   function closeSettings() {
     modal.setAttribute("aria-hidden", "true");
     document.body.classList.remove("modal-open");
+    // Cacher les containers après fermeture
+    exportContainer.style.display = "none";
+    importContainer.style.display = "none";
   }
 
-  // Reset total
+  // Reset total (inchangé)
   function performFullReset() {
     const confirmReset = confirm(
       "⚠️ Réinitialiser TOUT le stockage local et remettre les clics à 1 ?"
     );
     if (!confirmReset) return;
-
     localStorage.clear();
-    // RAZ de toutes les clés
     for (const k of keys) state[k] = 0;
     state.pointsPerClick      = 1;
     state.shopBoost           = 1;
     state.tempShopBoostFactor = 1;
     state.tempShopBoostExpiresAt = 0;
     state.rebirths            = 0;
-
     save();
     renderMain();
     closeSettings();
   }
 
-  // Événements
+  // Événements globaux
   els.settingsBtn.addEventListener("click", openSettings);
   els.closeSettingsBtn.addEventListener("click", closeSettings);
   modal.addEventListener("click", e => {
@@ -147,49 +155,59 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     console.log("Fonction de connexion à implémenter");
   });
 
-  // Export chiffré
+  // ─── Export chiffré ───
   els.exportBtn.addEventListener("click", async () => {
     const password = prompt("🔑 Mot de passe pour chiffrer l’export :");
     if (!password) return;
 
-    const dataStr = JSON.stringify(state);
+    importContainer.style.display = "none"; // cacher l’import
     try {
+      const dataStr = JSON.stringify(state);
       const encrypted = await encryptData(dataStr, password);
-      const blob = new Blob([encrypted], { type: "text/plain" });
-      const url  = URL.createObjectURL(blob);
-      const a    = document.createElement("a");
-      a.href     = url;
-      a.download = "clicker-state.txt";
-      a.click();
-      URL.revokeObjectURL(url);
+
+      const ta = exportContainer.querySelector("#exportText");
+      ta.value = encrypted;
+      exportContainer.style.display = "flex";
+
+      const saveBtn = exportContainer.querySelector("#saveExportBtn");
+      saveBtn.onclick = () => {
+        const blob = new Blob([ta.value], { type: "text/plain" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "clicker-state.txt";
+        a.click();
+        URL.revokeObjectURL(url);
+      };
     } catch (err) {
       console.error("Chiffrement impossible", err);
       alert("Erreur lors de l’export chiffré.");
     }
   });
 
-  // Import chiffré
+  // ─── Import chiffré ───
   els.importBtn.addEventListener("click", () => {
     const password = prompt("🔑 Mot de passe pour déchiffrer l’import :");
     if (!password) return;
 
-    fileInput.onchange = async () => {
-      const file = fileInput.files[0];
-      if (!file) return;
-      const text = await file.text();
+    exportContainer.style.display = "none"; // cacher l’export
+    importContainer.style.display = "flex";
+
+    const applyBtn = importContainer.querySelector("#applyImportBtn");
+    applyBtn.onclick = async () => {
+      const raw = importContainer.querySelector("#importText").value.trim();
       try {
-        const decrypted = await decryptData(text.trim(), password);
+        const decrypted = await decryptData(raw, password);
         const imported  = JSON.parse(decrypted);
 
-        // Remplacement des valeurs
         for (const k of keys) {
           if (imported[k] != null) state[k] = imported[k];
         }
-        state.pointsPerClick      = imported.pointsPerClick      ?? 1;
-        state.shopBoost           = imported.shopBoost           ?? 1;
-        state.tempShopBoostFactor = imported.tempShopBoostFactor ?? 1;
+        state.pointsPerClick         = imported.pointsPerClick      ?? 1;
+        state.shopBoost              = imported.shopBoost           ?? 1;
+        state.tempShopBoostFactor    = imported.tempShopBoostFactor ?? 1;
         state.tempShopBoostExpiresAt = imported.tempShopBoostExpiresAt ?? 0;
-        state.rebirths            = imported.rebirths            ?? 0;
+        state.rebirths               = imported.rebirths            ?? 0;
 
         save();
         renderMain();
@@ -197,13 +215,9 @@ export function initSettings({ els, state, keys, save, renderMain }) {
         alert("Import réussi !");
       } catch (err) {
         console.error("Déchiffrement/parse impossible", err);
-        alert("Mot de passe incorrect ou fichier invalide.");
-      } finally {
-        fileInput.value = "";
+        alert("Mot de passe incorrect ou texte invalide.");
       }
     };
-
-    fileInput.click();
   });
 
   els.resetBtn.addEventListener("click", performFullReset);
