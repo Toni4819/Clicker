@@ -1,12 +1,11 @@
 export function initCoinDrop({ els, state, save, renderMain }) {
-  const DROP_INTERVAL = 5 * 60 * 1000  // 5 minutes
-  const DROP_CHANCE   = 0.5
-  const RARE_CHANCE   = 0.01
+  const DROP_CHANCE = 0.5       // 50% de chance de drop à chaque intervalle
+  const RARE_CHANCE = 0.01      // 1% de chance que la pièce soit rare
 
-  // s’assure que passiveClicksPerSecond est toujours un nombre
+  // S’assure que passiveClicksPerSecond est bien un nombre
   state.passiveClicksPerSecond = Number(state.passiveClicksPerSecond) || 0
 
-  // conteneur des messages en bas de l’écran
+  // Conteneur des messages en bas de l’écran
   const msgContainer = document.createElement('div')
   Object.assign(msgContainer.style, {
     position:       'fixed',
@@ -21,7 +20,7 @@ export function initCoinDrop({ els, state, save, renderMain }) {
   })
   document.body.appendChild(msgContainer)
 
-  // affiche un message temporaire
+  // Affiche un message temporaire
   function showMessage(text) {
     const msg = document.createElement('div')
     Object.assign(msg.style, {
@@ -50,7 +49,7 @@ export function initCoinDrop({ els, state, save, renderMain }) {
     }, 3000)
   }
 
-  // génère une pièce aléatoire
+  // Génère une pièce aléatoire
   function spawnCoin() {
     if (Math.random() > DROP_CHANCE) return
 
@@ -70,37 +69,37 @@ export function initCoinDrop({ els, state, save, renderMain }) {
 
     coin.addEventListener('click', event => {
       const isRare     = Math.random() < RARE_CHANCE
-      const multiplier = isRare
-        ? 100
-        : Math.floor(Math.random() * 10) + 1
-
-      // conversion sécurisée et calcul du gain
-      const passive = Number(state.passiveClicksPerSecond) || 0
-      const gain    = passive * multiplier
+      const multiplier = isRare ? 100 : Math.floor(Math.random() * 10) + 1
+      const passive    = Number(state.passiveClicksPerSecond) || 0
+      const gain       = passive * multiplier
 
       state.points += gain
       save()
       renderMain()
 
-      // feedback visuel sur la pièce
       const target = event.currentTarget
-      target.textContent = isRare
-        ? '💎 +100×!'
-        : `💰 ×${multiplier}`
+      target.textContent = isRare ? '💎 +100×!' : `💰 ×${multiplier}`
       target.style.transform = 'scale(1.5)'
 
-      // message informatif
       showMessage(`+${gain} pts ${isRare ? '(rare)' : ''}`)
 
       setTimeout(() => target.remove(), 800)
     })
 
-    // supprime la pièce au bout de 30s si non cliquée
+    // Supprime la pièce après 30 secondes si non cliquée
     setTimeout(() => {
       if (coin.parentNode) coin.remove()
     }, 30_000)
   }
 
-  // démarre la boucle de drop
-  setInterval(spawnCoin, DROP_INTERVAL)
+  // Boucle de drop avec intervalle aléatoire entre 2 et 5 minutes
+  function startCoinLoop() {
+    const randomDelay = Math.random() * (5 - 2) * 60 * 1000 + 2 * 60 * 1000
+    setTimeout(() => {
+      spawnCoin()
+      startCoinLoop()
+    }, randomDelay)
+  }
+
+  startCoinLoop()
 }
