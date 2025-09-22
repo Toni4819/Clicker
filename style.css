@@ -20,14 +20,15 @@ html, body {
   padding: 0;
   background: var(--bg);
   color: var(--fg);
-  font-family: -apple-system, system-ui, "Segoe UI", Roboto, Inter, sans-serif;
-  user-select: none;
-  -webkit-user-select: none;
-  -moz-user-select: none;
+  font-family: -apple-system, system-ui, sans-serif;
   -ms-user-select: none;
+  -moz-user-select: none;
+  -webkit-user-select: none;
+  user-select: none;
   overflow: hidden;
   height: 100%;
 }
+
 
 html {
   touch-action: none;
@@ -492,28 +493,26 @@ input[type="text"] {
   top: 1rem;
   right: 1rem;
   z-index: 1000;
-
   width: 3rem;
   height: 3rem;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   background: none;
   border: none;
   border-radius: 50%;
   font-size: 1.75rem;
   color: var(--fg);
   cursor: pointer;
-
   outline: none;
   box-shadow: none;
-
-  user-select: none;
+  -ms-user-select: none;
+  -moz-user-select: none;
   -webkit-user-select: none;
+  user-select: none;
   touch-action: manipulation;
 }
+
 
 #settingsBtn:hover {
   background-color: rgba(255, 255, 255, 0.08);
