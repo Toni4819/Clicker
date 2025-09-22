@@ -1,4 +1,4 @@
-const CACHE_NAME = 'clicker-cache-v4';
+const CACHE_NAME = 'clicker-toni-s-studios';
 
 // JS à la racine
 const rootJS = [
@@ -28,7 +28,6 @@ const staticFiles = [
   './',
   './index.html',
   './style.css',
-  './site.webmanifest'
 ];
 
 // Icônes Android, Apple, MS, favicon
@@ -39,15 +38,14 @@ const faviconSizes = [16, 32, 96];
 
 const iconPaths = [
   'favicon.ico',
-  'apple-icon.png',
-  'apple-icon-precomposed.png',
-  'browserconfig.xml',
-  'favicon.ico',
-  ...androidSizes.map(size => `android-icon-${size}x${size}.png`),
-  ...appleSizes.map(size => `apple-icon-${size}x${size}.png`),
-  ...msSizes.map(size => `ms-icon-${size}x${size}.png`),
-  ...faviconSizes.map(size => `favicon-${size}x${size}.png`)
-].map(file => `./images/${file}`);
+  'favicon.svg',
+  'apple-touch-icon.png',
+  'favicon-96x96.png',
+  'site.webmanifest',
+  'web-app-manifest-192x192.png',
+  'web-app-manifest-512x512.png'
+
+].map(file => `./icons/${file}`);
 
 // Liste finale à cacher
 const urlsToCache = [
