@@ -1,19 +1,18 @@
 /* menus/settings.js (ES module)
- * Exports:
+ * Exporte:
  *   - initSettings(opts?)
  *   - openSettings()
  *   - closeSettings()
  *
- * Inclus:
- *   - Import/Export chiffrés (AES-GCM + PBKDF2)
- *   - Inputs password toujours dans un <form> (fix Chromium)
- *   - Modal principal + modal-second (overlay secondaire)
- *   - Confirms natifs pour actions destructives
- *   - Garde-fou global: encapsule automatiquement tout input[type=password] hors <form>
+ * Corrigé:
+ *   - Les inputs password sont créés DANS un <form> avant insertion DOM (aucun warning Chromium).
+ *   - Pas d’IDs dupliqués dans les panneaux (on utilise des name/classes et le scoping).
+ *   - Modal principal + modal-second pour aperçu/validation.
+ *   - Confirms natifs pour actions destructives.
  */
 
 // -----------------------------
-// Références app (injectées)
+// Références app (injectées via initSettings)
 // -----------------------------
 let appState;
 let appSave;
@@ -43,22 +42,38 @@ const IV_BYTES = 12;
 const SALT_BYTES = 16;
 
 // -----------------------------
+// Helpers DOM (sans innerHTML pour les nœuds critiques)
+// -----------------------------
+function el(tag, attrs = {}, children = []) {
+  const node = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === "style" && typeof v === "object") Object.assign(node.style, v);
+    else if (k.startsWith("on") && typeof v === "function") node.addEventListener(k.slice(2), v);
+    else if (v !== false && v != null) node.setAttribute(k, v === true ? "" : String(v));
+  }
+  for (const child of [].concat(children)) {
+    if (child == null) continue;
+    node.appendChild(typeof child === "string" ? document.createTextNode(child) : child);
+  }
+  return node;
+}
+
+// -----------------------------
 // API publique
 // -----------------------------
 export function openSettings() {
   if (document.getElementById(SETTINGS_MODAL_ID)) return;
 
-  const overlay = document.createElement("div");
-  overlay.id = SETTINGS_OVERLAY_ID;
-  overlay.className = "modal-overlay";
+  const overlay = el("div", { id: SETTINGS_OVERLAY_ID, class: "modal-overlay" });
   overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9990;";
 
-  const modal = document.createElement("div");
-  modal.id = SETTINGS_MODAL_ID;
-  modal.className = "modal";
-  modal.setAttribute("role", "dialog");
-  modal.setAttribute("aria-modal", "true");
-  modal.setAttribute("aria-labelledby", "settingsTitle");
+  const modal = el("div", {
+    id: SETTINGS_MODAL_ID,
+    class: "modal",
+    role: "dialog",
+    "aria-modal": "true",
+    "aria-labelledby": "settingsTitle",
+  });
   modal.style.cssText = `
     position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);
     background:var(--panel-bg,#1a1a1a);color:var(--text,#fff);
@@ -66,26 +81,28 @@ export function openSettings() {
     box-shadow:0 20px 60px rgba(0,0,0,.5);padding:16px;z-index:10000;
   `;
 
-  modal.innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
-      <h2 id="settingsTitle" style="margin:0;">Paramètres</h2>
-      <button id="settingsCloseBtn" class="btn" aria-label="Fermer les paramètres">✕</button>
-    </div>
+  const header = el("div", { style: "display:flex;align-items:center;justify-content:space-between;gap:12px;" }, [
+    el("h2", { id: "settingsTitle", style: "margin:0;" }, ["Paramètres"]),
+    el("button", { id: "settingsCloseBtn", class: "btn", "aria-label": "Fermer les paramètres" }, ["✕"]),
+  ]);
 
-    <div id="settingsTabs" style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
-      <button id="tabGeneral" class="btn btn-secondary" aria-controls="panelGeneral" aria-selected="true">Général</button>
-      <button id="tabExport" class="btn btn-secondary" aria-controls="panelExport" aria-selected="false">Exporter</button>
-      <button id="tabImport" class="btn btn-secondary" aria-controls="panelImport" aria-selected="false">Importer</button>
-      <button id="tabDanger" class="btn btn-secondary" aria-controls="panelDanger" aria-selected="false">DANGER</button>
-    </div>
+  const tabsBar = el("div", { id: "settingsTabs", style: "display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;" }, [
+    el("button", { id: "tabGeneral", class: "btn btn-secondary", "aria-controls": "panelGeneral", "aria-selected": "true" }, ["Général"]),
+    el("button", { id: "tabExport", class: "btn btn-secondary", "aria-controls": "panelExport", "aria-selected": "false" }, ["Exporter"]),
+    el("button", { id: "tabImport", class: "btn btn-secondary", "aria-controls": "panelImport", "aria-selected": "false" }, ["Importer"]),
+    el("button", { id: "tabDanger", class: "btn btn-secondary", "aria-controls": "panelDanger", "aria-selected": "false" }, ["DANGER"]),
+  ]);
 
-    <div id="settingsPanels" style="margin-top:12px;">
-      <section id="panelGeneral" role="region" aria-labelledby="tabGeneral"></section>
-      <section id="panelExport" role="region" aria-labelledby="tabExport" hidden></section>
-      <section id="panelImport" role="region" aria-labelledby="tabImport" hidden></section>
-      <section id="panelDanger" role="region" aria-labelledby="tabDanger" hidden></section>
-    </div>
-  `;
+  const panels = el("div", { id: "settingsPanels", style: "margin-top:12px;" }, [
+    el("section", { id: "panelGeneral", role: "region", "aria-labelledby": "tabGeneral" }),
+    el("section", { id: "panelExport", role: "region", "aria-labelledby": "tabExport", hidden: true }),
+    el("section", { id: "panelImport", role: "region", "aria-labelledby": "tabImport", hidden: true }),
+    el("section", { id: "panelDanger", role: "region", "aria-labelledby": "tabDanger", hidden: true }),
+  ]);
+
+  modal.appendChild(header);
+  modal.appendChild(tabsBar);
+  modal.appendChild(panels);
 
   document.body.appendChild(overlay);
   document.body.appendChild(modal);
@@ -115,57 +132,68 @@ export function openSettings() {
 }
 
 export function closeSettings() {
-  const modal = document.getElementById(SETTINGS_MODAL_ID);
-  const overlay = document.getElementById(SETTINGS_OVERLAY_ID);
-  const second = document.getElementById(SECOND_OVERLAY_ID);
-  if (modal) modal.remove();
-  if (overlay) overlay.remove();
-  if (second) second.remove();
+  document.getElementById(SETTINGS_MODAL_ID)?.remove();
+  document.getElementById(SETTINGS_OVERLAY_ID)?.remove();
+  document.getElementById(SECOND_OVERLAY_ID)?.remove();
 }
 
 // -----------------------------
 // Panneaux
 // -----------------------------
 function renderGeneral(container) {
-  container.innerHTML = `
-    <div style="display:flex;flex-direction:column;gap:12px;">
-      <p>Réglez l’application à votre convenance. Les actions sensibles utilisent des confirmations natives.</p>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button id="openExportFromGeneral" class="btn">→ Exporter</button>
-        <button id="openImportFromGeneral" class="btn">→ Importer</button>
-      </div>
-    </div>
-  `;
-  container.querySelector("#openExportFromGeneral").addEventListener("click", () => {
+  container.textContent = "";
+  const wrap = el("div", { style: "display:flex;flex-direction:column;gap:12px;" }, [
+    el("p", {}, ["Réglez l’application à votre convenance. Les actions sensibles utilisent des confirmations natives."]),
+    el("div", { style: "display:flex;gap:8px;flex-wrap:wrap;" }, [
+      el("button", { class: "btn btn-open-export" }, ["→ Exporter"]),
+      el("button", { class: "btn btn-open-import" }, ["→ Importer"]),
+    ]),
+  ]);
+  container.appendChild(wrap);
+
+  wrap.querySelector(".btn-open-export").addEventListener("click", () => {
     document.getElementById("tabExport").click();
   });
-  container.querySelector("#openImportFromGeneral").addEventListener("click", () => {
+  wrap.querySelector(".btn-open-import").addEventListener("click", () => {
     document.getElementById("tabImport").click();
   });
 }
 
 function renderExport(container) {
-  container.innerHTML = `
-    <form id="exportForm" style="display:flex;flex-direction:column;gap:8px;">
-      <label for="exportPwd" style="font-weight:600;">Mot de passe d’export</label>
-      <input id="exportPwd" name="exportPwd" type="password" inputmode="text" autocomplete="new-password"
-             placeholder="Choisissez un mot de passe" style="width:100%;" required />
-      <div style="display:flex;gap:8px;align-items:center;">
-        <button type="submit" id="applyExportBtn" class="btn">🔒 Chiffrer & Copier</button>
-        <button type="button" id="previewExportBtn" class="btn btn-secondary">Aperçu</button>
-      </div>
-      <label for="exportText" style="font-weight:600;margin-top:4px;">Données chiffrées</label>
-      <textarea id="exportText" rows="6" style="width:100%;" readonly aria-readonly="true"></textarea>
-      <small>Le texte ci-dessus est chiffré avec AES-GCM. Conservez-le en lieu sûr.</small>
-    </form>
-  `;
+  container.textContent = "";
 
-  const exportForm = container.querySelector("#exportForm");
-  const pwdInput = exportForm.querySelector("#exportPwd");
-  const ta = exportForm.querySelector("#exportText");
-  const previewBtn = exportForm.querySelector("#previewExportBtn");
+  // Créer TOUT le formulaire en mémoire avant insertion → aucun warning
+  const form = el("form", { "aria-label": "Export", novalidate: true });
+  form.style.display = "flex";
+  form.style.flexDirection = "column";
+  form.style.gap = "8px";
 
-  exportForm.addEventListener("submit", async (e) => {
+  form.append(
+    el("label", { class: "label-export-pwd" }, ["Mot de passe d’export"]),
+    el("input", {
+      type: "password",
+      name: "exportPwd",
+      autocomplete: "new-password",
+      placeholder: "Choisissez un mot de passe",
+      style: "width:100%;",
+      required: true,
+    }),
+    el("div", { class: "row-actions", style: "display:flex;gap:8px;align-items:center;" }, [
+      el("button", { type: "submit", class: "btn btn-export" }, ["🔒 Chiffrer & Copier"]),
+      el("button", { type: "button", class: "btn btn-secondary btn-preview" }, ["Aperçu"]),
+    ]),
+    el("label", { class: "label-export-text", style: "font-weight:600;margin-top:4px;" }, ["Données chiffrées"]),
+    el("textarea", { name: "exportText", rows: "6", readonly: true, "aria-readonly": "true", style: "width:100%;" }),
+    el("small", {}, ["Le texte ci-dessus est chifré avec AES-GCM. Conservez-le en lieu sûr."])
+  );
+
+  container.appendChild(form);
+
+  const pwdInput = form.querySelector('input[name="exportPwd"]');
+  const ta = form.querySelector('textarea[name="exportText"]');
+  const previewBtn = form.querySelector(".btn-preview");
+
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const password = pwdInput.value.trim();
     if (!password) return alert("Mot de passe requis.");
@@ -199,27 +227,43 @@ function renderExport(container) {
 }
 
 function renderImport(container) {
-  container.innerHTML = `
-    <form id="importForm" style="display:flex;flex-direction:column;gap:8px;">
-      <label for="importPwd" style="font-weight:600;">Mot de passe d’import</label>
-      <input id="importPwd" name="importPwd" type="password" inputmode="text" autocomplete="current-password"
-             placeholder="Entrez le mot de passe utilisé à l’export" style="width:100%;" required />
-      <label for="importText" style="font-weight:600;">Données chiffrées à importer</label>
-      <textarea id="importText" name="importText" rows="6" style="width:100%;"
-                placeholder="Collez ici le bloc chiffré"></textarea>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <button type="submit" id="applyImportBtn" class="btn">📂 Importer</button>
-        <button type="button" id="validateImportBtn" class="btn btn-secondary">Valider seulement</button>
-      </div>
-    </form>
-  `;
+  container.textContent = "";
 
-  const importForm = container.querySelector("#importForm");
-  const pwdInput = importForm.querySelector("#importPwd");
-  const ta = importForm.querySelector("#importText");
-  const validateBtn = importForm.querySelector("#validateImportBtn");
+  const form = el("form", { "aria-label": "Import", novalidate: true });
+  form.style.display = "flex";
+  form.style.flexDirection = "column";
+  form.style.gap = "8px";
 
-  importForm.addEventListener("submit", async (e) => {
+  form.append(
+    el("label", { class: "label-import-pwd" }, ["Mot de passe d’import"]),
+    el("input", {
+      type: "password",
+      name: "importPwd",
+      autocomplete: "current-password",
+      placeholder: "Entrez le mot de passe utilisé à l’export",
+      style: "width:100%;",
+      required: true,
+    }),
+    el("label", { class: "label-import-text" }, ["Données chiffrées à importer"]),
+    el("textarea", {
+      name: "importText",
+      rows: "6",
+      placeholder: "Collez ici le bloc chiffré",
+      style: "width:100%;",
+    }),
+    el("div", { class: "row-actions", style: "display:flex;gap:8px;align-items:center;" }, [
+      el("button", { type: "submit", class: "btn btn-import" }, ["📂 Importer"]),
+      el("button", { type: "button", class: "btn btn-secondary btn-validate" }, ["Valider seulement"]),
+    ])
+  );
+
+  container.appendChild(form);
+
+  const pwdInput = form.querySelector('input[name="importPwd"]');
+  const ta = form.querySelector('textarea[name="importText"]');
+  const validateBtn = form.querySelector(".btn-validate");
+
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const password = pwdInput.value.trim();
     const payload = (ta.value || "").trim();
@@ -229,6 +273,7 @@ function renderImport(container) {
       const decrypted = await decryptData(payload, password);
       const imported = JSON.parse(decrypted);
       if (!nativeConfirm("Cette opération remplacera votre état actuel. Continuer ?")) return;
+
       if (typeof appState === "object" && appState) {
         for (const k of Object.keys(appState)) delete appState[k];
         Object.assign(appState, imported);
@@ -262,15 +307,16 @@ function renderImport(container) {
 }
 
 function renderDanger(container) {
-  container.innerHTML = `
-    <div style="display:flex;flex-direction:column;gap:12px;">
-      <p style="color:var(--danger,#ff6b6b);font-weight:600;">Zone dangereuse</p>
-      <button id="btnResetState" class="btn" style="background:var(--danger,#b00020);">Réinitialiser la progression</button>
-      <button id="btnHardReload" class="btn btn-secondary">Rechargement dur (vider caches & SW)</button>
-    </div>
-  `;
+  container.textContent = "";
 
-  container.querySelector("#btnResetState").addEventListener("click", () => {
+  const wrap = el("div", { style: "display:flex;flex-direction:column;gap:12px;" }, [
+    el("p", { style: "color:var(--danger,#ff6b6b);font-weight:600;" }, ["Zone dangereuse"]),
+    el("button", { class: "btn btn-reset", style: "background:var(--danger,#b00020);" }, ["Réinitialiser la progression"]),
+    el("button", { class: "btn btn-secondary btn-hardreload" }, ["Rechargement dur (vider caches & SW)"]),
+  ]);
+  container.appendChild(wrap);
+
+  wrap.querySelector(".btn-reset").addEventListener("click", () => {
     if (!nativeConfirm("Réinitialiser la progression ? Cette action est irréversible.")) return;
     try {
       try { localStorage.clear?.(); } catch {}
@@ -290,7 +336,7 @@ function renderDanger(container) {
     }
   });
 
-  container.querySelector("#btnHardReload").addEventListener("click", async () => {
+  wrap.querySelector(".btn-hardreload").addEventListener("click", async () => {
     if (!nativeConfirm("Procéder à un rechargement dur ? Cela peut désinstaller le SW et vider le cache.")) return;
     try {
       if (typeof appPerformHardReload === "function") {
@@ -312,38 +358,40 @@ function renderDanger(container) {
 function openSecondModal(title, htmlContent) {
   let overlay = document.getElementById(SECOND_OVERLAY_ID);
   if (!overlay) {
-    overlay = document.createElement("div");
-    overlay.id = SECOND_OVERLAY_ID;
-    overlay.className = "modal-second-overlay";
+    overlay = el("div", { id: SECOND_OVERLAY_ID, class: "modal-second-overlay" });
     overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:11000;";
     overlay.addEventListener("click", () => {
-      const box = document.getElementById("modalSecondBox");
-      if (box) box.remove();
+      document.getElementById("modalSecondBox")?.remove();
       overlay.remove();
     });
     document.body.appendChild(overlay);
   }
 
-  const box = document.createElement("div");
-  box.id = "modalSecondBox";
-  box.className = "modal-second";
-  box.setAttribute("role", "dialog");
-  box.setAttribute("aria-modal", "true");
+  const box = el("div", {
+    id: "modalSecondBox",
+    class: "modal-second",
+    role: "dialog",
+    "aria-modal": "true",
+  });
   box.style.cssText = `
     position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);
     background:var(--panel-bg,#202020);color:var(--text,#fff);
     width:min(640px,92vw);max-height:80vh;overflow:auto;border-radius:12px;
     box-shadow:0 24px 64px rgba(0,0,0,.6);padding:16px;z-index:12000;
   `;
-  box.innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
-      <h3 style="margin:0;">${escapeHtml(title)}</h3>
-      <button id="modalSecondClose" class="btn" aria-label="Fermer la fenêtre secondaire">✕</button>
-    </div>
-    <div style="margin-top:12px;">${htmlContent}</div>
-  `;
+
+  const head = el("div", { style: "display:flex;align-items:center;justify-content:space-between;gap:12px;" }, [
+    el("h3", { style: "margin:0;" }, [escapeHtml(title)]),
+    el("button", { class: "btn btn-close-second", "aria-label": "Fermer la fenêtre secondaire" }, ["✕"]),
+  ]);
+  const body = el("div", { style: "margin-top:12px;" });
+  body.innerHTML = htmlContent;
+
+  box.appendChild(head);
+  box.appendChild(body);
   document.body.appendChild(box);
-  box.querySelector("#modalSecondClose").addEventListener("click", () => {
+
+  box.querySelector(".btn-close-second").addEventListener("click", () => {
     box.remove();
     overlay.remove();
   });
@@ -442,38 +490,4 @@ function escapeHtml(str) {
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
 }
-
-// -----------------------------
-// Garde-fou global: encapsule auto tous les password inputs hors <form>
-// -----------------------------
-(function passwordInputsMustBeInForms() {
-  function wrapPasswordInput(inp) {
-    if (!inp || inp.closest("form")) return;
-    const form = document.createElement("form");
-    form.style.display = "contents"; // pas d'impact visuel
-    form.addEventListener("submit", (e) => e.preventDefault());
-    const parent = inp.parentNode;
-    const next = inp.nextSibling;
-    parent.insertBefore(form, next);
-    form.appendChild(inp);
-  }
-  function scan(root = document) {
-    root.querySelectorAll('input[type="password"]').forEach(wrapPasswordInput);
-  }
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", () => scan());
-  } else {
-    scan();
-  }
-  const mo = new MutationObserver((mutations) => {
-    for (const m of mutations) {
-      for (const node of m.addedNodes) {
-        if (node.nodeType !== 1) continue;
-        const el = node;
-        if (el.matches?.('input[type="password"]')) wrapPasswordInput(el);
-        el.querySelectorAll?.('input[type="password"]').forEach(wrapPasswordInput);
-      }
-    }
-  });
-  mo.observe(document.documentElement, { childList: true, subtree: true });
-})();
+```
