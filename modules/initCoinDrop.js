@@ -55,7 +55,7 @@ export function initCoinDrop({ els, state, save, renderMain }) {
 
     const coin = document.createElement("div");
     coin.className = "coin-drop";
-    coin.textContent = "💰";
+    coin.textContent = "🪙";
     Object.assign(coin.style, {
       position: "fixed",
       zIndex: "1000",
