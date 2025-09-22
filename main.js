@@ -159,7 +159,7 @@ function renderMain() {
     getShopBoostFactor();
 
   els.tapBtn.textContent = `👇 Tapper (+${realPerClick.toFixed(2)})`;
-  els.versionText.textContent = `Toni’s Studios – v2.0`;
+  els.versionText.textContent = `Toni’s Studios – v2.5`;
 
   if (els.boostValue) {
     const totalBoost = getRebirthBoostFactor() * getShopBoostFactor();
