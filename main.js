@@ -135,7 +135,9 @@ const els = {
   closeDevBtn:     document.getElementById("closeDevBtn"),
   devBody:         document.getElementById("devBody"),
   boostValue:      document.getElementById("boostValue"),
-  settingsBtn:     document.getElementById("settingsBtn"),
+  settingsBtn: document.getElementById("settingsBtn"),
+  modalSecond: document.getElementById("modalSecond"),
+
   // upgrades.js attribuera: machinesList, upgradesList, statsList, closeStoreBtn
 };
 
@@ -268,9 +270,11 @@ initShop({
   formatCompact
 });
 
-initSettings({ els, state, keys, save, renderMain });
+document.addEventListener("DOMContentLoaded", () => {
+  initSettings({ els, state, keys, save, renderMain });
+  initCoinDrop({ els, state, save, renderMain });
+});
 
-initCoinDrop({ els, state, save, renderMain });
 
 // Sauvegarde avant fermeture
 window.addEventListener("beforeunload", save);
