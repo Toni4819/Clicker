@@ -477,4 +477,3 @@ function escapeHtml(str) {
   });
   mo.observe(document.documentElement, { childList: true, subtree: true });
 })();
-```
