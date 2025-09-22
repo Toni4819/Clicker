@@ -68,8 +68,8 @@ function createModal({ title, content, buttons }) {
     btn.textContent = cfg.text;
     btn.className = cfg.className || "btn btn-secondary";
     btn.addEventListener("click", async () => {
-      const ret = await cfg.onClick?.();
-      if (cfg.closeOnClick !== false && ret !== false) {
+      const result = await cfg.onClick?.();
+      if (cfg.closeOnClick !== false && result !== false) {
         document.body.removeChild(overlay);
       }
     });
@@ -82,7 +82,9 @@ function createModal({ title, content, buttons }) {
   });
 
   overlay.appendChild(modalContent);
-  return { open: () => document.body.appendChild(overlay) };
+  return {
+    open: () => document.body.appendChild(overlay)
+  };
 }
 
 // 🧹 Nettoyage complet + reload
@@ -110,11 +112,11 @@ async function hardReload() {
 
 // ⚙️ Initialize Settings
 export function initSettings({ els, state, keys, save, renderMain }) {
-  // SETTINGS MODAL (principal)
+  // Principal settings modal
   const settingsModal = document.getElementById("settingsModal");
   settingsModal.className = "modal";
-  settingsModal.setAttribute("role", "dialog");
-  settingsModal.setAttribute("aria-hidden", "true");
+  settingsModal.setAttribute("role",          "dialog");
+  settingsModal.setAttribute("aria-hidden",   "true");
   settingsModal.setAttribute("aria-labelledby", "settingsTitle");
   settingsModal.innerHTML = `
     <div class="modal-content" style="display:flex;flex-direction:column;height:100%;">
@@ -141,7 +143,7 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     </div>
   `;
 
-  // DOM references
+  // DOM refs
   els.settingsBtn      = document.getElementById("settingsBtn");
   els.closeSettingsBtn = settingsModal.querySelector("#closeSettingsBtn");
   els.loginBtn         = settingsModal.querySelector("#loginBtn");
@@ -172,15 +174,15 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     if (!confirm("⚠️ Tout réinitialiser ?")) return;
     localStorage.clear();
     keys.forEach(k => state[k] = 0);
-    state.pointsPerClick = 1;
-    state.shopBoost = 1;
-    state.tempShopBoostFactor = 1;
+    state.pointsPerClick         = 1;
+    state.shopBoost              = 1;
+    state.tempShopBoostFactor    = 1;
     state.tempShopBoostExpiresAt = 0;
-    state.rebirths = 0;
+    state.rebirths               = 0;
     save(); renderMain(); closeSettings();
   });
 
-  // EXPORT (chiffré)
+  // Export encrypted
   els.exportBtn.addEventListener("click", () => {
     const uid   = generateUID();
     const pwdId = `exportPwd-${uid}`;
@@ -189,7 +191,14 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     createModal({
       title: "Exporter les données (chiffré)",
       content: `
-        <form autocomplete="off" style="display:flex;flex-direction:column;gap:8px;">
+        <form autocomplete="off" style="position:relative;display:flex;flex-direction:column;gap:8px;">
+          <input
+            type="text"
+            name="username"
+            autocomplete="username"
+            style="position:absolute;opacity:0;pointer-events:none;height:0;width:0;border:none;margin:0;padding:0;"
+            aria-hidden="true" tabindex="-1"
+          />
           <label for="${pwdId}">Mot de passe</label>
           <input
             id="${pwdId}"
@@ -254,7 +263,7 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     }).open();
   });
 
-  // IMPORT (chiffré)
+  // Import encrypted
   els.importBtn.addEventListener("click", () => {
     const uid   = generateUID();
     const encId = `importEnc-${uid}`;
@@ -263,7 +272,14 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     createModal({
       title: "Importer les données (chiffré)",
       content: `
-        <form autocomplete="off" style="display:flex;flex-direction:column;gap:8px;">
+        <form autocomplete="off" style="position:relative;display:flex;flex-direction:column;gap:8px;">
+          <input
+            type="text"
+            name="username"
+            autocomplete="username"
+            style="position:absolute;opacity:0;pointer-events:none;height:0;width:0;border:none;margin:0;padding:0;"
+            aria-hidden="true" tabindex="-1"
+          />
           <label for="${encId}">Bloc chiffré (Base64)</label>
           <textarea
             id="${encId}"
@@ -315,7 +331,7 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     }).open();
   });
 
-  // CODES promotionnels
+  // Codes promotionnels
   els.codesBtn.addEventListener("click", () => {
     const uid        = generateUID();
     const inputId    = `codeInput-${uid}`;
@@ -370,7 +386,7 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     });
   });
 
-  // RELOAD (confirm natif + cleanup)
+  // Recharger (confirm natif + cleanup)
   els.reloadBtn.addEventListener("click", async () => {
     if (!confirm("Voulez-vous vraiment vider le cache et recharger ?")) return;
     await hardReload();
