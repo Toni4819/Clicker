@@ -41,15 +41,18 @@ async function decryptData(b64, password) {
   return dec.decode(plain);
 }
 
-// 🛠 createModal helper
+// 🛠 createModal helper (second modal)
 function createModal({ title, content, buttons }) {
   const overlay = document.createElement("div");
-  overlay.className = "modal-overlay";
+  overlay.className = "modal-second";
 
-  const modal = document.createElement("div");
-  modal.className = "modal";
-  modal.innerHTML = `
-    <header class="modal-header"><h2>${title}</h2></header>
+  const modalContent = document.createElement("div");
+  modalContent.className = "modal-content";
+  modalContent.innerHTML = `
+    <header class="modal-header">
+      <h2>${title}</h2>
+      <button class="close-btn" aria-label="Fermer">✕</button>
+    </header>
     <div class="modal-body">${content}</div>
   `;
 
@@ -64,9 +67,13 @@ function createModal({ title, content, buttons }) {
     });
     footer.appendChild(btn);
   });
+  modalContent.appendChild(footer);
 
-  modal.appendChild(footer);
-  overlay.appendChild(modal);
+  modalContent.querySelector(".close-btn").addEventListener("click", () => {
+    document.body.removeChild(overlay);
+  });
+
+  overlay.appendChild(modalContent);
   return { open: () => document.body.appendChild(overlay) };
 }
 
@@ -176,83 +183,4 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     createModal({
       title: "Importer les données",
       content: `
-        <textarea id="importRaw" rows="8" style="width:100%;" placeholder="Collez le JSON brut"></textarea>
-      `,
-      buttons: [
-        {
-          text: "Appliquer",
-          onClick: () => {
-            try {
-              const data = JSON.parse(document.getElementById("importRaw").value.trim());
-              keys.forEach(k => { if (data[k]!=null) state[k]=data[k]; });
-              state.pointsPerClick      = data.pointsPerClick      ?? 1;
-              state.shopBoost           = data.shopBoost           ?? 1;
-              state.tempShopBoostFactor = data.tempShopBoostFactor ?? 1;
-              state.tempShopBoostExpiresAt = data.tempShopBoostExpiresAt ?? 0;
-              state.rebirths            = data.rebirths            ?? 0;
-              save(); renderMain(); closeSettings();
-            } catch {
-              alert("JSON invalide");
-            }
-          },
-          closeOnClick: true
-        },
-        { text: "Fermer", onClick: () => {}, closeOnClick: true }
-      ]
-    }).open();
-  });
-
-  // CODES modal
-  els.codesBtn.addEventListener("click", () => {
-    createModal({
-      title: "Codes promotionnels",
-      content: `
-        <input id="codeInput" style="width:100%;" placeholder="Entrez le code" />
-        <h4>Déjà utilisés :</h4>
-        <ul id="usedList" style="padding-left:20px;"></ul>
-      `,
-      buttons: [
-        {
-          text: "Valider",
-          onClick: () => {
-            const code = document.getElementById("codeInput").value.trim().toUpperCase();
-            let used   = JSON.parse(localStorage.getItem("usedCodes")||"[]");
-            if (!code) return;
-            if (used.includes(code)) {
-              alert("Déjà utilisé");
-            } else {
-              used.push(code);
-              localStorage.setItem("usedCodes", JSON.stringify(used));
-              alert("Code appliqué !");
-              const ul = document.getElementById("usedList");
-              ul.innerHTML = "";
-              used.forEach(c => {
-                const li = document.createElement("li");
-                li.textContent = c;
-                ul.appendChild(li);
-              });
-            }
-          },
-          closeOnClick: false
-        },
-        { text: "Fermer", onClick: () => {}, closeOnClick: true }
-      ]
-    }).open();
-  });
-
-  // RELOAD modal
-  els.reloadBtn.addEventListener("click", () => {
-    createModal({
-      title: "Recharger la page",
-      content: `<p>Voulez-vous vraiment recharger tous les fichiers ?</p>`,
-      buttons: [
-        { text: "Recharger", onClick: () => window.location.reload(true) },
-        { text: "Annuler",   onClick: () => {}, closeOnClick: true }
-      ]
-    }).open();
-  });
-
-  // Se connecter & Thème (no modal)
-  els.loginBtn.addEventListener("click", () => {});
-  els.themeBtn.addEventListener("click", () => { /* stub */ });
-}
+        <textarea id="importRaw" rows="8" style="width:100%;" placeholder="Collez le JSON brut
