@@ -270,8 +270,7 @@ initShop({
 initSettings({
   state,
   save,
-  renderMain,
-  performHardReload, // si présent
+  renderMain
 });
 
 initCoinDrop({ els, state, save, renderMain });
