@@ -9,28 +9,21 @@ export function initRebirthSystem({
   formatCompact
 }) {
   const STORAGE_KEY = "rebirthCount";
-  const BOOST_RATE  = 1.10;       // +5% par Rebirth
-  const costTable   = [           // coûts par palier
-    1e6,    // 1 M
-    1e8,    // 100 M
-    5e8,    // 500 M
-    1e9,    // 1 B
-    1e11,    // 100 B
-    5e11,
-    1e13,
-    1e15,
-    5e15,
-    1e16,
-    1e18,
-    5e18,
-    1e20,
-    1e22,
-    5e22,
-    1e24
-    
-    
-    // … ajouter d'autres paliers si besoin
-  ];
+  const BOOST_RATE  = 1.10;       // +10% par Rebirt
+  const costTable = [];
+
+let unit = 1e6; // commence à 1 million
+const stepsPerUnit = [1, 100, 500];
+const unitCount = 16; // nombre de paliers
+
+for (let i = 0; i < unitCount; i++) {
+  for (const step of stepsPerUnit) {
+    costTable.push(step * unit);
+  }
+  unit *= 1000; // passe à l’unité suivante
+}
+
+
 
   // Charger le compteur de Rebirths
   state.rebirths = parseInt(localStorage.getItem(STORAGE_KEY) || "0", 10);
