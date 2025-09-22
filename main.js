@@ -268,8 +268,6 @@ initShop({
   formatCompact
 });
 
-const els = {}; // ← ajoute cette ligne AVANT
-
 initSettings({ els, state, keys, save, renderMain });
 
 initCoinDrop({ els, state, save, renderMain });
