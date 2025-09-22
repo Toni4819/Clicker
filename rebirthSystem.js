@@ -15,7 +15,20 @@ export function initRebirthSystem({
     1e8,    // 100 M
     5e8,    // 500 M
     1e9,    // 1 B
-    1e11    // 100 B
+    1e11,    // 100 B
+    5e11,
+    1e13,
+    1e15,
+    5e15,
+    1e16,
+    1e18,
+    5e18,
+    1e20,
+    1e22,
+    5e22,
+    1e24
+    
+    
     // … ajouter d'autres paliers si besoin
   ];
 
