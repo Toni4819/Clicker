@@ -1,358 +1,254 @@
-// settings.js
-// initSettings qui respecte le style.css existant et applique la nouvelle disposition des boutons demandée.
-// Attends : els (avec settingsBtn), state, keys, save, renderMain, renderStore, encryptData, decryptData, formatCompact
+// menus/settings.js
+// 🔐 Utilitaires AES-GCM / PBKDF2
+const enc = new TextEncoder();
+const dec = new TextDecoder();
+async function deriveKey(password, salt) {
+  const baseKey = await crypto.subtle.importKey(
+    "raw",
+    enc.encode(password),
+    "PBKDF2",
+    false,
+    ["deriveKey"]
+  );
+  return crypto.subtle.deriveKey(
+    { name: "PBKDF2", salt, iterations: 100_000, hash: "SHA-256" },
+    baseKey,
+    { name: "AES-GCM", length: 256 },
+    false,
+    ["encrypt", "decrypt"]
+  );
+}
+async function encryptData(plainText, password) {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const key = await deriveKey(password, salt);
+  const cipherBuffer = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, enc.encode(plainText));
+  const combined = new Uint8Array(salt.byteLength + iv.byteLength + cipherBuffer.byteLength);
+  combined.set(salt, 0);
+  combined.set(iv, salt.byteLength);
+  combined.set(new Uint8Array(cipherBuffer), salt.byteLength + iv.byteLength);
+  return btoa(String.fromCharCode(...combined));
+}
+async function decryptData(b64Combined, password) {
+  const combined = Uint8Array.from(atob(b64Combined), c => c.charCodeAt(0));
+  const salt = combined.slice(0, 16);
+  const iv = combined.slice(16, 28);
+  const data = combined.slice(28);
+  const key = await deriveKey(password, salt);
+  const plainBuffer = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, data);
+  return dec.decode(plainBuffer);
+}
 
-export function initSettings({
-  els = {},
-  state = {},
-  keys = [],
-  save = () => {},
-  renderMain = () => {},
-  renderStore = () => {},
-  encryptData,
-  decryptData,
-  formatCompact = v => String(v)
-}) {
-  // --- Création du modal principal en respectant les classes existantes (.modal, .modal-content)
-  let modal = document.getElementById("settingsModal");
-  if (!modal) {
-    modal = document.createElement("div");
-    modal.id = "settingsModal";
-    modal.className = "modal";
-    modal.setAttribute("role", "dialog");
-    modal.setAttribute("aria-hidden", "true");
-    document.body.appendChild(modal);
-  } else {
-    modal.className = "modal";
-    modal.setAttribute("role", "dialog");
-    modal.setAttribute("aria-hidden", "true");
-  }
-
-  // HTML du modal avec la nouvelle disposition des boutons
+// ⚙️ Initialisation du menu Settings
+export function initSettings({ els, state, keys, save, renderMain }) {
+  const modal = document.getElementById("settingsModal");
+  modal.className = "modal";
+  modal.setAttribute("aria-hidden", "true");
+  modal.setAttribute("role", "dialog");
+  modal.setAttribute("aria-labelledby", "settingsTitle");
   modal.innerHTML = `
-    <div class="modal-content" role="document" aria-labelledby="settingsTitle" id="settingsContent">
-      <header class="modal-header">
-        <h2 id="settingsTitle">⚙️ Paramètres</h2>
-        <button id="closeSettingsBtn" class="close-btn" aria-label="Fermer">✕</button>
-      </header>
-
-      <div class="modal-body" id="settingsBody">
-        <section class="section">
-          <!-- Login full width -->
-          <div style="margin-bottom:12px;">
-            <button id="loginBtn" class="btn btn-primary" style="width:100%;">🔐 Se connecter</button>
-          </div>
-
-          <!-- Exporter / Importer côte à côte -->
-          <div style="display:flex;gap:8px;margin-bottom:12px;">
-            <button id="exportBtn" class="btn btn-primary" style="flex:1;">📤 Exporter</button>
-            <button id="importBtn" class="btn" style="flex:1;">📥 Importer</button>
-          </div>
-
-          <!-- Recharger / Thème côte à côte -->
-          <div style="display:flex;gap:8px;margin-bottom:12px;">
-            <button id="reloadBtn" class="btn" style="flex:1;">🔁 Recharger</button>
-            <button id="themeBtn" class="btn" style="flex:1;">🎨 Thème</button>
-          </div>
-
-          <!-- Codes full width -->
-          <div style="margin-bottom:12px;">
-            <button id="codesBtn" class="btn" style="width:100%;">🎟️ Entrer un code</button>
-          </div>
-        </section>
-
-        <section id="settingsSecondaries" class="section">
-          <!-- modal-second containers injected via JS -->
-        </section>
+  <div class="modal-content" style="display:flex;flex-direction:column;height:100%;">
+    <header class="modal-header">
+      <h2 id="settingsTitle">⚙️ Paramètres</h2>
+      <button id="closeSettingsBtn" class="close-btn" aria-label="Fermer">✕</button>
+    </header>
+    <div class="modal-body" id="settingsBody" style="flex:1;display:flex;flex-direction:column;gap:16px;">
+      <button id="loginBtn" class="btn">🔑 Se connecter</button>
+      <!-- rangée principale de boutons -->
+      <div id="buttonRow" style="display:flex;flex-wrap:wrap;gap:8px;">
+        <button id="exportBtn" class="btn" style="flex:1;min-width:100px;"> 📤 Exporter </button>
+        <button id="importBtn" class="btn" style="flex:1;min-width:100px;"> 📥 Importer </button>
+        <button id="reloadBtn" class="btn" style="flex:1;min-width:100px;"> 🔄 Recharger </button>
+        <button id="themeBtn" class="btn" style="flex:1;min-width:100px;"> 🎗 Thème </button>
+        <button id="codesBtn" class="btn" style="flex:1;min-width:100px;"> 💳 Codes </button>
       </div>
-
-      <footer class="modal-footer" style="text-align:center;">
-        <button id="resetBtn" class="btn btn-warning" style="padding:6px 12px;font-size:.9rem;">⚠️ Réinitialiser</button>
-        <div style="margin-top:8px;font-size:.85rem;color:var(--muted-color);">Fermer avec Échap ou clic à l'extérieur</div>
-      </footer>
+      <!-- conteneur où s’affichent Export/Import/Codes -->
+      <div id="containerRow" style="display:flex;flex-direction:column;gap:8px;"></div>
+      <div style="flex:1;"></div>
+      <div style="display:flex;justify-content:center;">
+        <button id="resetBtn" class="btn footer-reset">↻ Reset total</button>
+      </div>
     </div>
+  </div>
   `;
 
-  // --- Références DOM
+  // Références DOM
   els.closeSettingsBtn = modal.querySelector("#closeSettingsBtn");
+  els.resetBtn = modal.querySelector("#resetBtn");
   els.loginBtn = modal.querySelector("#loginBtn");
   els.exportBtn = modal.querySelector("#exportBtn");
   els.importBtn = modal.querySelector("#importBtn");
-  els.codesBtn = modal.querySelector("#codesBtn");
-  els.themeBtn = modal.querySelector("#themeBtn");
   els.reloadBtn = modal.querySelector("#reloadBtn");
-  els.resetBtn = modal.querySelector("#resetBtn");
-  const secondaries = modal.querySelector("#settingsSecondaries");
+  els.themeBtn = modal.querySelector("#themeBtn");
+  els.codesBtn = modal.querySelector("#codesBtn");
+  const buttonRow = modal.querySelector("#buttonRow");
+  const containerRow = modal.querySelector("#containerRow");
 
-  // --- Helper: create modal-second (keeps style consistent)
-  function createSecondary(id, html) {
-    const node = document.createElement("div");
-    node.id = id;
-    node.className = "modal-second";
-    node.setAttribute("aria-hidden", "true");
-    node.style.display = "none";
-    node.innerHTML = html;
-    secondaries.appendChild(node);
-    return node;
-  }
-
-  // --- Export container
-  const exportContainer = createSecondary(
-    "exportContainer",
-    `
-      <div class="section">
-        <label for="exportPassword" class="section-title">Mot de passe (optionnel)</label>
-        <input id="exportPassword" type="password" class="input" />
-        <textarea id="exportText" class="textarea" readonly rows="6" placeholder="Cliquez sur Générer pour créer l'export"></textarea>
-        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">
-          <button id="doExportBtn" class="btn btn-primary">Générer</button>
-          <button id="copyExportBtn" class="btn">Copier</button>
-          <button id="backFromExport" class="btn">Retour</button>
+  // Secondary modal utilities
+  function createSecondaryModal(id, title, innerHtml) {
+    const m = document.createElement("div");
+    m.id = id;
+    m.className = "modal modal-secondary";
+    m.setAttribute("role", "dialog");
+    m.setAttribute("aria-hidden", "true");
+    m.innerHTML = `
+      <div class="modal-backdrop"></div>
+      <div class="modal-content" style="max-width:540px;">
+        <header class="modal-header" role="toolbar">
+          <h3 id="${id}Title" class="modal-title">${title}</h3>
+          <button class="close-btn" data-close="${id}" aria-label="Fermer">✕</button>
+        </header>
+        <div class="modal-body" style="display:flex;flex-direction:column;gap:8px;">
+          ${innerHtml}
         </div>
       </div>
-    `
-  );
-
-  // --- Import container
-  const importContainer = createSecondary(
-    "importContainer",
-    `
-      <div class="section">
-        <label for="importPassword" class="section-title">Mot de passe</label>
-        <input id="importPassword" type="password" class="input" />
-        <label for="importText" class="section-title">Données à importer</label>
-        <textarea id="importText" class="textarea" rows="6" placeholder="Collez les données chiffrées ou brutes ici"></textarea>
-        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">
-          <button id="doImportBtn" class="btn btn-primary">Importer</button>
-          <button id="clearImportBtn" class="btn">Effacer</button>
-          <button id="backFromImport" class="btn">Retour</button>
-        </div>
-      </div>
-    `
-  );
-
-  // --- Codes container
-  const codesContainer = createSecondary(
-    "codesContainer",
-    `
-      <div class="section">
-        <label for="codeInput" class="section-title">Entrer un code</label>
-        <input id="codeInput" class="input" />
-        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">
-          <button id="applyCodeBtn" class="btn btn-primary">Appliquer</button>
-          <button id="backFromCodes" class="btn">Retour</button>
-        </div>
-        <div id="codesFeedback" style="margin-top:10px;color:var(--muted);"></div>
-      </div>
-    `
-  );
-
-  // --- Selecteurs internes
-  const exportPasswordInput = exportContainer.querySelector("#exportPassword");
-  const exportText = exportContainer.querySelector("#exportText");
-  const doExportBtn = exportContainer.querySelector("#doExportBtn");
-  const copyExportBtn = exportContainer.querySelector("#copyExportBtn");
-  const backFromExport = exportContainer.querySelector("#backFromExport");
-
-  const importPasswordInput = importContainer.querySelector("#importPassword");
-  const importText = importContainer.querySelector("#importText");
-  const doImportBtn = importContainer.querySelector("#doImportBtn");
-  const clearImportBtn = importContainer.querySelector("#clearImportBtn");
-  const backFromImport = importContainer.querySelector("#backFromImport");
-
-  const codeInput = codesContainer.querySelector("#codeInput");
-  const applyCodeBtn = codesContainer.querySelector("#applyCodeBtn");
-  const codesFeedback = codesContainer.querySelector("#codesFeedback");
-  const backFromCodes = codesContainer.querySelector("#backFromCodes");
-
-  // --- Etat
-  let isOpen = false;
-  let rafId = null;
-
-  // --- Utilitaires d'affichage
-  function hideAllSeconds() {
-    [exportContainer, importContainer, codesContainer].forEach(c => {
-      c.style.display = "none";
-      c.setAttribute("aria-hidden", "true");
+    `;
+    m.addEventListener("click", e => {
+      if (e.target === m || e.target.classList.contains("modal-backdrop")) closeSecondaryModal(m);
     });
+    const closeBtn = m.querySelector(".close-btn");
+    if (closeBtn) closeBtn.addEventListener("click", () => closeSecondaryModal(m));
+    const content = m.querySelector(".modal-content");
+    if (content) content.addEventListener("click", e => e.stopPropagation());
+    document.body.appendChild(m);
+    return m;
   }
 
-  function showSecond(container) {
-    hideAllSeconds();
-    if (!container) return;
-    container.style.display = "block";
-    container.setAttribute("aria-hidden", "false");
-  }
-
-  function openMain() {
-    modal.setAttribute("aria-hidden", "false");
-    modal.style.display = "flex";
+  function openSecondaryModal(modalEl) {
+    const others = document.querySelectorAll(".modal.modal-secondary[aria-hidden='false']");
+    others.forEach(o => { if (o !== modalEl) closeSecondaryModal(o); });
+    modalEl.setAttribute("aria-hidden", "false");
     document.body.classList.add("modal-open");
-    hideAllSeconds();
-    isOpen = true;
-    loop();
+    if (buttonRow) buttonRow.style.display = "none";
+    const focusable = modalEl.querySelector('button, [href], input, textarea, select, [tabindex]:not([tabindex="-1"])');
+    if (focusable) focusable.focus();
   }
 
-  function closeMain() {
-    modal.setAttribute("aria-hidden", "true");
-    modal.style.display = "none";
+  function closeSecondaryModal(modalEl) {
+    modalEl.setAttribute("aria-hidden", "true");
     document.body.classList.remove("modal-open");
-    hideAllSeconds();
-    isOpen = false;
-    if (rafId) cancelAnimationFrame(rafId);
-    rafId = null;
+    if (buttonRow) buttonRow.style.display = "flex";
+    const settingsOpenBtn = document.querySelector('[data-open-settings], #settingsBtn');
+    if (settingsOpenBtn) settingsOpenBtn.focus();
   }
 
-  // --- Loop UI léger (placeholder)
-  function updateUI() { /* reserved for dynamic updates if needed */ }
-  function loop() {
-    if (!isOpen) return;
-    updateUI();
-    rafId = requestAnimationFrame(loop);
+  // Create secondary modals (export/import/codes)
+  const exportContainer = createSecondaryModal("exportModal", "Exporter", `
+    <textarea id="exportText" rows="5" style="width:100%;margin-top:8px;"></textarea>
+    <button id="saveExportBtn" class="btn modal-btn" style="margin-top:8px;width:100%;">💾 Enregistrer</button>
+  `);
+
+  const importContainer = createSecondaryModal("importModal", "Importer", `
+    <textarea id="importText" rows="5" style="width:100%;margin-top:8px;"></textarea>
+    <button id="applyImportBtn" class="btn modal-btn" style="margin-top:8px;width:100%;">📂 Importer</button>
+  `);
+
+  const codesContainer = createSecondaryModal("codesModal", "Codes", `
+    <input id="codeInput" type="text" placeholder="Entrez le code" style="width:100%;margin-top:8px;"/>
+    <button id="applyCodeBtn" class="btn modal-btn" style="margin-top:8px;width:100%;">✅ Valider</button>
+    <h4 style="margin:8px 0 4px;">Codes utilisés :</h4>
+    <ul id="usedCodesList" style="padding-left:20px;margin:0;"></ul>
+  `);
+
+  // Ouvrir / Fermer le modal principal
+  function openSettings() {
+    modal.setAttribute("aria-hidden", "false");
+    document.body.classList.add("modal-open");
+  }
+  function closeSettings() {
+    modal.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("modal-open");
+    // Réinitialise l’affichage
+    buttonRow.style.display = "flex";
+    exportContainer.setAttribute("aria-hidden", "true");
+    importContainer.setAttribute("aria-hidden", "true");
+    codesContainer.setAttribute("aria-hidden", "true");
   }
 
-  // --- Event bindings (sûrs)
-  if (els.settingsBtn) {
-    els.settingsBtn.addEventListener("click", openMain);
-  } else {
-    const fallback = document.getElementById("settingsBtn");
-    if (fallback) fallback.addEventListener("click", openMain);
-  }
-
-  if (els.closeSettingsBtn) els.closeSettingsBtn.addEventListener("click", closeMain);
-  modal.addEventListener("click", e => {
-    if (e.target === modal) closeMain();
-  });
-  window.addEventListener("keydown", e => {
-    if (e.key === "Escape" && modal.getAttribute("aria-hidden") === "false") closeMain();
-  });
-
-  // --- Login (no-op for now)
-  if (els.loginBtn) {
-    els.loginBtn.addEventListener("click", () => {
-      console.log("🔐 Connexion à implémenter");
-      // placeholder: eventually open a modal-second with login form
-    });
-  }
-
-  // --- Reset
+  // Reset total
   function performFullReset() {
-    if (!confirm("⚠️ Réinitialiser tout le stockage local ?")) return;
+    if (!confirm("⚠️ Réinitialiser TOUT le stockage local ?")) return;
     localStorage.clear();
     for (const k of keys) state[k] = 0;
-    if (typeof state.pointsPerClick !== "undefined") state.pointsPerClick = 1;
-    if (typeof state.rebirths !== "undefined") state.rebirths = 0;
+    state.pointsPerClick = 1;
+    state.shopBoost = 1;
+    state.tempShopBoostFactor = 1;
+    state.tempShopBoostExpiresAt = 0;
+    state.rebirths = 0;
     save();
     renderMain();
-    renderStore();
-    closeMain();
+    closeSettings();
   }
-  if (els.resetBtn) els.resetBtn.addEventListener("click", performFullReset);
 
-  // --- Export logic
-  async function doExport() {
+  // Événements globaux
+  els.settingsBtn.addEventListener("click", openSettings);
+  els.closeSettingsBtn.addEventListener("click", closeSettings);
+  modal.addEventListener("click", e => { if (e.target === modal) closeSettings(); });
+  els.loginBtn.addEventListener("click", () => { console.log("🔐 Fonction de connexion à implémenter"); });
+  els.resetBtn.addEventListener("click", performFullReset);
+
+  // Export chiffré — remplace l'ancien affichage inline par ouverture modal
+  els.exportBtn.addEventListener("click", async () => {
+    const password = prompt("🔐 Mot de passe pour chiffrer l’export :");
+    if (!password) return;
     try {
-      const payload = JSON.stringify(state);
-      const pwd = exportPasswordInput.value.trim();
-      let out = payload;
-      if (pwd && typeof encryptData === "function") {
-        out = await encryptData(payload, pwd);
-      }
-      exportText.value = out;
-      exportText.select();
+      const dataStr = JSON.stringify(state);
+      const encrypted = await encryptData(dataStr, password);
+      const ta = exportContainer.querySelector("#exportText");
+      const saveBtn = exportContainer.querySelector("#saveExportBtn");
+      ta.value = encrypted;
+      openSecondaryModal(exportContainer);
+      saveBtn.onclick = () => {
+        const blob = new Blob([ta.value], { type: "text/plain" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "clicker-state.txt";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      };
     } catch (err) {
-      console.error("Export error", err);
-      alert("Erreur lors de l'export");
-    }
-  }
-  if (doExportBtn) doExportBtn.addEventListener("click", async () => {
-    await doExport();
-    showSecond(exportContainer);
-  });
-
-  if (copyExportBtn) copyExportBtn.addEventListener("click", async () => {
-    try {
-      await navigator.clipboard.writeText(exportText.value);
-      alert("Copié dans le presse-papier");
-    } catch (err) {
-      console.warn("Clipboard failed", err);
-      exportText.select();
-      document.execCommand("copy");
-      alert("Copié (fallback)");
+      console.error("❌ Chiffrement impossible", err);
+      alert("Erreur lors de l’export chiffré.");
+      closeSettings();
     }
   });
-  if (backFromExport) backFromExport.addEventListener("click", () => showSecond(null));
-  if (els.exportBtn) els.exportBtn.addEventListener("click", () => showSecond(exportContainer));
 
-  // --- Import logic (whitelist keys to avoid surprises)
-  async function doImport() {
-    const pwd = importPasswordInput.value.trim();
-    const encrypted = importText.value.trim();
-    if (!encrypted) {
-      alert("Compléter les champs");
-      return;
-    }
-
-    try {
-      let decrypted = encrypted;
-      if (pwd && typeof decryptData === "function") {
-        decrypted = await decryptData(encrypted, pwd);
+  // Import chiffré — ouverture modal
+  els.importBtn.addEventListener("click", () => {
+    const password = prompt("🔐 Mot de passe pour déchiffrer l’import :");
+    if (!password) return;
+    const applyBtn = importContainer.querySelector("#applyImportBtn");
+    const ta = importContainer.querySelector("#importText");
+    openSecondaryModal(importContainer);
+    applyBtn.onclick = async () => {
+      try {
+        const decrypted = await decryptData(ta.value.trim(), password);
+        const imported = JSON.parse(decrypted);
+        for (const k of keys) {
+          if (imported[k] != null) state[k] = imported[k];
+        }
+        state.pointsPerClick = imported.pointsPerClick ?? 1;
+        state.shopBoost = imported.shopBoost ?? 1;
+        state.tempShopBoostFactor = imported.tempShopBoostFactor ?? 1;
+        state.tempShopBoostExpiresAt = imported.tempShopBoostExpiresAt ?? 0;
+        state.rebirths = imported.rebirths ?? 0;
+        save();
+        renderMain();
+        closeSettings();
+        alert("✅ Import réussi !");
+      } catch (err) {
+        console.error("❌ Déchiffrement/parse impossible", err);
+        alert("Mot de passe incorrect ou texte invalide.");
       }
-      const imported = JSON.parse(decrypted);
-      if (typeof imported !== "object" || imported === null) throw new Error("invalid imported data");
-
-      // whitelist: only known keys allowed plus a few safe fields
-      const whitelist = new Set([...keys, "rebirths", "theme", "pointsPerClick", "points", "shopBoost"]);
-      for (const k of Object.keys(imported)) {
-        if (whitelist.has(k)) state[k] = imported[k];
-      }
-
-      save();
-      renderMain();
-      renderStore();
-      alert("✅ Import réussi !");
-      closeMain();
-    } catch (err) {
-      console.error("Import error", err);
-      alert("Mot de passe incorrect ou données invalides.");
-    }
-  }
-  if (doImportBtn) doImportBtn.addEventListener("click", async () => {
-    await doImport();
+    };
   });
-  if (clearImportBtn) clearImportBtn.addEventListener("click", () => {
-    importPasswordInput.value = "";
-    importText.value = "";
-  });
-  if (backFromImport) backFromImport.addEventListener("click", () => showSecond(null));
-  if (els.importBtn) els.importBtn.addEventListener("click", () => showSecond(importContainer));
 
-  // --- Codes logic
-  if (els.codesBtn) els.codesBtn.addEventListener("click", () => showSecond(codesContainer));
-  if (applyCodeBtn) applyCodeBtn.addEventListener("click", () => {
-    const code = (codeInput.value || "").trim();
-    if (!code) {
-      codesFeedback.textContent = "Entrer un code.";
-      return;
-    }
-    if (code === "BONUS100") {
-      state.points = (state.points || 0) + 100;
-      codesFeedback.textContent = "Code appliqué : +100 points";
-    } else if (code === "BOOSTX2") {
-      state.pointsPerClick = (state.pointsPerClick || 1) * 2;
-      codesFeedback.textContent = "Code appliqué : multiplicateur x2";
-    } else {
-      codesFeedback.textContent = "Code invalide";
-    }
-    save();
-    renderMain();
-    renderStore();
-  });
-  if (backFromCodes) backFromCodes.addEventListener("click", () => showSecond(null));
-
-  // --- Reload
-  if (els.reloadBtn) els.reloadBtn.addEventListener("click", () => {
-    const link = document.querySelector("link[rel~='icon']");
+  // Recharger ressources
+  els.reloadBtn.addEventListener("click", () => {
+    const link = document.querySelector("link[rel*='icon']");
     if (link) {
       const href = link.href.split("?")[0];
       link.href = `${href}?t=${Date.now()}`;
@@ -360,31 +256,82 @@ export function initSettings({
     window.location.reload();
   });
 
-  // --- Theme toggle
-  if (els.themeBtn) els.themeBtn.addEventListener("click", () => {
-    const current = document.documentElement.getAttribute("data-theme") || "light";
-    const next = current === "light" ? "dark" : "light";
-    document.documentElement.setAttribute("data-theme", next);
-    if (state.theme !== undefined) {
-      state.theme = next;
-      save();
-    }
-    renderMain();
+  // Thème (stub)
+  els.themeBtn.addEventListener("click", () => {
+    console.log("🎗 Changer le thème (clair/sombre/système) – fonction à implémenter");
   });
 
-  // --- Ensure closed at init
-  hideAllSeconds();
-  modal.style.display = "none";
-  modal.setAttribute("aria-hidden", "true");
+  // Gestion des codes
+  const validCodes = ["FREE"];
+  function updateUsedCodesList() {
+    const used = JSON.parse(localStorage.getItem("usedCodes") || "[]");
+    const ul = codesContainer.querySelector("#usedCodesList");
+    ul.innerHTML = "";
+    used.forEach(code => {
+      const li = document.createElement("li");
+      li.textContent = code;
+      ul.appendChild(li);
+    });
+  }
+  els.codesBtn.addEventListener("click", () => {
+    updateUsedCodesList();
+    openSecondaryModal(codesContainer);
+    const applyBtn = codesContainer.querySelector("#applyCodeBtn");
+    const inp = codesContainer.querySelector("#codeInput");
+    applyBtn.onclick = () => {
+      const code = inp.value.trim().toUpperCase();
+      if (!code) return;
+      let used = JSON.parse(localStorage.getItem("usedCodes") || "[]");
+      if (used.includes(code)) {
+        alert("Ce code a déjà été utilisé.");
+      } else if (validCodes.includes(code)) {
+        used.push(code);
+        localStorage.setItem("usedCodes", JSON.stringify(used));
+        alert("🎉 Code appliqué !");
+        updateUsedCodesList();
+      } else {
+        alert("❌ Code invalide.");
+      }
+      inp.value = "";
+    };
+  });
 
-  // --- Retourne API utile pour tests / contrôle externe
-  return {
-    openMain,
-    closeMain,
-    showSecond,
-    modal,
-    exportContainer,
-    importContainer,
-    codesContainer
-  };
+  // Hooks pour boutons internes si d'autres parties du code attendent ces handlers
+  const saveExportBtn = document.getElementById("saveExportBtn");
+  if (saveExportBtn) saveExportBtn.addEventListener("click", () => {
+    const ta = document.getElementById("exportText");
+    if (ta) {
+      const blob = new Blob([ta.value], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "clicker-state.txt";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+    closeSecondaryModal(exportContainer);
+  });
+
+  const applyImportBtn = document.getElementById("applyImportBtn");
+  if (applyImportBtn) applyImportBtn.addEventListener("click", async () => {
+    // this handler is set dynamically above; keep a fallback no-op
+    closeSecondaryModal(importContainer);
+  });
+
+  const applyCodeBtn = document.getElementById("applyCodeBtn");
+  if (applyCodeBtn) applyCodeBtn.addEventListener("click", () => {
+    // actual logic set dynamically above
+    closeSecondaryModal(codesContainer);
+  });
+
+  // Close secondary modals on Escape
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape") {
+      const openSecondary = document.querySelector(".modal.modal-secondary[aria-hidden='false']");
+      if (openSecondary) closeSecondaryModal(openSecondary);
+      else if (modal && modal.getAttribute("aria-hidden") === "false") closeSettings();
+    }
+  });
 }
