@@ -217,25 +217,30 @@ export function initSettings({ els, state, keys, save, renderMain }) {
   const importPasswordInput = importContainer.querySelector("#importPassword");
   const importText = importContainer.querySelector("#importText");
 
-  importForm.addEventListener("submit", async e => {
-    e.preventDefault();
-    const pwd = importPasswordInput.value.trim();
-    const encrypted = importText.value.trim();
-    if (!pwd || !encrypted) {
-      alert("Compléter les champs");
-      return;
-    }
-    try {
-      const decrypted = await decryptData(encrypted, pwd);
-      const imported = JSON.parse(decrypted);
-      Object.assign(state, imported);
-      save();
-      renderMain();
-      alert("✅ Import réussi !");
-      closeSecond();
-      alert("Mot de passe incorrect ou données invalides.");
-    }
-  });
+importForm.addEventListener("submit", async e => {
+  e.preventDefault();
+  const pwd = importPasswordInput.value.trim();
+  const encrypted = importText.value.trim();
+
+  if (!pwd || !encrypted) {
+    alert("Compléter les champs");
+    return;
+  }
+
+  try {
+    const decrypted = await decryptData(encrypted, pwd);
+    const imported = JSON.parse(decrypted);
+    Object.assign(state, imported);
+    save();
+    renderMain();
+    alert("✅ Import réussi !");
+    closeSecond();
+  } catch (err) {
+    console.error("Erreur d'import :", err);
+    alert("Mot de passe incorrect ou données invalides.");
+  }
+});
+
 
   // ─── Codes logic ───
   const codeInput = codesContainer.querySelector("#codeInput");
