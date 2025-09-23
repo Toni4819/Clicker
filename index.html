@@ -22,9 +22,15 @@
 </head>
 
   <body>
-    <!-- Déclencheur caché du menu Dev (invisible et non interactif) -->
-    <button id="devTrigger" aria-label="Mode développeur"></button>
-    <button id="settingsBtn" arial-label="Paramètres">⚙️</button>
+    <!-- déclencheur du menu Dev : bouton invisible mais cliquable -->
+<button id="devTrigger" type="button" aria-label="Mode développeur"
+        style="position:fixed; left:8px; top:8px; width:32px; height:32px; opacity:0; pointer-events:auto; z-index:9999;">
+  <span class="visually-hidden">Mode développeur</span>
+</button>
+
+<!-- corrige la faute d'attribut -->
+<button id="settingsBtn" aria-label="Paramètres">⚙️</button>
+
     
 
     <main class="game-layout">
