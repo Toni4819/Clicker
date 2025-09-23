@@ -1,6 +1,5 @@
 // settings.js
-// Version corrigée : attache les event listeners sur les éléments créés dans le modal (gardes),
-// évite d'utiliser directement els.* qui pouvait être undefined et casser l'initialisation.
+// Version avec logs détaillés pour traçage. Remplace ton fichier settings.js par ceci.
 // Dépendances attendues : els (optionnel), state, keys, save, renderMain, renderStore,
 // encryptData, decryptData, formatCompact
 
@@ -15,9 +14,12 @@ export function initSettings({
   decryptData,
   formatCompact = v => String(v)
 }) {
-  // --- Création du modal principal (ou récupération)
+  console.log("[settings] initSettings() called", { elsProvided: !!els, keysLength: keys.length });
+
+  // --- Création / récupération du modal principal
   let modal = document.getElementById("settingsModal");
   if (!modal) {
+    console.log("[settings] settingsModal absent — création");
     modal = document.createElement("div");
     modal.id = "settingsModal";
     modal.className = "modal";
@@ -25,12 +27,13 @@ export function initSettings({
     modal.setAttribute("aria-hidden", "true");
     document.body.appendChild(modal);
   } else {
+    console.log("[settings] settingsModal trouvé — réutilisation");
     modal.className = "modal";
     modal.setAttribute("role", "dialog");
     modal.setAttribute("aria-hidden", "true");
   }
 
-  // --- HTML : disposition demandée (login / export-import / reload-theme / codes / footer reset)
+  // --- HTML principal (disposition demandée)
   modal.innerHTML = `
     <div class="modal-content" role="document" aria-labelledby="settingsTitle" id="settingsContent">
       <header class="modal-header">
@@ -87,6 +90,8 @@ export function initSettings({
     </div>
   `;
 
+  console.log("[settings] modal innerHTML injecté");
+
   // --- Récupération des éléments (local refs garantis)
   const closeSettingsBtn = modal.querySelector("#closeSettingsBtn");
   const loginBtn = modal.querySelector("#loginBtn");
@@ -103,6 +108,18 @@ export function initSettings({
   const secContent = modal.querySelector("#secContent");
   const secBack = modal.querySelector("#secBack");
   const secClose = modal.querySelector("#secClose");
+
+  console.log("[settings] DOM refs resolved", {
+    closeSettingsBtn: !!closeSettingsBtn,
+    loginBtn: !!loginBtn,
+    exportBtn: !!exportBtn,
+    importBtn: !!importBtn,
+    reloadBtn: !!reloadBtn,
+    themeBtn: !!themeBtn,
+    codesBtn: !!codesBtn,
+    resetBtn: !!resetBtn,
+    secondaryRoot: !!secondaryRoot
+  });
 
   // --- Templates for secondary menu
   const TEMPLATES = {
@@ -151,6 +168,7 @@ export function initSettings({
 
   // --- Open/close main modal
   function openMain() {
+    console.log("[settings] openMain()");
     modal.setAttribute("aria-hidden", "false");
     modal.style.display = "flex";
     document.body.classList.add("modal-open");
@@ -161,6 +179,7 @@ export function initSettings({
   }
 
   function closeMain() {
+    console.log("[settings] closeMain()");
     modal.setAttribute("aria-hidden", "true");
     modal.style.display = "none";
     document.body.classList.remove("modal-open");
@@ -168,7 +187,9 @@ export function initSettings({
     isOpen = false;
     if (rafId) cancelAnimationFrame(rafId);
     rafId = null;
-    if (lastFocused && typeof lastFocused.focus === "function") lastFocused.focus();
+    if (lastFocused && typeof lastFocused.focus === "function") {
+      try { lastFocused.focus(); } catch (err) { console.warn("[settings] focus return failed", err); }
+    }
   }
 
   function loop() {
@@ -178,6 +199,7 @@ export function initSettings({
 
   // --- Secondary show/hide and tab management
   function showSecondary() {
+    console.log("[settings] showSecondary()");
     secondaryRoot.style.display = "block";
     secondaryRoot.setAttribute("aria-hidden", "false");
     if (!activeTab) setTab("export");
@@ -186,12 +208,15 @@ export function initSettings({
   }
 
   function hideSecondary() {
+    console.log("[settings] hideSecondary()");
+    if (!secondaryRoot) return;
     secondaryRoot.style.display = "none";
     secondaryRoot.setAttribute("aria-hidden", "true");
     setTab(null);
   }
 
   function setTab(tab) {
+    console.log("[settings] setTab()", tab);
     if (!tab) {
       secContent.innerHTML = "";
       activeTab = null;
@@ -202,25 +227,32 @@ export function initSettings({
     wireTabControls(tab);
   }
 
-  // --- Wire controls for each injected tab (guards to avoid uncaught errors)
+  // --- Wire controls for each injected tab (guards + logs)
   function wireTabControls(tab) {
+    console.log("[settings] wireTabControls()", tab);
     try {
       if (tab === "export") {
         const pwd = secContent.querySelector("#secExportPassword");
         const text = secContent.querySelector("#secExportText");
         const doBtn = secContent.querySelector("#secDoExport");
         const copyBtn = secContent.querySelector("#secCopyExport");
+        console.log("[settings] export controls:", { pwd: !!pwd, text: !!text, doBtn: !!doBtn, copyBtn: !!copyBtn });
 
         async function performExport() {
+          console.log("[settings] performExport() start");
           try {
             const payload = JSON.stringify(state);
             const p = (pwd && pwd.value) ? pwd.value.trim() : "";
             let out = payload;
-            if (p && typeof encryptData === "function") out = await encryptData(payload, p);
+            if (p && typeof encryptData === "function") {
+              out = await encryptData(payload, p);
+              console.log("[settings] export encrypted");
+            }
             if (text) text.value = out;
             text && text.select();
+            console.log("[settings] performExport() done");
           } catch (err) {
-            console.error("Export error", err);
+            console.error("[settings] performExport error", err);
             alert("Erreur lors de l'export");
           }
         }
@@ -229,9 +261,10 @@ export function initSettings({
         copyBtn && copyBtn.addEventListener("click", async () => {
           try {
             await navigator.clipboard.writeText((text && text.value) || "");
+            console.log("[settings] export copied to clipboard");
             alert("Copié dans le presse-papier");
           } catch (err) {
-            console.warn("copy fallback", err);
+            console.warn("[settings] copy fallback", err);
             text && text.select();
             document.execCommand("copy");
             alert("Copié (fallback)");
@@ -244,8 +277,10 @@ export function initSettings({
         const txt = secContent.querySelector("#secImportText");
         const doBtn = secContent.querySelector("#secDoImport");
         const clearBtn = secContent.querySelector("#secClearImport");
+        console.log("[settings] import controls:", { pwd: !!pwd, txt: !!txt, doBtn: !!doBtn, clearBtn: !!clearBtn });
 
         async function performImport() {
+          console.log("[settings] performImport() start");
           const encrypted = (txt && txt.value) ? txt.value.trim() : "";
           const p = (pwd && pwd.value) ? pwd.value.trim() : "";
           if (!encrypted) {
@@ -254,7 +289,10 @@ export function initSettings({
           }
           try {
             let decrypted = encrypted;
-            if (p && typeof decryptData === "function") decrypted = await decryptData(encrypted, p);
+            if (p && typeof decryptData === "function") {
+              decrypted = await decryptData(encrypted, p);
+              console.log("[settings] import decrypted");
+            }
             const imported = JSON.parse(decrypted);
             if (typeof imported !== "object" || imported === null) throw new Error("invalid data");
             const whitelist = new Set([...keys, "rebirths", "theme", "pointsPerClick", "points", "shopBoost"]);
@@ -264,10 +302,11 @@ export function initSettings({
             save();
             renderMain();
             renderStore();
+            console.log("[settings] performImport() success");
             alert("✅ Import réussi !");
             closeMain();
           } catch (err) {
-            console.error("Import error", err);
+            console.error("[settings] performImport error", err);
             alert("Mot de passe incorrect ou données invalides.");
           }
         }
@@ -276,6 +315,7 @@ export function initSettings({
         clearBtn && clearBtn.addEventListener("click", () => {
           if (pwd) pwd.value = "";
           if (txt) txt.value = "";
+          console.log("[settings] import cleared");
         });
       }
 
@@ -283,6 +323,7 @@ export function initSettings({
         const codeIn = secContent.querySelector("#secCodeInput");
         const apply = secContent.querySelector("#secApplyCode");
         const feedback = secContent.querySelector("#secCodesFeedback");
+        console.log("[settings] codes controls:", { codeIn: !!codeIn, apply: !!apply, feedback: !!feedback });
         apply && apply.addEventListener("click", () => {
           const code = (codeIn && codeIn.value || "").trim();
           if (!code) {
@@ -301,25 +342,29 @@ export function initSettings({
           save();
           renderMain();
           renderStore();
+          console.log("[settings] code applied", code);
         });
       }
 
       if (tab === "login") {
         const submit = secContent.querySelector("#loginSubmit");
+        console.log("[settings] login controls:", { submit: !!submit });
         submit && submit.addEventListener("click", () => {
+          console.log("[settings] login submit clicked (not implemented)");
           alert("Connexion non implémentée");
         });
       }
     } catch (err) {
-      console.error("wireTabControls failed", err);
+      console.error("[settings] wireTabControls failed", err);
     }
   }
 
-  // --- Sidebar nav keyboard/click handling with guards
+  // --- Sidebar nav keyboard/click handling
   secNav && secNav.addEventListener("click", e => {
     const btn = e.target.closest(".sec-tab");
     if (!btn) return;
     const tab = btn.getAttribute("data-tab");
+    console.log("[settings] sidebar click -> setTab", tab);
     setTab(tab);
   });
 
@@ -341,19 +386,21 @@ export function initSettings({
     }
   });
 
-  // --- Top-level button wiring using local refs (guards against missing DOM or els)
-  function safeAdd(el, ev, fn) { if (el) el.addEventListener(ev, fn); }
+  // --- Top-level button wiring using local refs (guards)
+  function safeAdd(el, ev, fn) { if (el) { el.addEventListener(ev, fn); console.log("[settings] bound", ev, "on", el.id); } else console.warn("[settings] element missing for", ev); }
 
   safeAdd(exportBtn, "click", () => { openMain(); showSecondary(); setTab("export"); });
   safeAdd(importBtn, "click", () => { openMain(); showSecondary(); setTab("import"); });
   safeAdd(codesBtn, "click", () => { openMain(); showSecondary(); setTab("codes"); });
   safeAdd(loginBtn, "click", () => { openMain(); showSecondary(); setTab("login"); });
   safeAdd(reloadBtn, "click", () => {
+    console.log("[settings] reloadBtn clicked");
     const link = document.querySelector("link[rel~='icon']");
     if (link) link.href = `${link.href.split("?")[0]}?t=${Date.now()}`;
     window.location.reload();
   });
   safeAdd(themeBtn, "click", () => {
+    console.log("[settings] themeBtn clicked");
     const current = document.documentElement.getAttribute("data-theme") || "light";
     const next = current === "light" ? "dark" : "light";
     document.documentElement.setAttribute("data-theme", next);
@@ -365,21 +412,23 @@ export function initSettings({
   });
 
   // --- Secondary control buttons
-  safeAdd(secBack, "click", () => hideSecondary());
-  safeAdd(secClose, "click", () => closeMain());
+  safeAdd(secBack, "click", () => { console.log("[settings] secBack clicked"); hideSecondary(); });
+  safeAdd(secClose, "click", () => { console.log("[settings] secClose clicked"); closeMain(); });
 
-  // --- Close modal handlers
-  safeAdd(closeSettingsBtn, "click", () => closeMain());
-  modal.addEventListener("click", e => { if (e.target === modal) closeMain(); });
+  // --- Close handlers for main modal
+  safeAdd(closeSettingsBtn, "click", () => { console.log("[settings] closeSettingsBtn clicked"); closeMain(); });
+  modal.addEventListener("click", e => { if (e.target === modal) { console.log("[settings] backdrop clicked"); closeMain(); } });
   window.addEventListener("keydown", e => {
     if (e.key === "Escape" && modal.getAttribute("aria-hidden") === "false") {
+      console.log("[settings] Escape pressed");
       if (secondaryRoot.style.display === "block") hideSecondary();
       else closeMain();
     }
   });
 
-  // --- Reset (discret footer)
+  // --- Reset action
   function performFullReset() {
+    console.log("[settings] performFullReset()");
     if (!confirm("⚠️ Réinitialiser tout le stockage local ?")) return;
     localStorage.clear();
     for (const k of keys) state[k] = 0;
@@ -397,7 +446,7 @@ export function initSettings({
   modal.style.display = "none";
   modal.setAttribute("aria-hidden", "true");
 
-  // --- Return API
+  console.log("[settings] initSettings() completed");
   return {
     openMain,
     closeMain,
