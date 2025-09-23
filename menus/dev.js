@@ -263,36 +263,70 @@ export function renderDev(deps) {
 }
 
 // Initialisation : branche le trigger et prépare le modal
+// initDevMenu — attache proprement le trigger et le close button
 export function initDevMenu(deps) {
-  const { els = {}, openModal = () => {}, closeModal = () => {} } = deps;
+  const { els = {}, openModal = () => {}, closeModal = () => {}, renderDev } = deps;
 
+  // s'assurer que le modal a une structure minimale
   if (!els.devModal) {
-    console.warn("initDevMenu: els.devModal manquant");
+    if (typeof prepareDevModal === "function") {
+      prepareDevModal(els);
+    } else {
+      console.warn("initDevMenu: prepareDevModal introuvable et els.devModal absent");
+      return;
+    }
+  } else {
+    // si on a un élément DOM brut, exposer els.devBody si besoin
+    if (!els.devBody && els.devModal.querySelector) {
+      els.devBody = els.devModal.querySelector("#devBody") || null;
+    }
+  }
+
+  // Récupère l'élément déclencheur directement depuis le DOM pour éviter références obsolètes
+  const trigger = document.getElementById("devTrigger") || els.devTrigger;
+  if (!trigger) {
+    console.warn("initDevMenu: devTrigger introuvable (élément #devTrigger manquant)");
     return;
   }
 
-  // Prépare structure si nécessaire
-  if (!els.devBody) prepareDevModal(els);
-
-  // Assure qu'il n'y a pas d'écouteurs doublons
-  const trigger = els.devTrigger;
-  if (trigger) {
-    // retire attributs précédents au besoin
-    trigger.replaceWith(trigger.cloneNode(true));
-    els.devTrigger = document.querySelector(trigger.matches ? null : null) || trigger; // no-op pour rester sûr
-    els.devTrigger.addEventListener("click", () => {
-      devUnlocked = false;
-      renderDev(deps);
-      openModal(els.devModal);
-    });
-  } else {
-    console.warn("initDevMenu: els.devTrigger manquant");
+  // retire un ancien listener s'il existe (stocké sur l'élément)
+  if (trigger.__devListenerFn__) {
+    trigger.removeEventListener("click", trigger.__devListenerFn__);
+    trigger.__devListenerFn__ = null;
   }
 
-  if (els.closeDevBtn) {
-    els.closeDevBtn.addEventListener("click", () => {
-      devUnlocked = false;
+  // nouveau listener
+  const listener = (e) => {
+    // prévention de comportement par défaut si nécessaire
+    if (e && typeof e.preventDefault === "function") e.preventDefault();
+    // remettre l'état verrouillé à false pour l'ouverture (demande de code)
+    if (typeof window !== "undefined") window.devUnlocked = false; // garde compatibilité si tu l'utilises global
+    // renderDev doit exister et être passé via deps
+    if (typeof renderDev === "function") {
+      try { renderDev(deps); } catch (err) { console.error("renderDev a échoué:", err); }
+    }
+    openModal(els.devModal);
+  };
+
+  // stocke la ref pour pouvoir retirer le listener plus tard
+  trigger.__devListenerFn__ = listener;
+  trigger.addEventListener("click", listener);
+
+  // prepareDevModal / renderDev devrait avoir créé els.closeDevBtn
+  const closeBtn = els.closeDevBtn || (els.devModal && els.devModal.querySelector && els.devModal.querySelector("#dev-close-btn"));
+  if (closeBtn) {
+    if (closeBtn.__closeDevListener__) {
+      closeBtn.removeEventListener("click", closeBtn.__closeDevListener__);
+      closeBtn.__closeDevListener__ = null;
+    }
+    const closeFn = () => {
+      if (typeof window !== "undefined") window.devUnlocked = false;
       closeModal(els.devModal);
-    });
+    };
+    closeBtn.__closeDevListener__ = closeFn;
+    closeBtn.addEventListener("click", closeFn);
+    // expose la référence proprement
+    els.closeDevBtn = closeBtn;
   }
 }
+
