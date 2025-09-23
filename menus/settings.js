@@ -1,8 +1,63 @@
-export function initSettings({ els, state, keys, save, renderMain }) {
-  console.log("🚀 initSettings lancé");
+// menus/settings.js
 
-  // ─── Modale principale ───
+// ─── Chiffrement AES-GCM / PBKDF2 ───
+const enc = new TextEncoder();
+const dec = new TextDecoder();
+
+async function deriveKey(password, salt) {
+  const baseKey = await crypto.subtle.importKey(
+    "raw",
+    enc.encode(password),
+    "PBKDF2",
+    false,
+    ["deriveKey"]
+  );
+  return crypto.subtle.deriveKey(
+    { name: "PBKDF2", salt, iterations: 100_000, hash: "SHA-256" },
+    baseKey,
+    { name: "AES-GCM", length: 256 },
+    false,
+    ["encrypt", "decrypt"]
+  );
+}
+
+async function encryptData(plainText, password) {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const key = await deriveKey(password, salt);
+  const cipher = await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv },
+    key,
+    enc.encode(plainText)
+  );
+  const combined = new Uint8Array(salt.length + iv.length + cipher.byteLength);
+  combined.set(salt, 0);
+  combined.set(iv, salt.length);
+  combined.set(new Uint8Array(cipher), salt.length + iv.length);
+  return btoa(String.fromCharCode(...combined));
+}
+
+async function decryptData(b64, password) {
+  const raw = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+  const salt = raw.slice(0, 16);
+  const iv = raw.slice(16, 28);
+  const data = raw.slice(28);
+  const key = await deriveKey(password, salt);
+  const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, data);
+  return dec.decode(plain);
+}
+
+// ─── Initialisation du menu Settings ───
+export function initSettings({ els, state, keys, save, renderMain }) {
+  console.log("🚀 initSettings lancé", { hasEls: !!els, hasState: !!state });
+
+  // Récupération/modification du modal principal
   const modal = document.getElementById("settingsModal");
+  if (!modal) {
+    console.error("❌ settingsModal introuvable dans le DOM");
+    return;
+  }
+
   modal.className = "modal";
   modal.setAttribute("aria-hidden", "true");
   modal.setAttribute("role", "dialog");
@@ -28,7 +83,7 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     </div>
   `;
 
-  // ─── Références boutons ───
+  // Références boutons internes au modal
   els.closeSettingsBtn = modal.querySelector("#closeSettingsBtn");
   els.loginBtn         = modal.querySelector("#loginBtn");
   els.exportBtn        = modal.querySelector("#exportBtn");
@@ -38,20 +93,37 @@ export function initSettings({ els, state, keys, save, renderMain }) {
   els.codesBtn         = modal.querySelector("#codesBtn");
   els.resetBtn         = modal.querySelector("#resetBtn");
 
-  // ─── Branchement du bouton Paramètres ───
+  // Branchement fermeture modal principale
+  els.closeSettingsBtn?.addEventListener("click", () => {
+    modal.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("modal-open");
+  });
+  modal.addEventListener("click", e => {
+    if (e.target === modal) {
+      modal.setAttribute("aria-hidden", "true");
+      document.body.classList.remove("modal-open");
+    }
+  });
+
+  // Branchement du bouton paramètres (si présent dans els)
   if (els.settingsBtn) {
-    console.log("✅ settingsBtn trouvé");
+    console.log("✅ settingsBtn trouvé - branchement du click");
     els.settingsBtn.addEventListener("click", () => {
       console.log("⚙️ settingsBtn cliqué");
       modal.setAttribute("aria-hidden", "false");
       document.body.classList.add("modal-open");
     });
   } else {
-    console.warn("❌ settingsBtn introuvable");
+    console.warn("⚠️ els.settingsBtn absent, le bouton Paramètres ne s'ouvrira pas");
   }
 
-  // ─── Modale secondaire ───
-  const second = els.modalSecond;
+  // ─── Modal secondaire (injection attendue dans index.html: #modalSecond) ───
+  const second = els.modalSecond || document.getElementById("modalSecond");
+  if (!second) {
+    console.error("❌ modalSecond introuvable dans le DOM");
+    return;
+  }
+
   second.className = "modal-second";
   second.setAttribute("aria-hidden", "true");
   second.setAttribute("role", "dialog");
@@ -82,14 +154,16 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     if (e.target === second) closeSecond();
   });
 
-  // ─── Conteneurs dynamiques ───
+  // ─── Conteneurs dynamiques (export / import / codes) ───
   const exportContainer = document.createElement("div");
   exportContainer.innerHTML = `
     <form id="exportForm" style="display:flex;flex-direction:column;gap:8px;">
       <input id="exportPassword" type="password" placeholder="Mot de passe" required />
       <textarea id="exportText" rows="5" readonly></textarea>
-      <button type="submit" class="btn">💾 Générer</button>
-      <button type="button" id="saveExportBtn" class="btn">📂 Enregistrer</button>
+      <div style="display:flex;gap:8px;">
+        <button type="submit" class="btn">💾 Générer</button>
+        <button type="button" id="saveExportBtn" class="btn">📂 Enregistrer</button>
+      </div>
     </form>
   `;
 
@@ -104,12 +178,14 @@ export function initSettings({ els, state, keys, save, renderMain }) {
 
   const codesContainer = document.createElement("div");
   codesContainer.innerHTML = `
-    <input id="codeInput" type="text" placeholder="Entrez le code" />
-    <button id="applyCodeBtn" class="btn">✅ Valider</button>
-    <ul id="usedCodesList"></ul>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <input id="codeInput" type="text" placeholder="Entrez le code" />
+      <button id="applyCodeBtn" class="btn">✅ Valider</button>
+      <ul id="usedCodesList" style="margin-top:8px;"></ul>
+    </div>
   `;
 
-  // ─── Logique export/import/codes ───
+  // ─── Export logic ───
   const exportForm = exportContainer.querySelector("#exportForm");
   const exportPasswordInput = exportContainer.querySelector("#exportPassword");
   const exportText = exportContainer.querySelector("#exportText");
@@ -118,12 +194,17 @@ export function initSettings({ els, state, keys, save, renderMain }) {
   exportForm.addEventListener("submit", async e => {
     e.preventDefault();
     const pwd = exportPasswordInput.value.trim();
-    if (!pwd) return;
+    if (!pwd) {
+      alert("Entrez un mot de passe");
+      return;
+    }
     try {
       const data = JSON.stringify(state);
       const encrypted = await encryptData(data, pwd);
       exportText.value = encrypted;
-    } catch {
+      console.log("🔐 Export généré");
+    } catch (err) {
+      console.error("Erreur lors de l'export :", err);
       alert("Erreur export");
     }
   });
@@ -138,6 +219,7 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     URL.revokeObjectURL(a.href);
   });
 
+  // ─── Import logic ───
   const importForm = importContainer.querySelector("#importForm");
   const importPasswordInput = importContainer.querySelector("#importPassword");
   const importText = importContainer.querySelector("#importText");
@@ -146,19 +228,26 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     e.preventDefault();
     const pwd = importPasswordInput.value.trim();
     const encrypted = importText.value.trim();
-    if (!pwd || !encrypted) return;
+    if (!pwd || !encrypted) {
+      alert("Compléter les champs");
+      return;
+    }
     try {
       const decrypted = await decryptData(encrypted, pwd);
-      Object.assign(state, JSON.parse(decrypted));
+      const imported = JSON.parse(decrypted);
+      Object.assign(state, imported);
       save();
       renderMain();
       alert("✅ Import réussi !");
       closeSecond();
-    } catch {
+      console.log("🔓 Import réussi");
+    } catch (err) {
+      console.error("Erreur import :", err);
       alert("Mot de passe incorrect ou données invalides.");
     }
   });
 
+  // ─── Codes logic ───
   const codeInput = codesContainer.querySelector("#codeInput");
   const applyCodeBtn = codesContainer.querySelector("#applyCodeBtn");
   const usedCodesList = codesContainer.querySelector("#usedCodesList");
@@ -171,8 +260,9 @@ export function initSettings({ els, state, keys, save, renderMain }) {
       return;
     }
     if (code === "BONUS100") {
-      state.points += 100;
+      state.points = (state.points || 0) + 100;
       alert("🎉 +100 points !");
+      console.log("Code BONUS100 appliqué");
     } else {
       alert("Code invalide.");
       return;
@@ -185,15 +275,16 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     usedCodesList.appendChild(li);
   });
 
-  // ─── Boutons secondaires ───
-  els.exportBtn.addEventListener("click", () => openSecond(exportContainer));
-  els.importBtn.addEventListener("click", () => openSecond(importContainer));
-  els.codesBtn.addEventListener("click", () => openSecond(codesContainer));
-  els.reloadBtn.addEventListener("click", () => location.reload());
-  els.themeBtn.addEventListener("click", () => {
+  // ─── Brancher les boutons secondaires sur la modalSecond ───
+  els.exportBtn?.addEventListener("click", () => openSecond(exportContainer));
+  els.importBtn?.addEventListener("click", () => openSecond(importContainer));
+  els.codesBtn?.addEventListener("click", () => openSecond(codesContainer));
+  els.reloadBtn?.addEventListener("click", () => location.reload());
+  els.themeBtn?.addEventListener("click", () => {
     document.body.classList.toggle("dark-theme");
   });
-  els.resetBtn.addEventListener("click", () => {
+
+  els.resetBtn?.addEventListener("click", () => {
     if (!confirm("⚠️ Réinitialiser TOUT le stockage ?")) return;
     localStorage.clear();
     for (const k of keys) state[k] = 0;
@@ -201,6 +292,17 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     renderMain();
     modal.setAttribute("aria-hidden", "true");
     document.body.classList.remove("modal-open");
+    console.log("🧹 Reset complet effectué");
   });
 
-  //
+  // Remplir la liste usedCodes si déjà présent
+  if (Array.isArray(state.usedCodes) && state.usedCodes.length) {
+    for (const code of state.usedCodes) {
+      const li = document.createElement("li");
+      li.textContent = code;
+      usedCodesList.appendChild(li);
+    }
+  }
+
+  console.log("✅ initSettings terminé et prêt");
+}
