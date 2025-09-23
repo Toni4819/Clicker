@@ -1,60 +1,13 @@
-// menus/settings.js
-
-// ─── Chiffrement AES-GCM / PBKDF2 ───
-const enc = new TextEncoder();
-const dec = new TextDecoder();
-
-async function deriveKey(password, salt) {
-  const baseKey = await crypto.subtle.importKey(
-    "raw",
-    enc.encode(password),
-    "PBKDF2",
-    false,
-    ["deriveKey"]
-  );
-  return crypto.subtle.deriveKey(
-    { name: "PBKDF2", salt, iterations: 100_000, hash: "SHA-256" },
-    baseKey,
-    { name: "AES-GCM", length: 256 },
-    false,
-    ["encrypt", "decrypt"]
-  );
-}
-
-async function encryptData(plainText, password) {
-  const salt = crypto.getRandomValues(new Uint8Array(16));
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const key = await deriveKey(password, salt);
-  const cipher = await crypto.subtle.encrypt(
-    { name: "AES-GCM", iv },
-    key,
-    enc.encode(plainText)
-  );
-  const combined = new Uint8Array(salt.length + iv.length + cipher.byteLength);
-  combined.set(salt, 0);
-  combined.set(iv, salt.length);
-  combined.set(new Uint8Array(cipher), salt.length + iv.length);
-  return btoa(String.fromCharCode(...combined));
-}
-
-async function decryptData(b64, password) {
-  const raw = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
-  const salt = raw.slice(0, 16);
-  const iv = raw.slice(16, 28);
-  const data = raw.slice(28);
-  const key = await deriveKey(password, salt);
-  const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, data);
-  return dec.decode(plain);
-}
-
-// ─── Initialisation du menu Settings ───
 export function initSettings({ els, state, keys, save, renderMain }) {
-  // modal principal
+  console.log("🚀 initSettings lancé");
+
+  // ─── Modale principale ───
   const modal = document.getElementById("settingsModal");
   modal.className = "modal";
   modal.setAttribute("aria-hidden", "true");
   modal.setAttribute("role", "dialog");
   modal.setAttribute("aria-labelledby", "settingsTitle");
+
   modal.innerHTML = `
     <div class="modal-content">
       <header class="modal-header">
@@ -75,7 +28,7 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     </div>
   `;
 
-  // références boutons
+  // ─── Références boutons ───
   els.closeSettingsBtn = modal.querySelector("#closeSettingsBtn");
   els.loginBtn         = modal.querySelector("#loginBtn");
   els.exportBtn        = modal.querySelector("#exportBtn");
@@ -85,7 +38,19 @@ export function initSettings({ els, state, keys, save, renderMain }) {
   els.codesBtn         = modal.querySelector("#codesBtn");
   els.resetBtn         = modal.querySelector("#resetBtn");
 
-  // modal secondaire (injection dans index.html)
+  // ─── Branchement du bouton Paramètres ───
+  if (els.settingsBtn) {
+    console.log("✅ settingsBtn trouvé");
+    els.settingsBtn.addEventListener("click", () => {
+      console.log("⚙️ settingsBtn cliqué");
+      modal.setAttribute("aria-hidden", "false");
+      document.body.classList.add("modal-open");
+    });
+  } else {
+    console.warn("❌ settingsBtn introuvable");
+  }
+
+  // ─── Modale secondaire ───
   const second = els.modalSecond;
   second.className = "modal-second";
   second.setAttribute("aria-hidden", "true");
@@ -117,7 +82,7 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     if (e.target === second) closeSecond();
   });
 
-  // conteneurs dynamiques
+  // ─── Conteneurs dynamiques ───
   const exportContainer = document.createElement("div");
   exportContainer.innerHTML = `
     <form id="exportForm" style="display:flex;flex-direction:column;gap:8px;">
@@ -144,11 +109,11 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     <ul id="usedCodesList"></ul>
   `;
 
-  // logique Export
-  const exportForm         = exportContainer.querySelector("#exportForm");
-  const exportPasswordInput= exportContainer.querySelector("#exportPassword");
-  const exportText         = exportContainer.querySelector("#exportText");
-  const saveExportBtn      = exportContainer.querySelector("#saveExportBtn");
+  // ─── Logique export/import/codes ───
+  const exportForm = exportContainer.querySelector("#exportForm");
+  const exportPasswordInput = exportContainer.querySelector("#exportPassword");
+  const exportText = exportContainer.querySelector("#exportText");
+  const saveExportBtn = exportContainer.querySelector("#saveExportBtn");
 
   exportForm.addEventListener("submit", async e => {
     e.preventDefault();
@@ -156,7 +121,8 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     if (!pwd) return;
     try {
       const data = JSON.stringify(state);
-      exportText.value = await encryptData(data, pwd);
+      const encrypted = await encryptData(data, pwd);
+      exportText.value = encrypted;
     } catch {
       alert("Erreur export");
     }
@@ -172,14 +138,13 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     URL.revokeObjectURL(a.href);
   });
 
-  // logique Import
-  const importForm         = importContainer.querySelector("#importForm");
-  const importPasswordInput= importContainer.querySelector("#importPassword");
-  const importText         = importContainer.querySelector("#importText");
+  const importForm = importContainer.querySelector("#importForm");
+  const importPasswordInput = importContainer.querySelector("#importPassword");
+  const importText = importContainer.querySelector("#importText");
 
   importForm.addEventListener("submit", async e => {
     e.preventDefault();
-    const pwd       = importPasswordInput.value.trim();
+    const pwd = importPasswordInput.value.trim();
     const encrypted = importText.value.trim();
     if (!pwd || !encrypted) return;
     try {
@@ -194,10 +159,9 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     }
   });
 
-  // logique Codes
-  const codeInput    = codesContainer.querySelector("#codeInput");
+  const codeInput = codesContainer.querySelector("#codeInput");
   const applyCodeBtn = codesContainer.querySelector("#applyCodeBtn");
-  const usedCodesList= codesContainer.querySelector("#usedCodesList");
+  const usedCodesList = codesContainer.querySelector("#usedCodesList");
 
   applyCodeBtn.addEventListener("click", () => {
     const code = codeInput.value.trim();
@@ -213,7 +177,7 @@ export function initSettings({ els, state, keys, save, renderMain }) {
       alert("Code invalide.");
       return;
     }
-    state.usedCodes = [...(state.usedCodes||[]), code];
+    state.usedCodes = [...(state.usedCodes || []), code];
     save();
     renderMain();
     const li = document.createElement("li");
@@ -221,18 +185,7 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     usedCodesList.appendChild(li);
   });
 
-  // branchements
-  els.closeSettingsBtn.addEventListener("click", () => {
-    modal.setAttribute("aria-hidden","true");
-    document.body.classList.remove("modal-open");
-  });
-  modal.addEventListener("click", e => {
-    if (e.target === modal) {
-      modal.setAttribute("aria-hidden","true");
-      document.body.classList.remove("modal-open");
-    }
-  });
-
+  // ─── Boutons secondaires ───
   els.exportBtn.addEventListener("click", () => openSecond(exportContainer));
   els.importBtn.addEventListener("click", () => openSecond(importContainer));
   els.codesBtn.addEventListener("click", () => openSecond(codesContainer));
@@ -243,10 +196,11 @@ export function initSettings({ els, state, keys, save, renderMain }) {
   els.resetBtn.addEventListener("click", () => {
     if (!confirm("⚠️ Réinitialiser TOUT le stockage ?")) return;
     localStorage.clear();
-    for (const k of keys) state[k]=0;
+    for (const k of keys) state[k] = 0;
     save();
     renderMain();
-    modal.setAttribute("aria-hidden","true");
+    modal.setAttribute("aria-hidden", "true");
     document.body.classList.remove("modal-open");
   });
-}
+
+  //
