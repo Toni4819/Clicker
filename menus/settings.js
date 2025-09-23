@@ -1,6 +1,8 @@
 // settings.js
-// initSettings : modal principal + "vrai" menu secondaire (sidebar + content).
-// Dépendances : els, state, keys, save, renderMain, renderStore, encryptData, decryptData, formatCompact
+// Version corrigée : attache les event listeners sur les éléments créés dans le modal (gardes),
+// évite d'utiliser directement els.* qui pouvait être undefined et casser l'initialisation.
+// Dépendances attendues : els (optionnel), state, keys, save, renderMain, renderStore,
+// encryptData, decryptData, formatCompact
 
 export function initSettings({
   els = {},
@@ -13,7 +15,7 @@ export function initSettings({
   decryptData,
   formatCompact = v => String(v)
 }) {
-  // --- Création du modal principal
+  // --- Création du modal principal (ou récupération)
   let modal = document.getElementById("settingsModal");
   if (!modal) {
     modal = document.createElement("div");
@@ -28,7 +30,7 @@ export function initSettings({
     modal.setAttribute("aria-hidden", "true");
   }
 
-  // --- HTML : modal principal + secondary menu layout (sidebar + content)
+  // --- HTML : disposition demandée (login / export-import / reload-theme / codes / footer reset)
   modal.innerHTML = `
     <div class="modal-content" role="document" aria-labelledby="settingsTitle" id="settingsContent">
       <header class="modal-header">
@@ -37,27 +39,27 @@ export function initSettings({
       </header>
 
       <div class="modal-body" id="settingsBody">
-        <!-- Top-level buttons layout as requested -->
-        <div class="settings-top" style="margin-bottom:12px;">
-          <button id="loginBtn" class="btn btn-primary" style="width:100%;">🔐 Se connecter</button>
-        </div>
+        <section class="section">
+          <div style="margin-bottom:12px;">
+            <button id="loginBtn" class="btn btn-primary" style="width:100%;">🔐 Se connecter</button>
+          </div>
 
-        <div style="display:flex;gap:8px;margin-bottom:12px;">
-          <button id="exportBtn" class="btn btn-primary" style="flex:1;">📤 Exporter</button>
-          <button id="importBtn" class="btn" style="flex:1;">📥 Importer</button>
-        </div>
+          <div style="display:flex;gap:8px;margin-bottom:12px;">
+            <button id="exportBtn" class="btn btn-primary" style="flex:1;">📤 Exporter</button>
+            <button id="importBtn" class="btn" style="flex:1;">📥 Importer</button>
+          </div>
 
-        <div style="display:flex;gap:8px;margin-bottom:12px;">
-          <button id="reloadBtn" class="btn" style="flex:1;">🔁 Recharger</button>
-          <button id="themeBtn" class="btn" style="flex:1;">🎨 Thème</button>
-        </div>
+          <div style="display:flex;gap:8px;margin-bottom:12px;">
+            <button id="reloadBtn" class="btn" style="flex:1;">🔁 Recharger</button>
+            <button id="themeBtn" class="btn" style="flex:1;">🎨 Thème</button>
+          </div>
 
-        <div style="margin-bottom:12px;">
-          <button id="codesBtn" class="btn" style="width:100%;">🎟️ Entrer un code</button>
-        </div>
+          <div style="margin-bottom:12px;">
+            <button id="codesBtn" class="btn" style="width:100%;">🎟️ Entrer un code</button>
+          </div>
+        </section>
 
-        <!-- placeholder pour le menu secondaire (sidebar + content) -->
-        <div id="settingsSecondaryRoot" style="display:none;margin-top:12px;">
+        <section id="settingsSecondaryRoot" style="display:none;margin-top:12px;">
           <div id="secOverlay" style="display:flex;gap:12px;">
             <nav id="secSidebar" class="modal-second-sidebar" aria-label="Menu paramètres" style="min-width:160px;">
               <ul role="menu" id="secNav" style="list-style:none;margin:0;padding:8px;display:flex;flex-direction:column;gap:8px;">
@@ -68,15 +70,14 @@ export function initSettings({
               </ul>
             </nav>
 
-            <div id="secContent" class="modal-second" role="region" aria-live="polite" style="flex:1;">
-              <!-- contenus par onglet injectés par JS -->
-            </div>
+            <div id="secContent" class="modal-second" role="region" aria-live="polite" style="flex:1;"></div>
           </div>
+
           <div style="display:flex;justify-content:flex-end;margin-top:8px;gap:8px;">
             <button id="secBack" class="btn">Retour</button>
             <button id="secClose" class="btn">Fermer</button>
           </div>
-        </div>
+        </section>
       </div>
 
       <footer class="modal-footer" style="text-align:center;">
@@ -86,24 +87,24 @@ export function initSettings({
     </div>
   `;
 
-  // --- DOM refs
-  els.closeSettingsBtn = modal.querySelector("#closeSettingsBtn");
-  els.loginBtn = modal.querySelector("#loginBtn");
-  els.exportBtn = modal.querySelector("#exportBtn");
-  els.importBtn = modal.querySelector("#importBtn");
-  els.codesBtn = modal.querySelector("#codesBtn");
-  els.themeBtn = modal.querySelector("#themeBtn");
-  els.reloadBtn = modal.querySelector("#reloadBtn");
-  els.resetBtn = modal.querySelector("#resetBtn");
+  // --- Récupération des éléments (local refs garantis)
+  const closeSettingsBtn = modal.querySelector("#closeSettingsBtn");
+  const loginBtn = modal.querySelector("#loginBtn");
+  const exportBtn = modal.querySelector("#exportBtn");
+  const importBtn = modal.querySelector("#importBtn");
+  const reloadBtn = modal.querySelector("#reloadBtn");
+  const themeBtn = modal.querySelector("#themeBtn");
+  const codesBtn = modal.querySelector("#codesBtn");
+  const resetBtn = modal.querySelector("#resetBtn");
 
   const secondaryRoot = modal.querySelector("#settingsSecondaryRoot");
-  const secSidebar = modal.querySelector("#secSidebar");
   const secNav = modal.querySelector("#secNav");
+  const secSidebar = modal.querySelector("#secSidebar");
   const secContent = modal.querySelector("#secContent");
   const secBack = modal.querySelector("#secBack");
   const secClose = modal.querySelector("#secClose");
 
-  // --- Tab contents templates (kept simple, will be wired)
+  // --- Templates for secondary menu
   const TEMPLATES = {
     login: `
       <h3>🔐 Connexion</h3>
@@ -142,13 +143,13 @@ export function initSettings({
     `
   };
 
-  // --- State: which tab is active
+  // --- State
   let activeTab = null;
   let lastFocused = null;
   let rafId = null;
   let isOpen = false;
 
-  // --- Utilities: open/close main modal
+  // --- Open/close main modal
   function openMain() {
     modal.setAttribute("aria-hidden", "false");
     modal.style.display = "flex";
@@ -175,13 +176,11 @@ export function initSettings({
     rafId = requestAnimationFrame(loop);
   }
 
-  // --- Secondary show/hide
+  // --- Secondary show/hide and tab management
   function showSecondary() {
     secondaryRoot.style.display = "block";
     secondaryRoot.setAttribute("aria-hidden", "false");
-    // default to export tab if none
     if (!activeTab) setTab("export");
-    // focus first tabbable in sidebar
     const firstBtn = secSidebar.querySelector(".sec-tab");
     if (firstBtn) firstBtn.focus();
   }
@@ -192,7 +191,6 @@ export function initSettings({
     setTab(null);
   }
 
-  // --- Tab switcher
   function setTab(tab) {
     if (!tab) {
       secContent.innerHTML = "";
@@ -201,131 +199,131 @@ export function initSettings({
     }
     activeTab = tab;
     secContent.innerHTML = TEMPLATES[tab] || "<div>Vide</div>";
-    // After injecting content, wire the specific controls for that tab
     wireTabControls(tab);
   }
 
-  // --- Wire controls per tab
+  // --- Wire controls for each injected tab (guards to avoid uncaught errors)
   function wireTabControls(tab) {
-    if (tab === "export") {
-      const pwd = document.getElementById("secExportPassword");
-      const text = document.getElementById("secExportText");
-      const doBtn = document.getElementById("secDoExport");
-      const copyBtn = document.getElementById("secCopyExport");
+    try {
+      if (tab === "export") {
+        const pwd = secContent.querySelector("#secExportPassword");
+        const text = secContent.querySelector("#secExportText");
+        const doBtn = secContent.querySelector("#secDoExport");
+        const copyBtn = secContent.querySelector("#secCopyExport");
 
-      async function performExport() {
-        try {
-          const payload = JSON.stringify(state);
-          const p = (pwd && pwd.value) ? pwd.value.trim() : "";
-          let out = payload;
-          if (p && typeof encryptData === "function") out = await encryptData(payload, p);
-          if (text) text.value = out;
-          text && text.select();
-        } catch (err) {
-          console.error("Export error", err);
-          alert("Erreur lors de l'export");
+        async function performExport() {
+          try {
+            const payload = JSON.stringify(state);
+            const p = (pwd && pwd.value) ? pwd.value.trim() : "";
+            let out = payload;
+            if (p && typeof encryptData === "function") out = await encryptData(payload, p);
+            if (text) text.value = out;
+            text && text.select();
+          } catch (err) {
+            console.error("Export error", err);
+            alert("Erreur lors de l'export");
+          }
         }
+
+        doBtn && doBtn.addEventListener("click", performExport);
+        copyBtn && copyBtn.addEventListener("click", async () => {
+          try {
+            await navigator.clipboard.writeText((text && text.value) || "");
+            alert("Copié dans le presse-papier");
+          } catch (err) {
+            console.warn("copy fallback", err);
+            text && text.select();
+            document.execCommand("copy");
+            alert("Copié (fallback)");
+          }
+        });
       }
 
-      doBtn && doBtn.addEventListener("click", performExport);
-      copyBtn && copyBtn.addEventListener("click", async () => {
-        try {
-          await navigator.clipboard.writeText(text.value || "");
-          alert("Copié dans le presse-papier");
-        } catch (err) {
-          console.warn("copy fallback", err);
-          text && text.select();
-          document.execCommand("copy");
-          alert("Copié (fallback)");
-        }
-      });
-    }
+      if (tab === "import") {
+        const pwd = secContent.querySelector("#secImportPassword");
+        const txt = secContent.querySelector("#secImportText");
+        const doBtn = secContent.querySelector("#secDoImport");
+        const clearBtn = secContent.querySelector("#secClearImport");
 
-    if (tab === "import") {
-      const pwd = document.getElementById("secImportPassword");
-      const txt = document.getElementById("secImportText");
-      const doBtn = document.getElementById("secDoImport");
-      const clearBtn = document.getElementById("secClearImport");
-
-      async function performImport() {
-        const encrypted = (txt && txt.value) ? txt.value.trim() : "";
-        const p = (pwd && pwd.value) ? pwd.value.trim() : "";
-        if (!encrypted) {
-          alert("Compléter les champs");
-          return;
-        }
-        try {
-          let decrypted = encrypted;
-          if (p && typeof decryptData === "function") {
-            decrypted = await decryptData(encrypted, p);
+        async function performImport() {
+          const encrypted = (txt && txt.value) ? txt.value.trim() : "";
+          const p = (pwd && pwd.value) ? pwd.value.trim() : "";
+          if (!encrypted) {
+            alert("Compléter les champs");
+            return;
           }
-          const imported = JSON.parse(decrypted);
-          if (typeof imported !== "object" || imported === null) throw new Error("invalid data");
-          const whitelist = new Set([...keys, "rebirths", "theme", "pointsPerClick", "points", "shopBoost"]);
-          for (const k of Object.keys(imported)) {
-            if (whitelist.has(k)) state[k] = imported[k];
+          try {
+            let decrypted = encrypted;
+            if (p && typeof decryptData === "function") decrypted = await decryptData(encrypted, p);
+            const imported = JSON.parse(decrypted);
+            if (typeof imported !== "object" || imported === null) throw new Error("invalid data");
+            const whitelist = new Set([...keys, "rebirths", "theme", "pointsPerClick", "points", "shopBoost"]);
+            for (const k of Object.keys(imported)) {
+              if (whitelist.has(k)) state[k] = imported[k];
+            }
+            save();
+            renderMain();
+            renderStore();
+            alert("✅ Import réussi !");
+            closeMain();
+          } catch (err) {
+            console.error("Import error", err);
+            alert("Mot de passe incorrect ou données invalides.");
+          }
+        }
+
+        doBtn && doBtn.addEventListener("click", performImport);
+        clearBtn && clearBtn.addEventListener("click", () => {
+          if (pwd) pwd.value = "";
+          if (txt) txt.value = "";
+        });
+      }
+
+      if (tab === "codes") {
+        const codeIn = secContent.querySelector("#secCodeInput");
+        const apply = secContent.querySelector("#secApplyCode");
+        const feedback = secContent.querySelector("#secCodesFeedback");
+        apply && apply.addEventListener("click", () => {
+          const code = (codeIn && codeIn.value || "").trim();
+          if (!code) {
+            feedback && (feedback.textContent = "Entrer un code.");
+            return;
+          }
+          if (code === "BONUS100") {
+            state.points = (state.points || 0) + 100;
+            feedback && (feedback.textContent = "Code appliqué : +100 points");
+          } else if (code === "BOOSTX2") {
+            state.pointsPerClick = (state.pointsPerClick || 1) * 2;
+            feedback && (feedback.textContent = "Code appliqué : multiplicateur x2");
+          } else {
+            feedback && (feedback.textContent = "Code invalide");
           }
           save();
           renderMain();
           renderStore();
-          alert("✅ Import réussi !");
-          closeMain();
-        } catch (err) {
-          console.error("Import error", err);
-          alert("Mot de passe incorrect ou données invalides.");
-        }
+        });
       }
 
-      doBtn && doBtn.addEventListener("click", performImport);
-      clearBtn && clearBtn.addEventListener("click", () => {
-        if (pwd) pwd.value = "";
-        if (txt) txt.value = "";
-      });
-    }
-
-    if (tab === "codes") {
-      const codeIn = document.getElementById("secCodeInput");
-      const apply = document.getElementById("secApplyCode");
-      const feedback = document.getElementById("secCodesFeedback");
-      apply && apply.addEventListener("click", () => {
-        const code = (codeIn && codeIn.value || "").trim();
-        if (!code) {
-          feedback.textContent = "Entrer un code.";
-          return;
-        }
-        if (code === "BONUS100") {
-          state.points = (state.points || 0) + 100;
-          feedback.textContent = "Code appliqué : +100 points";
-        } else if (code === "BOOSTX2") {
-          state.pointsPerClick = (state.pointsPerClick || 1) * 2;
-          feedback.textContent = "Code appliqué : multiplicateur x2";
-        } else {
-          feedback.textContent = "Code invalide";
-        }
-        save();
-        renderMain();
-        renderStore();
-      });
-    }
-
-    if (tab === "login") {
-      const submit = document.getElementById("loginSubmit");
-      submit && submit.addEventListener("click", () => {
-        // no-op placeholder
-        alert("Connexion non implémentée");
-      });
+      if (tab === "login") {
+        const submit = secContent.querySelector("#loginSubmit");
+        submit && submit.addEventListener("click", () => {
+          alert("Connexion non implémentée");
+        });
+      }
+    } catch (err) {
+      console.error("wireTabControls failed", err);
     }
   }
 
-  // --- Sidebar navigation handling (keyboard & click)
-  secNav.addEventListener("click", e => {
+  // --- Sidebar nav keyboard/click handling with guards
+  secNav && secNav.addEventListener("click", e => {
     const btn = e.target.closest(".sec-tab");
     if (!btn) return;
     const tab = btn.getAttribute("data-tab");
     setTab(tab);
   });
 
-  secNav.addEventListener("keydown", e => {
+  secNav && secNav.addEventListener("keydown", e => {
     const focused = document.activeElement;
     if (!focused || !focused.classList.contains("sec-tab")) return;
     if (e.key === "ArrowDown" || e.key === "ArrowRight") {
@@ -343,33 +341,44 @@ export function initSettings({
     }
   });
 
-  // --- Top-level button wiring: open the secondary menu and activate the related tab
-  if (els.exportBtn) els.exportBtn.addEventListener("click", () => { openMain(); showSecondary(); setTab("export"); });
-  if (els.importBtn) els.importBtn.addEventListener("click", () => { openMain(); showSecondary(); setTab("import"); });
-  if (els.codesBtn) els.codesBtn.addEventListener("click", () => { openMain(); showSecondary(); setTab("codes"); });
-  if (els.loginBtn) els.loginBtn.addEventListener("click", () => { openMain(); showSecondary(); setTab("login"); });
+  // --- Top-level button wiring using local refs (guards against missing DOM or els)
+  function safeAdd(el, ev, fn) { if (el) el.addEventListener(ev, fn); }
 
-  // --- Secondary back/close
-  secBack && secBack.addEventListener("click", () => {
-    // simply hide secondary and keep main open
-    hideSecondary();
+  safeAdd(exportBtn, "click", () => { openMain(); showSecondary(); setTab("export"); });
+  safeAdd(importBtn, "click", () => { openMain(); showSecondary(); setTab("import"); });
+  safeAdd(codesBtn, "click", () => { openMain(); showSecondary(); setTab("codes"); });
+  safeAdd(loginBtn, "click", () => { openMain(); showSecondary(); setTab("login"); });
+  safeAdd(reloadBtn, "click", () => {
+    const link = document.querySelector("link[rel~='icon']");
+    if (link) link.href = `${link.href.split("?")[0]}?t=${Date.now()}`;
+    window.location.reload();
   });
-  secClose && secClose.addEventListener("click", () => {
-    closeMain();
+  safeAdd(themeBtn, "click", () => {
+    const current = document.documentElement.getAttribute("data-theme") || "light";
+    const next = current === "light" ? "dark" : "light";
+    document.documentElement.setAttribute("data-theme", next);
+    if (state.theme !== undefined) {
+      state.theme = next;
+      save();
+    }
+    renderMain();
   });
 
-  // --- Close handlers for the modal
-  if (els.closeSettingsBtn) els.closeSettingsBtn.addEventListener("click", closeMain);
+  // --- Secondary control buttons
+  safeAdd(secBack, "click", () => hideSecondary());
+  safeAdd(secClose, "click", () => closeMain());
+
+  // --- Close modal handlers
+  safeAdd(closeSettingsBtn, "click", () => closeMain());
   modal.addEventListener("click", e => { if (e.target === modal) closeMain(); });
   window.addEventListener("keydown", e => {
     if (e.key === "Escape" && modal.getAttribute("aria-hidden") === "false") {
-      // If secondary open, close it first; else close main
       if (secondaryRoot.style.display === "block") hideSecondary();
       else closeMain();
     }
   });
 
-  // --- Reset button
+  // --- Reset (discret footer)
   function performFullReset() {
     if (!confirm("⚠️ Réinitialiser tout le stockage local ?")) return;
     localStorage.clear();
@@ -381,25 +390,7 @@ export function initSettings({
     renderStore();
     closeMain();
   }
-  if (els.resetBtn) els.resetBtn.addEventListener("click", performFullReset);
-
-  // --- Reload & Theme top-level
-  if (els.reloadBtn) els.reloadBtn.addEventListener("click", () => {
-    const link = document.querySelector("link[rel~='icon']");
-    if (link) link.href = `${link.href.split("?")[0]}?t=${Date.now()}`;
-    window.location.reload();
-  });
-
-  if (els.themeBtn) els.themeBtn.addEventListener("click", () => {
-    const current = document.documentElement.getAttribute("data-theme") || "light";
-    const next = current === "light" ? "dark" : "light";
-    document.documentElement.setAttribute("data-theme", next);
-    if (state.theme !== undefined) {
-      state.theme = next;
-      save();
-    }
-    renderMain();
-  });
+  safeAdd(resetBtn, "click", performFullReset);
 
   // --- Ensure closed at init
   hideSecondary();
