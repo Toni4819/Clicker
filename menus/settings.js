@@ -51,15 +51,15 @@ export function initSettings({ els, state, save, renderMain }) {
         <section class="section">
           <h3 class="section-title" style="text-align:center">Données</h3>
           <div style="display:flex;gap:8px;justify-content:center;margin-top:8px;flex-wrap:wrap">
-            <button id="exportBtn" class="btn btn-primary btn-data">📤 Exporter (chiffré)</button>
-            <button id="importBtn" class="btn btn-primary btn-data">📥 Importer (chiffré)</button>
+            <button id="exportBtn" class="btn btn-blue btn-data">📤 Exporter (chiffré)</button>
+            <button id="importBtn" class="btn btn-blue btn-data">📥 Importer (chiffré)</button>
           </div>
         </section>
 
         <section class="section">
           <h3 class="section-title" style="text-align:center">Codes</h3>
           <div style="display:flex;gap:8px;justify-content:center;margin-top:8px">
-            <button id="codesBtn" class="btn btn-primary btn-codes">💳 Entrer un code</button>
+            <button id="codesBtn" class="btn btn-green btn-codes">💳 Entrer un code</button>
           </div>
         </section>
 
@@ -82,7 +82,7 @@ export function initSettings({ els, state, save, renderMain }) {
     </div>
   `;
 
-  // --- Style spécial zone texte "copilot like" ---
+  // --- Style spécial zone texte + boutons colorés ---
   if (!document.getElementById("settings-modal-style")) {
     const style = document.createElement("style");
     style.id = "settings-modal-style";
@@ -112,6 +112,12 @@ export function initSettings({ els, state, save, renderMain }) {
         color:var(--fg);
         resize:none;
       }
+      /* Boutons colorés */
+      .btn-green { background:#28a745; color:white; border:none; padding:10px 14px; border-radius:8px; cursor:pointer; }
+      .btn-green:hover { background:#218838; }
+      .btn-blue { background:#007bff; color:white; border:none; padding:10px 14px; border-radius:8px; cursor:pointer; }
+      .btn-blue:hover { background:#0069d9; }
+      .item-btn { background:var(--border); padding:8px 12px; border-radius:8px; cursor:pointer; }
     `;
     document.head.appendChild(style);
   }
@@ -185,7 +191,7 @@ export function initSettings({ els, state, save, renderMain }) {
       <div class="section">
         <div style="text-align:center;margin-bottom:8px">Mot de passe pour chiffrer l'export</div>
         <div style="display:flex;justify-content:center;gap:8px">
-          <input id="exportPwd" type="password" placeholder="Mot de passe" style="border-radius:10px;padding:10px;border:1px solid var(--border);background:transparent;color:var(--fg)" />
+          <input id="exportPwd" type="password" placeholder="Mot de passe" class="styled-input" />
           <button id="doExportBtn" class="item-btn">Générer</button>
         </div>
         <div id="exportOutput" style="margin-top:12px"></div>
@@ -200,6 +206,7 @@ export function initSettings({ els, state, save, renderMain }) {
     doExportBtn.addEventListener("click", async function handleExport() {
       const pwd = exportPwd.value || "";
       if (!pwd) return alert("Mot de passe requis");
+      exportPwd.disabled = true; // 🔒 empêche modification
       try {
         const blob = await encryptJSON(state, pwd);
         exportOutput.innerHTML = `
@@ -234,12 +241,12 @@ export function initSettings({ els, state, save, renderMain }) {
     secondBody.innerHTML = `
       <div class="section">
         <div style="text-align:center;margin-bottom:8px">Fichier ou collez votre export</div>
-        <input id="importFile" type="file" accept=".txt" style="margin-bottom:8px" />
+        <input id="importFile" type="file" accept=".txt" class="styled-input" />
         <div class="copilot-box">
           <button class="copy-btn">Coller</button>
           <textarea id="importData" rows="6"></textarea>
         </div>
-        <input id="importPwd" type="password" placeholder="Mot de passe" style="margin-top:8px;border-radius:10px;padding:10px;border:1px solid var(--border);background:transparent;color:var(--fg);width:60%" />
+        <input id="importPwd" type="password" placeholder="Mot de passe" class="styled-input" />
         <div style="text-align:center;margin-top:8px">
           <button id="doImportBtn" class="item-btn">Importer</button>
         </div>
@@ -288,7 +295,7 @@ export function initSettings({ els, state, save, renderMain }) {
       <div class="section">
         <div style="text-align:center;margin-bottom:8px">Entrez votre code</div>
         <div style="display:flex;gap:8px;justify-content:center">
-          <input id="codeInput" type="text" placeholder="Code" style="border-radius:10px;padding:10px;border:1px solid var(--border);background:transparent;color:var(--fg)" />
+          <input id="codeInput" type="text" placeholder="Code" class="styled-input" />
           <button id="applyCodeBtn" class="item-btn">Appliquer</button>
         </div>
       </div>
