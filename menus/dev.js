@@ -1,329 +1,312 @@
-// dev.js — Menu développeur sécurisé, autonome et modulaire
-// Intègre : salt, expectedHash, devUnlocked et expose initDevMenu / renderDev
+// menus/dev.js
+// Module autonome du menu développeur avec mot de passe fixe et global (non modifiable à l'exécution).
+// Usage (type="module"):
+// import { initDevMenu, openDev, closeDev } from './menus/dev.js';
+// initDevMenu({ devTriggerId: 'devTrigger', devModalId: 'devModal', api: { getState, setState } });
+//
+// Pour des raisons de sécurité, le mot de passe en clair n'est pas présent dans le fichier.
+// Il est attendu que tu remplaceras directement la constante EXPECTED_HASH par le SHA-256 hex du
+// mot de passe souhaité concaténé au salt ci‑dessous avant déploiement.
 
-const salt = "X9!a#";
-const expectedHash = "bb58f0471dac25dc294e8af3f6b8dba28c302dee3b3ce24a69c1914462dee954";
-let devUnlocked = false;
+const DEFAULT = {
+  devTriggerId: 'devTrigger',
+  devModalId: 'devModal',
+  salt: 'X9!a#', // conserver/adapter si tu changes la méthode de calcul du hash
+  // Remplace la valeur ci-dessous par le hash hex SHA-256 du (motDePasse + salt).
+  // Exemple (hors code) : SHA256('MonMDP' + 'X9!a#') => hex => coller ici.
+  EXPECTED_HASH: 'bb58f0471dac25dc294e8af3f6b8dba28c302dee3b3ce24a69c1914462dee954',
+  modalClass: 'dev-modal',
+  modalContentClass: 'dev-modal__content',
+  closeBtnClass: 'dev-modal__close',
+};
 
-// util: SHA-256 hex
-async function hashString(str) {
-  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+let cfg = { ...DEFAULT };
+let els = {};
+let api = {};
+let state = { open: false, unlocked: false, sessionKey: null };
+
+async function sha256Hex(str) {
+  const enc = new TextEncoder();
+  const buf = await crypto.subtle.digest('SHA-256', enc.encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-async function checkDevCode(input) {
-  const code = String(input || "").trim();
-  if (!code) return false;
-  const computedHash = await hashString(code + salt);
-  return computedHash === expectedHash;
-}
-
-// Prépare le DOM du modal s'il n'existe pas
-function prepareDevModal(els) {
-  if (!els.devModal) return;
-  const modal = els.devModal;
-  modal.className = "modal";
-  modal.setAttribute("aria-hidden", "true");
-  modal.setAttribute("role", "dialog");
-  modal.setAttribute("aria-labelledby", "devTitle");
+/* ---------------------------
+   Modal DOM + styles
+   --------------------------- */
+function ensureModal(id) {
+  let modal = document.getElementById(id);
+  if (modal) return modal;
+  modal = document.createElement('div');
+  modal.id = id;
+  modal.className = cfg.modalClass;
+  modal.setAttribute('role', 'dialog');
+  modal.setAttribute('aria-modal', 'true');
+  modal.setAttribute('aria-hidden', 'true');
+  modal.style.display = 'none';
   modal.innerHTML = `
-    <div class="modal-content" role="document">
-      <header class="modal-header">
-        <h2 id="devTitle">🔧 Mode Développeur</h2>
-        <button id="dev-close-btn" class="close-btn" aria-label="Fermer">✕</button>
-      </header>
-      <div class="modal-body" id="devBody" tabindex="0"></div>
+    <div class="${cfg.modalContentClass}" role="document">
+      <button class="${cfg.closeBtnClass}" aria-label="Fermer">✕</button>
+      <header><h2>Mode développeur</h2><p id="${id}-status">Initialisation...</p></header>
+      <main id="${id}-main" class="dev-main" tabindex="0"></main>
+      <footer class="dev-footer" style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+        <button id="${id}-btn-apply" class="btn">Appliquer</button>
+        <button id="${id}-btn-export" class="btn">Exporter</button>
+        <button id="${id}-btn-import" class="btn">Importer</button>
+        <button id="${id}-btn-lock" class="btn">Verrouiller</button>
+      </footer>
     </div>
   `;
-  els.devBody = modal.querySelector("#devBody");
-  els.closeDevBtn = modal.querySelector("#dev-close-btn");
+  document.body.appendChild(modal);
+  injectStyles();
+  return modal;
 }
 
+function injectStyles() {
+  if (document.getElementById('dev-modal-styles')) return;
+  const css = `
+    .${cfg.modalClass} { position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.55); z-index:10000; }
+    .${cfg.modalContentClass} { background:#0e1117; color:#e6eef8; padding:14px; border-radius:8px; width:calc(100% - 48px); max-width:880px; position:relative; box-shadow:0 8px 24px rgba(0,0,0,.6); }
+    .${cfg.closeBtnClass} { position:absolute; right:12px; top:12px; background:transparent; border:0; color:#cbd5e1; font-size:18px; cursor:pointer; }
+    .dev-main { max-height:60vh; overflow:auto; margin-top:8px; }
+    .dev-row { display:flex; gap:8px; align-items:center; margin:8px 0; flex-wrap:wrap; }
+    .dev-row label { min-width:120px; color:#cbd5e1; }
+    .dev-row input, .dev-row textarea, .dev-row select { background:#0b0d10; color:#e6eef8; border:1px solid #24303a; padding:6px 8px; border-radius:4px; }
+    .dev-footer .btn { background:#132032; color:#e6eef8; border:0; padding:6px 10px; border-radius:6px; cursor:pointer; }
+  `;
+  const s = document.createElement('style');
+  s.id = 'dev-modal-styles';
+  s.textContent = css;
+  document.head.appendChild(s);
+}
 
-// Renderer principal
-export function renderDev(deps) {
-  const { els, state, save = () => {}, renderMain = () => {}, renderStore = () => {}, closeModal = () => {}, machines = [] } = deps;
+/* ---------------------------
+   Build UI (with fixed PW flow)
+   --------------------------- */
+function buildMain(modal) {
+  const main = modal.querySelector(`#${modal.id}-main`);
+  main.innerHTML = '';
 
-  if (!els || !els.devModal) return;
-  if (!els.devBody) prepareDevModal(els);
-  const body = els.devBody;
+  const isProtected = !!cfg.EXPECTED_HASH && cfg.EXPECTED_HASH !== 'REPLACE_WITH_SHA256_HEX_OF_PASSWORD_PLUS_SALT';
 
-  Object.assign(body.style, {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    padding: "16px",
-    gap: "12px",
-    width: "100%",
-    boxSizing: "border-box"
-  });
-
-  // helper: créer ligne de contrôle (label + input number + bouton)
-  const makeLine = (label, id, value, min = 0, step = 1) => {
-    const safeVal = (value === undefined || value === null) ? "" : String(value);
-    return `
-      <div class="dev-line" style="display:flex; align-items:center; gap:8px; width:100%; max-width:480px;">
-        <label for="${id}" style="flex:1; text-align:right;">${label}</label>
-        <input id="${id}" type="number" min="${min}" step="${step}" value="${safeVal}" style="flex:1; padding:6px;" />
-        <button data-action="set" data-target="${id}" class="item-btn">OK</button>
-      </div>
-    `;
-  };
-
-  // Vue : verrouillé (demande code)
-  if (!devUnlocked) {
-    body.innerHTML = `
-      <div style="display:flex; flex-direction:column; align-items:center; gap:12px; width:100%;">
-        <h3 class="section-title">🔐 Code Développeur</h3>
-        <div style="display:flex; gap:8px; align-items:center;">
-          <input id="devCodeInput" type="password" placeholder="Entrez le code" aria-label="Code développeur"
-                 style="width:260px; text-align:center; padding:8px;" />
-        </div>
-        <div style="display:flex; gap:8px; margin-top:6px;">
-          <button id="devValidateBtn" class="btn btn-primary">Valider</button>
-          <button id="devCancelBtn" class="btn"">Annuler</button>
-        </div>
-        <div id="devFeedback" role="status" aria-live="polite" style="min-height:18px; color:#b00; margin-top:8px;"></div>
-      </div>
-    `;
-
-    const input = body.querySelector("#devCodeInput");
-    const validateBtn = body.querySelector("#devValidateBtn");
-    const cancelBtn = body.querySelector("#devCancelBtn");
-    const feedback = body.querySelector("#devFeedback");
-
-    const showFeedback = (msg, ok = false) => {
-      feedback.textContent = msg;
-      feedback.style.color = ok ? "#080" : "#b00";
-    };
-
-    validateBtn.addEventListener("click", async () => {
-      validateBtn.disabled = true;
-      const code = input.value || "";
-      const ok = await checkDevCode(code);
-      validateBtn.disabled = false;
-      if (ok) {
-        devUnlocked = true;
-        showFeedback("Accès développeur autorisé", true);
-        // petit délai pour que lecteur vocal lise le feedback, puis re-render
-        setTimeout(() => renderDev(deps), 250);
-      } else {
-        input.value = "";
-        showFeedback("Code incorrect");
-        input.focus();
-      }
-    });
-
-    cancelBtn.addEventListener("click", () => {
-      devUnlocked = false;
-      closeModal(els.devModal);
-    });
-
-    // support Entrée dans l'input
-    input.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") validateBtn.click();
-    });
-
-    input.focus();
-    return;
-  }
-
-  // Vue : déverrouillée — affichage des variables
-  let html = `<h3 class="section-title">🔧 Mode Dev Avancé</h3>`;
-
-  html += `<section style="width:100%; max-width:640px;">`;
-  html += `<h4>💰 Points</h4>`;
-  html += makeLine("Points", "pointsInput", state.points || 0, 0, 1);
-  html += `
-    <div style="display:flex; align-items:center; gap:8px; max-width:480px; margin-top:6px;">
-      <span style="flex:1; text-align:right;">Ajout rapide</span>
-      <button data-bulk="1000" class="item-btn bulk-btn">+1k</button>
-      <button data-bulk="10000" class="item-btn bulk-btn">+10k</button>
-      <button data-bulk="100000" class="item-btn bulk-btn">+100k</button>
-      <button data-bulk="1000000" class="item-btn bulk-btn">+1M</button>
+  const sessionSection = document.createElement('section');
+  sessionSection.className = 'dev-section';
+  sessionSection.innerHTML = `
+    <h3>Session</h3>
+    <div class="dev-row"><label>Protection</label><span id="${modal.id}-prot">${isProtected ? 'Activée (mot de passe requis)' : 'Désactivée (aucun mot de passe configuré)'}</span></div>
+    <div class="dev-row" id="${modal.id}-auth">
+      <label>Mot de passe</label>
+      <input id="${modal.id}-pwd" type="password" placeholder="${isProtected ? 'Entrez le mot de passe' : 'Aucun mot de passe configuré'}" />
+      <button id="${modal.id}-btn-pwd" class="btn">${isProtected ? 'Déverrouiller' : 'Déverrouillage (désactivé)'}</button>
     </div>
   `;
-  html += makeLine("Points/Clic", "clickPowerInput", state.pointsPerClick || 1, 1, 1);
+  main.appendChild(sessionSection);
 
-  html += `<h4>🏭 Production</h4>`;
-  html += makeLine("Auto-clickers", "autoClickersInput", state.autoClickers || 0, 0, 1);
-  for (const m of machines) {
-    const key = `machine-${m.key}-input`;
-    html += makeLine(m.title || m.key, key, Number(state[m.key] || 0), 0, 1);
-  }
-
-  html += `<h4>🚀 Boosts</h4>`;
-  html += makeLine("Boost Shop permanent", "shopBoostInput", state.shopBoost ?? 1, 1, 0.01);
-  html += makeLine("Boost Temporaire ×", "tempBoostFactorInput", state.tempShopBoostFactor ?? 1, 1, 0.01);
-  html += makeLine("Temp Boost expire (timestamp)", "tempBoostExpireInput", state.tempShopBoostExpiresAt ?? 0, 0, 1);
-  html += makeLine("Boost Rebirth ×", "rebirthBoostInput", state.rebirthBoost ?? 1, 1, 0.01);
-
-  html += `<h4>🌱 Rebirths</h4>`;
-  html += makeLine("Nombre de Rebirths", "rebirthsInput", state.rebirths ?? 0, 0, 1);
-
-  html += `
-    <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-top:12px;">
-      <button id="resetRebirthsBtn" class="item-btn">Réinit Rebirths</button>
-      <button id="resetAllStorageBtn" class="danger-btn">Vider Storage & Reload</button>
-    </div>
-    <div style="margin-top:12px;">
-      <button id="devExitBtn" class="btn btn-secondary">🚪 Quitter Mode Dev</button>
-    </div>
+  const cur = api.getState ? api.getState() : { points: 0, autoClicks: 0, multipliers: { clickPower: 1 }, upgrades: {} };
+  const varsSection = document.createElement('section');
+  varsSection.innerHTML = `
+    <h3>Variables</h3>
+    <div class="dev-row"><label>Points</label><input id="${modal.id}-points" type="number" value="${Number(cur.points || 0)}" /></div>
+    <div class="dev-row"><label>Clics/s</label><input id="${modal.id}-auto" type="number" value="${Number(cur.autoClicks || 0)}" /></div>
+    <div class="dev-row"><label>Click Power</label><input id="${modal.id}-clickP" type="number" step="0.1" value="${(cur.multipliers && cur.multipliers.clickPower) || 1}" /></div>
   `;
+  main.appendChild(varsSection);
 
-  html += `</section>`;
-  body.innerHTML = html;
+  const upgrades = JSON.stringify(cur.upgrades || {}, null, 2);
+  const upSection = document.createElement('section');
+  upSection.innerHTML = `
+    <h3>Upgrades (JSON)</h3>
+    <div class="dev-row"><label>Upgrades</label><textarea id="${modal.id}-upgrades" rows="6" style="min-width:320px;">${escapeHtml(upgrades)}</textarea></div>
+  `;
+  main.appendChild(upSection);
 
-  // --- délégation d'événements pour les boutons OK
-  body.querySelectorAll('button[data-action="set"]').forEach(btn => {
-    btn.addEventListener("click", () => {
-      const target = btn.getAttribute("data-target");
-      const input = body.querySelector(`#${target}`);
-      if (!input) return;
-      const raw = input.value;
-      // garder int si l'utilisateur a fourni entier, sinon float
-      const parsed = raw.includes('.') ? parseFloat(raw) : parseInt(raw, 10);
-      if (isNaN(parsed)) {
-        input.classList.add("input-error");
-        setTimeout(() => input.classList.remove("input-error"), 800);
+  wireMainButtons(modal);
+  updateStatus(modal, 'Prêt');
+}
+
+/* ---------------------------
+   Wiring: verification (fixed hash), apply, export, import, lock
+   --------------------------- */
+function wireMainButtons(modal) {
+  const pwdBtn = modal.querySelector(`#${modal.id}-btn-pwd`);
+  const pwdInput = modal.querySelector(`#${modal.id}-pwd`);
+
+  if (pwdBtn) {
+    pwdBtn.addEventListener('click', async () => {
+      const val = pwdInput.value || '';
+      if (!cfg.EXPECTED_HASH || cfg.EXPECTED_HASH === 'REPLACE_WITH_SHA256_HEX_OF_PASSWORD_PLUS_SALT') {
+        // no password configured at build time
+        state.unlocked = true;
+        state.sessionKey = 'session_nopw_' + Date.now();
+        updateStatus(modal, 'Déverrouillé (aucun mot de passe configuré)');
+        buildMain(modal);
         return;
       }
-      // map target -> state key
-      switch (target) {
-        case "pointsInput": state.points = parsed; break;
-        case "clickPowerInput": state.pointsPerClick = parsed; break;
-        case "autoClickersInput": state.autoClickers = parsed; break;
-        case "shopBoostInput": state.shopBoost = parsed; break;
-        case "tempBoostFactorInput": state.tempShopBoostFactor = parsed; break;
-        case "tempBoostExpireInput": state.tempShopBoostExpiresAt = parsed; break;
-        case "rebirthBoostInput": state.rebirthBoost = parsed; break;
-        case "rebirthsInput": state.rebirths = parsed; break;
-        default:
-          // machines: machine-{key}-input => state[key]
-          if (target.startsWith("machine-") && target.endsWith("-input")) {
-            const key = target.slice(8, -6); // remove "machine-" and "-input"
-            state[key] = parsed;
-          } else {
-            // Unknown target: ignore
-            return;
-          }
+      const candidate = await sha256Hex(val + cfg.salt);
+      if (candidate === cfg.EXPECTED_HASH) {
+        state.unlocked = true;
+        state.sessionKey = 'session_' + Math.random().toString(36).slice(2);
+        updateStatus(modal, 'Déverrouillé');
+        buildMain(modal);
+      } else {
+        updateStatus(modal, 'Mot de passe incorrect');
       }
-      save();
-      renderMain();
-      renderStore();
-    });
-  });
-
-  // bulk add buttons
-  body.querySelectorAll(".bulk-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const n = Number(btn.getAttribute("data-bulk") || 0);
-      if (!Number.isFinite(n) || n <= 0) return;
-      state.points = (Number(state.points) || 0) + n;
-      save();
-      renderMain();
-      renderStore();
-    });
-  });
-
-  // reset rebirths
-  const resetRebirthsBtn = body.querySelector("#resetRebirthsBtn");
-  if (resetRebirthsBtn) {
-    resetRebirthsBtn.addEventListener("click", () => {
-      state.rebirths = 0;
-      try { localStorage.removeItem("rebirthCount"); } catch(e) {}
-      save();
-      renderMain();
-      renderStore();
     });
   }
 
-  // reset all storage
-  const resetAllBtn = body.querySelector("#resetAllStorageBtn");
-  if (resetAllBtn) {
-    resetAllBtn.addEventListener("click", () => {
-      // protection : confirmer nativement
-      if (!confirm("Confirmer : vider le localStorage et recharger la page ?")) return;
-      try { localStorage.clear(); } catch (e) {}
-      location.reload();
+  const applyBtn = modal.querySelector(`#${modal.id}-btn-apply`);
+  if (applyBtn) {
+    applyBtn.addEventListener('click', () => {
+      if (cfg.EXPECTED_HASH && !state.unlocked) {
+        return updateStatus(modal, 'Session verrouillée. Déverrouillez pour appliquer.');
+      }
+      const main = modal.querySelector(`#${modal.id}-main`);
+      const points = Number(main.querySelector(`#${modal.id}-points`).value || 0);
+      const autoClicks = Number(main.querySelector(`#${modal.id}-auto`).value || 0);
+      const clickP = Number(main.querySelector(`#${modal.id}-clickP`).value || 1);
+      let upgrades;
+      try { upgrades = JSON.parse(main.querySelector(`#${modal.id}-upgrades`).value || '{}'); }
+      catch (e) { return updateStatus(modal, 'JSON Upgrades invalide'); }
+
+      const changes = { points, autoClicks, multipliers: { clickPower: clickP }, upgrades };
+      try {
+        if (api.setState) api.setState(changes);
+        else if (api.applyChanges) api.applyChanges(changes);
+        updateStatus(modal, 'Modifications appliquées');
+      } catch (e) {
+        updateStatus(modal, 'Erreur lors de l\'application');
+      }
     });
   }
 
-  // Exit dev
-  const exitBtn = body.querySelector("#devExitBtn");
-  if (exitBtn) {
-    exitBtn.addEventListener("click", () => {
-      devUnlocked = false;
-      closeModal(els.devModal);
+  const exportBtn = modal.querySelector(`#${modal.id}-btn-export`);
+  if (exportBtn) {
+    exportBtn.addEventListener('click', () => {
+      const cur = api.getState ? api.getState() : {};
+      const raw = JSON.stringify({ exportedAt: Date.now(), data: cur }, null, 2);
+      const payload = btoa(unescape(encodeURIComponent(raw)));
+      const blob = new Blob([payload], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `clicker_export_${Date.now()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      updateStatus(modal, 'Export déclenché');
+    });
+  }
+
+  const importBtn = modal.querySelector(`#${modal.id}-btn-import`);
+  if (importBtn) {
+    importBtn.addEventListener('click', () => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'application/json';
+      input.onchange = async () => {
+        const f = input.files[0];
+        if (!f) return updateStatus(modal, 'Aucun fichier choisi');
+        const txt = await f.text();
+        let decoded = null;
+        try { decoded = decodeURIComponent(escape(atob(txt))); } catch (e) {
+          try { decoded = atob(txt); } catch (e2) { decoded = txt; }
+        }
+        try {
+          const parsed = JSON.parse(decoded);
+          const data = parsed.data || parsed;
+          if (api.setState) api.setState(data);
+          else if (api.applyChanges) api.applyChanges(data);
+          else state.snapshot = data;
+          updateStatus(modal, 'Import appliqué');
+          buildMain(modal);
+        } catch (e) {
+          updateStatus(modal, 'Import invalide');
+        }
+      };
+      input.click();
+    });
+  }
+
+  const lockBtn = modal.querySelector(`#${modal.id}-btn-lock`);
+  if (lockBtn) {
+    lockBtn.addEventListener('click', () => {
+      state.unlocked = false;
+      state.sessionKey = null;
+      updateStatus(modal, 'Session verrouillée');
+      buildMain(modal);
     });
   }
 }
 
-// Initialisation : branche le trigger et prépare le modal
-// initDevMenu — attache proprement le trigger et le close button
-export function initDevMenu(deps) {
-  const { els = {}, openModal = () => {}, closeModal = () => {}, renderDev } = deps;
+/* ---------------------------
+   Open / close modal
+   --------------------------- */
+function openModal(modal) {
+  if (!modal) return;
+  modal.style.display = 'flex';
+  modal.setAttribute('aria-hidden', 'false');
+  document.documentElement.style.overflow = 'hidden';
+  state.open = true;
+  const first = modal.querySelector('input,button,textarea,select');
+  if (first) first.focus();
+}
+function closeModal(modal) {
+  if (!modal) return;
+  modal.style.display = 'none';
+  modal.setAttribute('aria-hidden', 'true');
+  document.documentElement.style.overflow = '';
+  state.open = false;
+}
 
-  // s'assurer que le modal a une structure minimale
-  if (!els.devModal) {
-    if (typeof prepareDevModal === "function") {
-      prepareDevModal(els);
-    } else {
-      console.warn("initDevMenu: prepareDevModal introuvable et els.devModal absent");
-      return;
-    }
-  } else {
-    // si on a un élément DOM brut, exposer els.devBody si besoin
-    if (!els.devBody && els.devModal.querySelector) {
-      els.devBody = els.devModal.querySelector("#devBody") || null;
-    }
+/* ---------------------------
+   Public API
+   --------------------------- */
+export function initDevMenu(options = {}) {
+  cfg = { ...cfg, ...options };
+  if (options.api) api = options.api;
+  els.devTrigger = document.getElementById(cfg.devTriggerId);
+  els.devModal = ensureModal(cfg.devModalId);
+
+  if (els.devTrigger) {
+    els.devTrigger.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (state.open) closeModal(els.devModal);
+      else { buildMain(els.devModal); openModal(els.devModal); }
+    });
   }
 
-  // Récupère l'élément déclencheur directement depuis le DOM pour éviter références obsolètes
-  const trigger = document.getElementById("devTrigger") || els.devTrigger;
-  if (!trigger) {
-    console.warn("initDevMenu: devTrigger introuvable (élément #devTrigger manquant)");
-    return;
-  }
+  const closeBtn = els.devModal.querySelector(`.${cfg.closeBtnClass}`);
+  if (closeBtn) closeBtn.addEventListener('click', () => closeModal(els.devModal));
 
-  // retire un ancien listener s'il existe (stocké sur l'élément)
-  if (trigger.__devListenerFn__) {
-    trigger.removeEventListener("click", trigger.__devListenerFn__);
-    trigger.__devListenerFn__ = null;
-  }
+  els.devModal.addEventListener('click', (e) => {
+    const content = els.devModal.querySelector(`.${cfg.modalContentClass}`);
+    if (content && !content.contains(e.target)) closeModal(els.devModal);
+  });
 
-  // nouveau listener
-  const listener = (e) => {
-    // prévention de comportement par défaut si nécessaire
-    if (e && typeof e.preventDefault === "function") e.preventDefault();
-    // remettre l'état verrouillé à false pour l'ouverture (demande de code)
-    if (typeof window !== "undefined") window.devUnlocked = false; // garde compatibilité si tu l'utilises global
-    // renderDev doit exister et être passé via deps
-    if (typeof renderDev === "function") {
-      try { renderDev(deps); } catch (err) { console.error("renderDev a échoué:", err); }
-    }
-    openModal(els.devModal);
-  };
+  document.addEventListener('keydown', (e) => {
+    if ((e.key === 'Escape' || e.key === 'Esc') && state.open) closeModal(els.devModal);
+  });
 
-  // stocke la ref pour pouvoir retirer le listener plus tard
-  trigger.__devListenerFn__ = listener;
-  trigger.addEventListener("click", listener);
-
-  // prepareDevModal / renderDev devrait avoir créé els.closeDevBtn
-  const closeBtn = els.closeDevBtn || (els.devModal && els.devModal.querySelector && els.devModal.querySelector("#dev-close-btn"));
-  if (closeBtn) {
-    if (closeBtn.__closeDevListener__) {
-      closeBtn.removeEventListener("click", closeBtn.__closeDevListener__);
-      closeBtn.__closeDevListener__ = null;
-    }
-    const closeFn = () => {
-      if (typeof window !== "undefined") window.devUnlocked = false;
-      closeModal(els.devModal);
+  if (typeof window !== 'undefined') {
+    window.__CLICKER_DEV__ = {
+      open: () => { buildMain(els.devModal); openModal(els.devModal); },
+      close: () => closeModal(els.devModal),
+      state,
+      // helper console: compute hash for a chosen password (not stored)
+      computeHash: async (pwd) => await sha256Hex(pwd + cfg.salt)
     };
-    closeBtn.__closeDevListener__ = closeFn;
-    closeBtn.addEventListener("click", closeFn);
-    // expose la référence proprement
-    els.closeDevBtn = closeBtn;
   }
+  return { cfg, els, state };
 }
 
+export function openDev() { if (els.devModal) { buildMain(els.devModal); openModal(els.devModal); } }
+export function closeDev() { if (els.devModal) closeModal(els.devModal); }
+
+function updateStatus(modal, text) {
+  const id = modal && modal.id ? modal.id : cfg.devModalId;
+  const el = document.getElementById(`${id}-status`);
+  if (el) el.textContent = text;
+}
+function escapeHtml(v) {
+  if (v === null || v === undefined) return '';
+  return String(v).replace(/[&<>"']/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
