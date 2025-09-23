@@ -24,7 +24,6 @@ export function initSettings({ els, state, save, renderMain }) {
   if (!modalSecond) {
     modalSecond = document.createElement("div");
     modalSecond.id = "settingsModalSecond";
-    // utilise la classe modal-second si tu l'as, sinon on laisse la classe modal pour l'overlay
     modalSecond.className = "modal modal-second";
     modalSecond.setAttribute("aria-hidden", "true");
     modalSecond.setAttribute("role", "dialog");
@@ -33,7 +32,7 @@ export function initSettings({ els, state, save, renderMain }) {
     els.settingsModalSecond = modalSecond;
   }
 
-  // --- HTML modal principal (format identique au shop/upgrades) ---
+  // --- HTML modal principal (structure conforme à shop/upgrades) ---
   modal.innerHTML = `
     <div class="modal-content">
       <header class="modal-header">
@@ -52,27 +51,26 @@ export function initSettings({ els, state, save, renderMain }) {
         <section class="section">
           <h3 class="section-title" style="text-align:center">Données</h3>
           <div style="display:flex;gap:8px;justify-content:center;margin-top:8px;flex-wrap:wrap">
-            <button id="exportBtn" class="btn btn-primary">📤 Exporter (chiffré)</button>
-            <button id="importBtn" class="btn btn-primary">📥 Importer (chiffré)</button>
-            <button id="reloadBtn" class="btn btn-primary">🔄 Recharger</button>
+            <button id="exportBtn" class="btn btn-primary btn-data">📤 Exporter (chiffré)</button>
+            <button id="importBtn" class="btn btn-primary btn-data">📥 Importer (chiffré)</button>
+            <button id="reloadBtn" class="btn btn-primary btn-data">🔄 Recharger</button>
           </div>
         </section>
 
         <section class="section">
           <h3 class="section-title" style="text-align:center">Apparence</h3>
           <div style="display:flex;gap:8px;justify-content:center;margin-top:8px">
-            <button id="themeBtn" class="btn btn-primary">🌗 Basculer thème</button>
+            <button id="themeBtn" class="btn btn-primary btn-appearance">🌗 Basculer thème</button>
           </div>
         </section>
 
         <section class="section">
           <h3 class="section-title" style="text-align:center">Codes</h3>
           <div style="display:flex;gap:8px;justify-content:center;margin-top:8px">
-            <button id="codesBtn" class="btn btn-primary">💳 Entrer un code</button>
+            <button id="codesBtn" class="btn btn-primary btn-codes">💳 Entrer un code</button>
           </div>
         </section>
 
-        <!-- Reset placé à l'intérieur du modal, centré en bas -->
         <section class="section" style="display:flex;justify-content:center">
           <button id="resetBtn" class="btn btn-warning">↺ Reset total</button>
         </section>
@@ -80,7 +78,7 @@ export function initSettings({ els, state, save, renderMain }) {
     </div>
   `;
 
-  // --- HTML modal secondaire (contenu injecté dynamiquement) ---
+  // --- HTML modal secondaire ---
   modalSecond.innerHTML = `
     <div class="modal-content">
       <header class="modal-header">
@@ -90,6 +88,47 @@ export function initSettings({ els, state, save, renderMain }) {
       <div class="modal-body" id="settingsSecondBody"></div>
     </div>
   `;
+
+  // --- Inject scoped color overrides only for this modal, using existing class names ---
+  if (!document.getElementById("settings-modal-color-overrides")) {
+    const style = document.createElement("style");
+    style.id = "settings-modal-color-overrides";
+    style.textContent = `
+      /* keep all global styles, only override specific buttons inside #settingsModal */
+      #settingsModal .btn-data {
+        background: linear-gradient(180deg,#1e6ef0,#155ed6);
+        border-color: rgba(255,255,255,0.06);
+        color:white;
+      }
+      #settingsModal .btn-data:hover { filter:brightness(1.06); transform:translateY(-1px); }
+
+      #settingsModal .btn-appearance {
+        background: linear-gradient(180deg,#8656e0,#6a3fbf);
+        border-color: rgba(255,255,255,0.06);
+        color:white;
+      }
+      #settingsModal .btn-appearance:hover { filter:brightness(1.06); transform:translateY(-1px); }
+
+      #settingsModal .btn-codes {
+        background: linear-gradient(180deg,#2f9a57,#1f7a44);
+        border-color: rgba(255,255,255,0.06);
+        color:white;
+      }
+      #settingsModal .btn-codes:hover { filter:brightness(1.06); transform:translateY(-1px); }
+
+      /* ensure contrast and keep original focus outlines if any */
+      #settingsModal .btn-data:focus, #settingsModal .btn-appearance:focus, #settingsModal .btn-codes:focus {
+        outline: 2px solid rgba(255,255,255,0.08);
+        outline-offset: 2px;
+      }
+
+      /* secondary modal uses same button styles when opened from settings */
+      #settingsModalSecond .btn, #settingsModalSecond .item-btn {
+        /* no override here; secondary content uses default styles */
+      }
+    `;
+    document.head.appendChild(style);
+  }
 
   // --- Refs DOM ---
   const closeSettingsBtn = modal.querySelector("#closeSettingsBtn");
@@ -109,14 +148,13 @@ export function initSettings({ els, state, save, renderMain }) {
   const secondBody = modalSecond.querySelector("#settingsSecondBody");
   const secondTitle = modalSecond.querySelector("#settingsSecondTitle");
 
-  // --- open / close helpers that reuse modal classes/styles (comme shop/upgrades) ---
+  // --- open / close helpers that reuse existing modal classes/styles ---
   function openModal(m) {
     m.setAttribute("aria-hidden", "false");
     document.body.classList.add("modal-open");
   }
   function closeModal(m) {
     m.setAttribute("aria-hidden", "true");
-    // only remove modal-open if no modal visible
     const anyOpen = Array.from(document.querySelectorAll(".modal")).some(x => x.getAttribute("aria-hidden") === "false");
     if (!anyOpen) document.body.classList.remove("modal-open");
   }
@@ -127,12 +165,9 @@ export function initSettings({ els, state, save, renderMain }) {
     loginBtn.disabled = logged;
     logoutBtn.disabled = !logged;
     acctLabelEl.textContent = logged ? (state.user.name || "utilisateur") : "Non connecté";
-
-    // centre les titres et boutons : les styles généraux s'en chargent, on s'assure juste que le contenu est centré
-    // (les inline styles ci-dessus assurent centrage et mise en page identique à shop/upgrades)
   }
 
-  // --- Crypto helpers (WebCrypto PBKDF2 + AES-GCM), identique à ce qu'on a défini précédemment ---
+  // --- Crypto helpers (PBKDF2 + AES-GCM) ---
   async function deriveKey(password, salt) {
     const enc = new TextEncoder();
     const keyMaterial = await crypto.subtle.importKey("raw", enc.encode(password), { name: "PBKDF2" }, false, ["deriveKey"]);
@@ -165,7 +200,6 @@ export function initSettings({ els, state, save, renderMain }) {
 
   // --- Actions ---
   function onLogin() {
-    // placeholder : remplacer par flow réel
     state.user = { name: "Player" };
     save();
     renderMain();
@@ -180,7 +214,6 @@ export function initSettings({ els, state, save, renderMain }) {
     renderSettingsBody();
   }
 
-  // Export: ouvre modal-second, demande mot de passe, génère chaîne chiffrée
   async function onExport() {
     secondTitle.textContent = "Exporter (chiffré)";
     secondBody.innerHTML = `
@@ -215,7 +248,6 @@ export function initSettings({ els, state, save, renderMain }) {
     }, { once: true });
   }
 
-  // Import: modal-second with textarea + password
   async function onImport() {
     secondTitle.textContent = "Importer (chiffré)";
     secondBody.innerHTML = `
@@ -242,7 +274,6 @@ export function initSettings({ els, state, save, renderMain }) {
       if (!raw || !pwd) return alert("Données et mot de passe requis");
       try {
         const parsed = await decryptJSON(raw, pwd);
-        // merge safely: only override existing keys
         Object.keys(state).forEach(k => { if (Object.prototype.hasOwnProperty.call(parsed, k)) state[k] = parsed[k]; });
         save();
         renderMain();
@@ -282,7 +313,6 @@ export function initSettings({ els, state, save, renderMain }) {
     renderMain();
   }
 
-  // Codes: use secondary modal
   function onEnterCode() {
     secondTitle.textContent = "Entrer un code";
     secondBody.innerHTML = `
@@ -318,16 +348,14 @@ export function initSettings({ els, state, save, renderMain }) {
     if (!ok) return;
     try {
       const prefixes = ["clicker", "shop", "state"];
-      Object.keys(localStorage).forEach(k => {
-        if (prefixes.some(p => k.startsWith(p))) localStorage.removeItem(k);
-      });
+      Object.keys(localStorage).forEach(k => { if (prefixes.some(p => k.startsWith(p))) localStorage.removeItem(k); });
     } catch (err) {
       console.warn("Erreur lors du nettoyage localStorage", err);
     }
     location.reload();
   }
 
-  // --- gestion des listeners safely (prevent duplicates) ---
+  // --- Safe listener helper ---
   function safeListen(el, ev, fn) {
     if (!el) return;
     el.removeEventListener(ev, fn);
@@ -349,7 +377,6 @@ export function initSettings({ els, state, save, renderMain }) {
   modal.addEventListener("click", (e) => { if (e.target === modal) closeModal(modal); });
   modalSecond.addEventListener("click", (e) => { if (e.target === modalSecond) closeModal(modalSecond); });
 
-  // ESC key closes topmost modal
   function onKeydown(e) {
     if (e.key === "Escape") {
       if (modalSecond.getAttribute("aria-hidden") === "false") closeModal(modalSecond);
