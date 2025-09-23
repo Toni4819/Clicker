@@ -20,14 +20,12 @@ async function checkDevCode(input) {
 
 // Prépare le DOM du modal s'il n'existe pas
 function prepareDevModal(els) {
-  if (!els || !els.devModal) return;
+  if (!els.devModal) return;
   const modal = els.devModal;
   modal.className = "modal";
   modal.setAttribute("aria-hidden", "true");
   modal.setAttribute("role", "dialog");
   modal.setAttribute("aria-labelledby", "devTitle");
-
-  // Accessible structure minimale, contenu injecté dynamiquement
   modal.innerHTML = `
     <div class="modal-content" role="document">
       <header class="modal-header">
@@ -37,11 +35,10 @@ function prepareDevModal(els) {
       <div class="modal-body" id="devBody" tabindex="0"></div>
     </div>
   `;
-
-  // Expose refs propres
-  els.closeDevBtn = modal.querySelector("#dev-close-btn");
   els.devBody = modal.querySelector("#devBody");
+  els.closeDevBtn = modal.querySelector("#dev-close-btn");
 }
+
 
 // Renderer principal
 export function renderDev(deps) {
