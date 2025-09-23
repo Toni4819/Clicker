@@ -6,7 +6,7 @@ export function initSettings({ els, state, save, renderMain }) {
     return;
   }
 
-  // --- Création / récupération de la modale principale (settings) ---
+  // --- Créer / récupérer modal principal (settings) ---
   let modal = els.settingsModal;
   if (!modal) {
     modal = document.createElement("div");
@@ -19,121 +19,83 @@ export function initSettings({ els, state, save, renderMain }) {
     els.settingsModal = modal;
   }
 
-  // --- Création / récupération de la modale secondaire (codes / import-export) ---
-  let secondaryModal = els.settingsSecondaryModal;
-  if (!secondaryModal) {
-    secondaryModal = document.createElement("div");
-    secondaryModal.id = "settingsSecondaryModal";
-    secondaryModal.className = "modal";
-    secondaryModal.setAttribute("aria-hidden", "true");
-    secondaryModal.setAttribute("role", "dialog");
-    secondaryModal.setAttribute("aria-labelledby", "settingsSecondaryTitle");
-    document.body.append(secondaryModal);
-    els.settingsSecondaryModal = secondaryModal;
+  // --- Créer / récupérer modal secondaire (codes / import / export) ---
+  let modalSecond = els.settingsModalSecond;
+  if (!modalSecond) {
+    modalSecond = document.createElement("div");
+    modalSecond.id = "settingsModalSecond";
+    // utilise la classe modal-second si tu l'as, sinon on laisse la classe modal pour l'overlay
+    modalSecond.className = "modal modal-second";
+    modalSecond.setAttribute("aria-hidden", "true");
+    modalSecond.setAttribute("role", "dialog");
+    modalSecond.setAttribute("aria-labelledby", "settingsSecondTitle");
+    document.body.append(modalSecond);
+    els.settingsModalSecond = modalSecond;
   }
 
-  // --- Inner HTML main modal (uniformisé comme initShop) ---
+  // --- HTML modal principal (format identique au shop/upgrades) ---
   modal.innerHTML = `
     <div class="modal-content">
       <header class="modal-header">
         <h2 id="settingsTitle">⚙️ Paramètres</h2>
-        <button class="close-btn" aria-label="Fermer">✕</button>
+        <button id="closeSettingsBtn" class="close-btn" aria-label="Fermer">✕</button>
       </header>
-
       <div class="modal-body" id="settingsBody">
-
-        <div class="section">
-          <h3 class="center">Compte <span id="acctStatus">(<span id="acctState">Non connecté</span>)</span></h3>
-          <div class="row center">
-            <button class="btn btn-primary" id="loginBtn">🔐 Se connecter</button>
-            <button class="btn btn-primary" id="logoutBtn">🔓 Se déconnecter</button>
+        <section class="section">
+          <h3 class="section-title" style="text-align:center">Compte <span id="acctState">(<span id="acctLabel">Non connecté</span>)</span></h3>
+          <div style="display:flex;gap:8px;justify-content:center;margin-top:8px">
+            <button id="loginBtn" class="btn btn-primary">🔐 Se connecter</button>
+            <button id="logoutBtn" class="btn btn-primary">🔓 Se déconnecter</button>
           </div>
-        </div>
+        </section>
 
-        <div class="section">
-          <h3 class="center">Données</h3>
-          <div class="row center">
-            <button class="btn btn-primary" id="exportBtn">📤 Exporter (chiffré)</button>
-            <button class="btn btn-primary" id="importBtn">📥 Importer (chiffré)</button>
-            <button class="btn btn-primary" id="reloadBtn">🔄 Recharger</button>
+        <section class="section">
+          <h3 class="section-title" style="text-align:center">Données</h3>
+          <div style="display:flex;gap:8px;justify-content:center;margin-top:8px;flex-wrap:wrap">
+            <button id="exportBtn" class="btn btn-primary">📤 Exporter (chiffré)</button>
+            <button id="importBtn" class="btn btn-primary">📥 Importer (chiffré)</button>
+            <button id="reloadBtn" class="btn btn-primary">🔄 Recharger</button>
           </div>
-        </div>
+        </section>
 
-        <div class="section">
-          <h3 class="center">Apparence</h3>
-          <div class="row center">
-            <button class="btn btn-primary" id="themeBtn">🌗 Basculer thème</button>
+        <section class="section">
+          <h3 class="section-title" style="text-align:center">Apparence</h3>
+          <div style="display:flex;gap:8px;justify-content:center;margin-top:8px">
+            <button id="themeBtn" class="btn btn-primary">🌗 Basculer thème</button>
           </div>
-        </div>
+        </section>
 
-        <div class="section">
-          <h3 class="center">Codes</h3>
-          <div class="row center">
-            <button class="btn btn-primary" id="codesBtn">💳 Entrer un code</button>
+        <section class="section">
+          <h3 class="section-title" style="text-align:center">Codes</h3>
+          <div style="display:flex;gap:8px;justify-content:center;margin-top:8px">
+            <button id="codesBtn" class="btn btn-primary">💳 Entrer un code</button>
           </div>
-        </div>
+        </section>
 
-        <div class="section footer-center">
-          <button class="btn btn-reset" id="resetBtn">↺ Reset total</button>
-        </div>
-
+        <!-- Reset placé à l'intérieur du modal, centré en bas -->
+        <section class="section" style="display:flex;justify-content:center">
+          <button id="resetBtn" class="btn btn-warning">↺ Reset total</button>
+        </section>
       </div>
     </div>
   `;
 
-  // --- Inner HTML secondary modal (reused for codes / import / export forms) ---
-  secondaryModal.innerHTML = `
+  // --- HTML modal secondaire (contenu injecté dynamiquement) ---
+  modalSecond.innerHTML = `
     <div class="modal-content">
       <header class="modal-header">
-        <h2 id="settingsSecondaryTitle">⚙️ Action</h2>
-        <button class="close-btn" aria-label="Fermer">✕</button>
+        <h2 id="settingsSecondTitle">Action</h2>
+        <button id="closeSettingsSecondBtn" class="close-btn" aria-label="Fermer">✕</button>
       </header>
-      <div class="modal-body" id="settingsSecondaryBody">
-        <!-- Content injected dynamically -->
-      </div>
+      <div class="modal-body" id="settingsSecondBody"></div>
     </div>
   `;
 
-  const body = modal.querySelector("#settingsBody");
-  const closeBtn = modal.querySelector(".close-btn");
+  // --- Refs DOM ---
+  const closeSettingsBtn = modal.querySelector("#closeSettingsBtn");
+  const settingsBody = modal.querySelector("#settingsBody");
+  const acctLabelEl = modal.querySelector("#acctLabel");
 
-  // --- Styles uniformisés (boutons #0e1117) ---
-  if (!document.getElementById("settings-modal-styles")) {
-    const style = document.createElement("style");
-    style.id = "settings-modal-styles";
-    style.textContent = `
-      /* modal baseline similar to shop */
-      .modal { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; z-index: 1000; background: rgba(0,0,0,0.45); }
-      .modal[aria-hidden="false"] { display: flex; }
-      .modal .modal-content { width: 92%; max-width: 760px; margin: 4vh auto; padding: 16px; border-radius: 10px; background: #0f1318; color: #e6eef8; box-shadow: 0 10px 30px rgba(0,0,0,0.6); position: relative; }
-      .modal .modal-header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; }
-      .modal h2 { margin:0; font-weight:700; color:#f5f8fb; text-align:center; width:100%; }
-      .modal h3 { margin:0; font-weight:600; color:#f5f8fb; }
-      .modal .modal-body { display:flex; flex-direction:column; gap:12px; }
-      .modal .section { background: rgba(255,255,255,0.02); padding:12px; border-radius:8px; }
-      .modal .row { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; justify-content:center; }
-      .modal .center { text-align:center; display:block; }
-      .footer-center { display:flex; justify-content:center; margin-top:8px; }
-
-      /* Buttons */
-      .btn { background-color: #0e1117; color: #ffffff; border: 1px solid rgba(255,255,255,0.04); padding: 10px 14px; border-radius: 8px; cursor: pointer; font-size:15px; transition: transform 0.08s ease, background-color 0.12s, opacity 0.12s; }
-      .btn:hover { transform: translateY(-1px); background-color: #14161a; }
-      .btn:active { transform: translateY(0); }
-      .btn[disabled] { opacity:0.45; cursor:not-allowed; transform:none; }
-      .btn-reset { background: linear-gradient(180deg,#6b0b0b,#a71b1b); color:#fff; border:none; padding:10px 18px; }
-
-      .close-btn { background: transparent; border: none; color: #cbd6e8; font-size:18px; cursor:pointer; }
-      /* ensure modal content sits above overlay; fix opacity oddities if reset button was outside */
-      body.modal-open { overflow: hidden; }
-      @media (max-width:560px) {
-        .modal .modal-content { margin: 4vh 8px; padding: 12px; }
-        .btn { font-size:14px; padding: 8px 12px; }
-      }
-    `;
-    document.head.appendChild(style);
-  }
-
-  // --- Refs for buttons ---
   const loginBtn = modal.querySelector("#loginBtn");
   const logoutBtn = modal.querySelector("#logoutBtn");
   const exportBtn = modal.querySelector("#exportBtn");
@@ -142,48 +104,39 @@ export function initSettings({ els, state, save, renderMain }) {
   const themeBtn = modal.querySelector("#themeBtn");
   const codesBtn = modal.querySelector("#codesBtn");
   const resetBtn = modal.querySelector("#resetBtn");
-  const acctStateEl = modal.querySelector("#acctState");
 
-  // --- Secondary modal refs ---
-  const secondaryCloseBtn = secondaryModal.querySelector(".close-btn");
-  const secondaryBody = secondaryModal.querySelector("#settingsSecondaryBody");
-  const secondaryTitle = secondaryModal.querySelector("#settingsSecondaryTitle");
+  const closeSecondBtn = modalSecond.querySelector("#closeSettingsSecondBtn");
+  const secondBody = modalSecond.querySelector("#settingsSecondBody");
+  const secondTitle = modalSecond.querySelector("#settingsSecondTitle");
 
-  // --- Open / Close handlers ---
+  // --- open / close helpers that reuse modal classes/styles (comme shop/upgrades) ---
   function openModal(m) {
     m.setAttribute("aria-hidden", "false");
     document.body.classList.add("modal-open");
   }
   function closeModal(m) {
     m.setAttribute("aria-hidden", "true");
-    document.body.classList.remove("modal-open");
+    // only remove modal-open if no modal visible
+    const anyOpen = Array.from(document.querySelectorAll(".modal")).some(x => x.getAttribute("aria-hidden") === "false");
+    if (!anyOpen) document.body.classList.remove("modal-open");
   }
 
-  // --- Render dynamic main body (account status etc) ---
+  // --- Render dynamique du contenu principal ---
   function renderSettingsBody() {
     const logged = !!state.user;
     loginBtn.disabled = logged;
     logoutBtn.disabled = !logged;
-    acctStateEl.textContent = logged ? (state.user.name || "utilisateur") : "Non connecté";
+    acctLabelEl.textContent = logged ? (state.user.name || "utilisateur") : "Non connecté";
+
+    // centre les titres et boutons : les styles généraux s'en chargent, on s'assure juste que le contenu est centré
+    // (les inline styles ci-dessus assurent centrage et mise en page identique à shop/upgrades)
   }
 
-  // --- Utility: Web Crypto helpers for AES-GCM (PBKDF2 -> AES-GCM) ---
+  // --- Crypto helpers (WebCrypto PBKDF2 + AES-GCM), identique à ce qu'on a défini précédemment ---
   async function deriveKey(password, salt) {
     const enc = new TextEncoder();
-    const keyMaterial = await crypto.subtle.importKey(
-      "raw",
-      enc.encode(password),
-      { name: "PBKDF2" },
-      false,
-      ["deriveKey"]
-    );
-    return crypto.subtle.deriveKey(
-      { name: "PBKDF2", salt, iterations: 150000, hash: "SHA-256" },
-      keyMaterial,
-      { name: "AES-GCM", length: 256 },
-      false,
-      ["encrypt", "decrypt"]
-    );
+    const keyMaterial = await crypto.subtle.importKey("raw", enc.encode(password), { name: "PBKDF2" }, false, ["deriveKey"]);
+    return crypto.subtle.deriveKey({ name: "PBKDF2", salt, iterations: 150000, hash: "SHA-256" }, keyMaterial, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
   }
 
   async function encryptJSON(obj, password) {
@@ -193,117 +146,31 @@ export function initSettings({ els, state, save, renderMain }) {
     const key = await deriveKey(password, salt);
     const data = enc.encode(JSON.stringify(obj));
     const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, data);
-    const payload = {
-      v: 1,
-      salt: Array.from(salt),
-      iv: Array.from(iv),
-      ct: Array.from(new Uint8Array(ct)),
-    };
+    const payload = { v: 1, salt: Array.from(salt), iv: Array.from(iv), ct: Array.from(new Uint8Array(ct)) };
     return btoa(JSON.stringify(payload));
   }
 
   async function decryptJSON(b64, password) {
-    try {
-      const raw = atob(b64);
-      const payload = JSON.parse(raw);
-      if (!payload || !payload.salt || !payload.iv || !payload.ct) throw new Error("payload invalid");
-      const salt = new Uint8Array(payload.salt);
-      const iv = new Uint8Array(payload.iv);
-      const ct = new Uint8Array(payload.ct);
-      const key = await deriveKey(password, salt);
-      const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, ct);
-      const dec = new TextDecoder().decode(pt);
-      return JSON.parse(dec);
-    } catch (err) {
-      throw new Error("Déchiffrement échoué");
-    }
+    const raw = atob(b64);
+    const payload = JSON.parse(raw);
+    if (!payload || !payload.salt || !payload.iv || !payload.ct) throw new Error("payload invalid");
+    const salt = new Uint8Array(payload.salt);
+    const iv = new Uint8Array(payload.iv);
+    const ct = new Uint8Array(payload.ct);
+    const key = await deriveKey(password, salt);
+    const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, ct);
+    const dec = new TextDecoder().decode(pt);
+    return JSON.parse(dec);
   }
 
   // --- Actions ---
-  async function onExport() {
-    // open secondary modal with password prompt and export button
-    secondaryTitle.textContent = "Exporter (chiffré)";
-    secondaryBody.innerHTML = `
-      <div class="section">
-        <label class="center">Mot de passe pour chiffrer l'export</label>
-        <div class="row center">
-          <input id="exportPwd" type="password" placeholder="Mot de passe" style="padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,0.06);width:60%;" />
-        </div>
-        <div class="row center" style="margin-top:12px;">
-          <button class="btn btn-primary" id="doExportBtn">📤 Générer l'export</button>
-        </div>
-        <div id="exportResult" style="margin-top:10px;word-break:break-all;"></div>
-      </div>
-    `;
-    openModal(secondaryModal);
-
-    const doExportBtn = secondaryBody.querySelector("#doExportBtn");
-    doExportBtn.addEventListener("click", async () => {
-      const pwd = secondaryBody.querySelector("#exportPwd").value || "";
-      if (!pwd) return alert("Mot de passe requis");
-      try {
-        const exported = await encryptJSON(state, pwd);
-        const outEl = secondaryBody.querySelector("#exportResult");
-        outEl.textContent = exported;
-        // try copy to clipboard
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          try { await navigator.clipboard.writeText(exported); } catch (_) {}
-        }
-      } catch (err) {
-        console.error(err);
-        alert("Erreur lors de l'export chiffré");
-      }
-    });
-  }
-
-  async function onImport() {
-    // open secondary modal with password + paste area
-    secondaryTitle.textContent = "Importer (chiffré)";
-    secondaryBody.innerHTML = `
-      <div class="section">
-        <label class="center">Collez l'export chiffré et entrez le mot de passe</label>
-        <div class="row center">
-          <textarea id="importData" rows="6" placeholder="Chaîne d'export" style="width:80%;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,0.06)"></textarea>
-        </div>
-        <div class="row center">
-          <input id="importPwd" type="password" placeholder="Mot de passe" style="padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,0.06);width:60%;" />
-        </div>
-        <div class="row center" style="margin-top:12px;">
-          <button class="btn btn-primary" id="doImportBtn">📥 Importer</button>
-        </div>
-      </div>
-    `;
-    openModal(secondaryModal);
-
-    const doImportBtn = secondaryBody.querySelector("#doImportBtn");
-    doImportBtn.addEventListener("click", async () => {
-      const data = secondaryBody.querySelector("#importData").value || "";
-      const pwd = secondaryBody.querySelector("#importPwd").value || "";
-      if (!data || !pwd) return alert("Données et mot de passe requis");
-      try {
-        const parsed = await decryptJSON(data.trim(), pwd);
-        // merge safe: only allowed keys (example approach)
-        const allowedKeys = Object.keys(state);
-        allowedKeys.forEach(k => {
-          if (Object.prototype.hasOwnProperty.call(parsed, k)) state[k] = parsed[k];
-        });
-        save();
-        renderMain();
-        alert("Import réussi");
-        closeModal(secondaryModal);
-      } catch (err) {
-        console.error(err);
-        alert("Import échoué : mot de passe invalide ou fichier corrompu");
-      }
-    });
-  }
-
   function onLogin() {
-    // Placeholder: real auth flow goes here
+    // placeholder : remplacer par flow réel
     state.user = { name: "Player" };
     save();
     renderMain();
     renderSettingsBody();
+    alert("Connecté (simulé)");
   }
 
   function onLogout() {
@@ -311,6 +178,97 @@ export function initSettings({ els, state, save, renderMain }) {
     save();
     renderMain();
     renderSettingsBody();
+  }
+
+  // Export: ouvre modal-second, demande mot de passe, génère chaîne chiffrée
+  async function onExport() {
+    secondTitle.textContent = "Exporter (chiffré)";
+    secondBody.innerHTML = `
+      <div class="section">
+        <div style="text-align:center;margin-bottom:8px">Entrez un mot de passe pour chiffrer l'export</div>
+        <div style="display:flex;justify-content:center;gap:8px">
+          <input id="exportPwd" type="password" placeholder="Mot de passe" style="border-radius:10px;padding:10px;border:1px solid var(--border);background:transparent;color:var(--fg)" />
+          <button id="doExportBtn" class="item-btn">Générer</button>
+        </div>
+        <div id="exportOutput" style="margin-top:12px;word-break:break-all;max-height:200px;overflow:auto"></div>
+      </div>
+    `;
+    openModal(modalSecond);
+
+    const doExportBtn = secondBody.querySelector("#doExportBtn");
+    const exportPwd = secondBody.querySelector("#exportPwd");
+    const exportOutput = secondBody.querySelector("#exportOutput");
+
+    doExportBtn.addEventListener("click", async function handleExport() {
+      const pwd = exportPwd.value || "";
+      if (!pwd) return alert("Mot de passe requis");
+      try {
+        const blob = await encryptJSON(state, pwd);
+        exportOutput.textContent = blob;
+        try { await navigator.clipboard.writeText(blob); } catch (_) {}
+      } catch (err) {
+        console.error(err);
+        alert("Erreur lors de l'export chiffré");
+      } finally {
+        doExportBtn.removeEventListener("click", handleExport);
+      }
+    }, { once: true });
+  }
+
+  // Import: modal-second with textarea + password
+  async function onImport() {
+    secondTitle.textContent = "Importer (chiffré)";
+    secondBody.innerHTML = `
+      <div class="section">
+        <div style="text-align:center;margin-bottom:8px">Collez l'export chiffré et entrez le mot de passe</div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+          <textarea id="importData" rows="6" style="width:90%;border-radius:10px;padding:10px;border:1px solid var(--border);background:transparent;color:var(--fg)"></textarea>
+          <input id="importPwd" type="password" placeholder="Mot de passe" style="border-radius:10px;padding:10px;border:1px solid var(--border);background:transparent;color:var(--fg);width:60%" />
+          <div style="display:flex;gap:8px">
+            <button id="doImportBtn" class="item-btn">Importer</button>
+            <button id="testDecryptBtn" class="item-btn">Tester</button>
+          </div>
+        </div>
+      </div>
+    `;
+    openModal(modalSecond);
+
+    const doImportBtn = secondBody.querySelector("#doImportBtn");
+    const testDecryptBtn = secondBody.querySelector("#testDecryptBtn");
+
+    doImportBtn.addEventListener("click", async function handleImport() {
+      const raw = secondBody.querySelector("#importData").value.trim();
+      const pwd = secondBody.querySelector("#importPwd").value || "";
+      if (!raw || !pwd) return alert("Données et mot de passe requis");
+      try {
+        const parsed = await decryptJSON(raw, pwd);
+        // merge safely: only override existing keys
+        Object.keys(state).forEach(k => { if (Object.prototype.hasOwnProperty.call(parsed, k)) state[k] = parsed[k]; });
+        save();
+        renderMain();
+        alert("Import réussi");
+        closeModal(modalSecond);
+      } catch (err) {
+        console.error(err);
+        alert("Import échoué : mot de passe invalide ou fichier corrompu");
+      } finally {
+        doImportBtn.removeEventListener("click", handleImport);
+      }
+    }, { once: true });
+
+    testDecryptBtn.addEventListener("click", async function handleTest() {
+      const raw = secondBody.querySelector("#importData").value.trim();
+      const pwd = secondBody.querySelector("#importPwd").value || "";
+      if (!raw || !pwd) return alert("Données et mot de passe requis");
+      try {
+        await decryptJSON(raw, pwd);
+        alert("Déchiffrement OK");
+      } catch (err) {
+        alert("Échec du déchiffrement");
+      } finally {
+        testDecryptBtn.removeEventListener("click", handleTest);
+      }
+    }, { once: true });
   }
 
   function onReload() {
@@ -324,25 +282,23 @@ export function initSettings({ els, state, save, renderMain }) {
     renderMain();
   }
 
+  // Codes: use secondary modal
   function onEnterCode() {
-    // Use secondary modal for codes
-    secondaryTitle.textContent = "Entrer un code";
-    secondaryBody.innerHTML = `
+    secondTitle.textContent = "Entrer un code";
+    secondBody.innerHTML = `
       <div class="section">
-        <label class="center">Entrez votre code</label>
-        <div class="row center">
-          <input id="codeInput" type="text" placeholder="Code" style="padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,0.06);width:60%;" />
-        </div>
-        <div class="row center" style="margin-top:12px;">
-          <button class="btn btn-primary" id="applyCodeBtn">Appliquer</button>
+        <div style="text-align:center;margin-bottom:8px">Entrez votre code</div>
+        <div style="display:flex;gap:8px;justify-content:center">
+          <input id="codeInput" type="text" placeholder="Code" style="border-radius:10px;padding:10px;border:1px solid var(--border);background:transparent;color:var(--fg)" />
+          <button id="applyCodeBtn" class="item-btn">Appliquer</button>
         </div>
       </div>
     `;
-    openModal(secondaryModal);
+    openModal(modalSecond);
 
-    const applyCodeBtn = secondaryBody.querySelector("#applyCodeBtn");
+    const applyCodeBtn = secondBody.querySelector("#applyCodeBtn");
     applyCodeBtn.addEventListener("click", () => {
-      const code = secondaryBody.querySelector("#codeInput").value || "";
+      const code = secondBody.querySelector("#codeInput").value || "";
       if (!code) return;
       const norm = code.trim().toUpperCase();
       if (norm === "BONUS") {
@@ -353,15 +309,14 @@ export function initSettings({ els, state, save, renderMain }) {
       } else {
         alert("Code invalide");
       }
-      closeModal(secondaryModal);
-    });
+      closeModal(modalSecond);
+    }, { once: true });
   }
 
   function onReset() {
     const ok = confirm("Reset total : toutes les données locales seront perdues. Continuer ?");
     if (!ok) return;
     try {
-      // conservative clear: remove known keys; adjust to your app prefixes
       const prefixes = ["clicker", "shop", "state"];
       Object.keys(localStorage).forEach(k => {
         if (prefixes.some(p => k.startsWith(p))) localStorage.removeItem(k);
@@ -369,20 +324,18 @@ export function initSettings({ els, state, save, renderMain }) {
     } catch (err) {
       console.warn("Erreur lors du nettoyage localStorage", err);
     }
-    // reload to ensure clean state
     location.reload();
   }
 
-  // --- Safe listener helper (prevent duplicate attaches) ---
+  // --- gestion des listeners safely (prevent duplicates) ---
   function safeListen(el, ev, fn) {
     if (!el) return;
     el.removeEventListener(ev, fn);
     el.addEventListener(ev, fn);
   }
 
-  // --- Attach listeners ---
   safeListen(settingsBtn, "click", () => { renderSettingsBody(); openModal(modal); });
-  safeListen(closeBtn, "click", () => closeModal(modal));
+  safeListen(closeSettingsBtn, "click", () => closeModal(modal));
   safeListen(loginBtn, "click", onLogin);
   safeListen(logoutBtn, "click", onLogout);
   safeListen(exportBtn, "click", onExport);
@@ -392,17 +345,14 @@ export function initSettings({ els, state, save, renderMain }) {
   safeListen(codesBtn, "click", onEnterCode);
   safeListen(resetBtn, "click", onReset);
 
-  // Secondary modal listeners
-  safeListen(secondaryCloseBtn, "click", () => closeModal(secondaryModal));
-  secondaryModal.addEventListener("click", e => { if (e.target === secondaryModal) closeModal(secondaryModal); });
+  safeListen(closeSecondBtn, "click", () => closeModal(modalSecond));
+  modal.addEventListener("click", (e) => { if (e.target === modal) closeModal(modal); });
+  modalSecond.addEventListener("click", (e) => { if (e.target === modalSecond) closeModal(modalSecond); });
 
-  // Close on backdrop click for main modal
-  modal.addEventListener("click", e => { if (e.target === modal) closeModal(modal); });
-
-  // ESC to close either modal
+  // ESC key closes topmost modal
   function onKeydown(e) {
     if (e.key === "Escape") {
-      if (secondaryModal.getAttribute("aria-hidden") === "false") closeModal(secondaryModal);
+      if (modalSecond.getAttribute("aria-hidden") === "false") closeModal(modalSecond);
       else if (modal.getAttribute("aria-hidden") === "false") closeModal(modal);
     }
   }
