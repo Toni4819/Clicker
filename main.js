@@ -118,6 +118,7 @@ import { animateClick, animatePassive } from "./modules/animations.js";
 import { initShop }                   from "./menus/shop.js";
 import { initSettings } from "./menus/settings.js";
 import { initCoinDrop } from "./modules/initCoinDrop.js";
+import { initUpdatePopup } from './popup.js';
 
 // ─── Sélecteurs DOM ───
 const els = {
@@ -273,6 +274,10 @@ initShop({
 document.addEventListener("DOMContentLoaded", () => {
   initSettings({ els, state, keys, save, renderMain });
   initCoinDrop({ els, state, save, renderMain });
+});
+
+window.addEventListener('DOMContentLoaded', () => {
+  initUpdatePopup();
 });
 
 
