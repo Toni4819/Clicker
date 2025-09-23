@@ -28,44 +28,37 @@ async function decryptData(b64Combined, password) {
 
 export function initSettings({ els, state, keys, save, renderMain }) {
   const modal = document.getElementById("settingsModal");
+  // center modal (full-screen fixed container)
   modal.className = "modal";
+  modal.style.cssText = "position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;z-index:1000;";
   modal.setAttribute("role", "dialog");
   modal.setAttribute("aria-labelledby", "settingsTitle");
+
   modal.innerHTML = `
-  <div class="modal-content" style="display:flex;flex-direction:column;height:100%;">
-    <header class="modal-header">
-      <h2 id="settingsTitle">⚙️ Paramètres</h2>
-      <button id="closeSettingsBtn" class="close-btn" aria-label="Fermer">✕</button>
+  <div class="modal-content" style="width:100%;max-width:720px;background:var(--bg,#fff);border-radius:8px;box-shadow:0 8px 30px rgba(0,0,0,0.3);display:flex;flex-direction:column;height:auto;max-height:90vh;overflow:hidden;">
+    <header class="modal-header" style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid rgba(0,0,0,0.06);">
+      <h2 id="settingsTitle" style="margin:0">⚙️ Paramètres</h2>
+      <button id="closeSettingsBtn" class="close-btn" aria-label="Fermer" style="background:transparent;border:0;font-size:18px;cursor:pointer;">✕</button>
     </header>
-    <div class="modal-body" id="settingsBody" style="flex:1;display:flex;flex-direction:column;gap:16px;">
-      <button id="loginBtn" class="btn" style="width:100%;">🔑 Se connecter</button>
+    <div class="modal-body" id="settingsBody" style="flex:1;display:flex;flex-direction:column;gap:12px;padding:16px;">
+      <button id="loginBtn" class="btn" style="width:100%;background:#10141b;color:#fff;border-radius:6px;padding:10px 12px;border:0;cursor:pointer;">🔑 Se connecter</button>
 
       <div id="rowTop" style="display:flex;gap:8px;">
-        <div style="flex:1;">
-          <button id="exportBtn" class="btn" style="width:100%;">📤 Exporter</button>
-        </div>
-        <div style="flex:1;">
-          <button id="importBtn" class="btn" style="width:100%;">📥 Importer</button>
-        </div>
+        <div style="flex:1;"><button id="exportBtn" class="btn" style="width:100%;background:#10141b;color:#fff;border-radius:6px;padding:10px 12px;border:0;cursor:pointer;">📤 Exporter</button></div>
+        <div style="flex:1;"><button id="importBtn" class="btn" style="width:100%;background:#10141b;color:#fff;border-radius:6px;padding:10px 12px;border:0;cursor:pointer;">📥 Importer</button></div>
       </div>
 
       <div id="rowMiddle" style="display:flex;gap:8px;">
-        <div style="flex:1;">
-          <button id="reloadBtn" class="btn" style="width:100%;">🔄 Recharger</button>
-        </div>
-        <div style="flex:1;">
-          <button id="themeBtn" class="btn" style="width:100%;">🎗 Thème</button>
-        </div>
+        <div style="flex:1;"><button id="reloadBtn" class="btn" style="width:100%;background:#10141b;color:#fff;border-radius:6px;padding:10px 12px;border:0;cursor:pointer;">🔄 Recharger</button></div>
+        <div style="flex:1;"><button id="themeBtn" class="btn" style="width:100%;background:#10141b;color:#fff;border-radius:6px;padding:10px 12px;border:0;cursor:pointer;">🎗 Thème</button></div>
       </div>
 
-      <div>
-        <button id="codesBtn" class="btn" style="width:100%;">💳 Codes</button>
-      </div>
+      <div><button id="codesBtn" class="btn" style="width:100%;background:#10141b;color:#fff;border-radius:6px;padding:10px 12px;border:0;cursor:pointer;">💳 Codes</button></div>
 
       <div style="flex:1;"></div>
 
-      <div style="display:flex;justify-content:center;">
-        <button id="resetBtn" class="btn footer-reset" style="width:100%;max-width:360px;">↻ Réinitialiser</button>
+      <div style="display:flex;justify-content:center;padding-bottom:8px;">
+        <button id="resetBtn" class="btn footer-reset" style="background:#b31217;color:#fff;border-radius:6px;padding:6px 10px;border:0;cursor:pointer;width:auto;">↻ Réinitialiser</button>
       </div>
     </div>
   </div>
@@ -80,21 +73,21 @@ export function initSettings({ els, state, keys, save, renderMain }) {
   els.themeBtn = modal.querySelector("#themeBtn");
   els.codesBtn = modal.querySelector("#codesBtn");
 
-  // Secondary modal utilities
   function createSecondaryModal(id, title, innerHtml) {
     const m = document.createElement("div");
     m.id = id;
     m.className = "modal modal-secondary";
     m.setAttribute("role", "dialog");
     m.setAttribute("aria-hidden", "true");
+    m.style.cssText = "position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;z-index:1100;";
     m.innerHTML = `
-      <div class="modal-backdrop" data-backdrop></div>
-      <div class="modal-content" style="max-width:540px;">
-        <header class="modal-header" role="toolbar">
-          <h3 id="${id}Title" class="modal-title">${title}</h3>
-          <button class="close-btn" data-close="${id}" aria-label="Fermer">✕</button>
+      <div class="modal-backdrop" data-backdrop style="position:fixed;inset:0;background:rgba(0,0,0,0.4);"></div>
+      <div class="modal-content" style="width:100%;max-width:540px;background:var(--bg,#fff);border-radius:8px;box-shadow:0 8px 30px rgba(0,0,0,0.3);overflow:hidden;">
+        <header class="modal-header" role="toolbar" style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid rgba(0,0,0,0.06);">
+          <h3 id="${id}Title" class="modal-title" style="margin:0;font-size:1.05rem">${title}</h3>
+          <button class="close-btn" data-close="${id}" aria-label="Fermer" style="background:transparent;border:0;font-size:16px;cursor:pointer;">✕</button>
         </header>
-        <div class="modal-body" style="display:flex;flex-direction:column;gap:8px;">
+        <div class="modal-body" style="display:flex;flex-direction:column;gap:8px;padding:12px 16px;">
           ${innerHtml}
         </div>
       </div>
@@ -106,6 +99,7 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     if (closeBtn) closeBtn.addEventListener("click", () => closeSecondaryModal(m));
     const content = m.querySelector(".modal-content");
     if (content) content.addEventListener("click", e => e.stopPropagation());
+    m.style.display = "none";
     document.body.appendChild(m);
     return m;
   }
@@ -113,12 +107,11 @@ export function initSettings({ els, state, keys, save, renderMain }) {
   function openSecondaryModal(modalEl) {
     const others = document.querySelectorAll(".modal.modal-secondary[aria-hidden='false']");
     others.forEach(o => { if (o !== modalEl) closeSecondaryModal(o); });
-    // make main settings inert instead of aria-hidden to avoid hiding focused element
-    modal.setAttribute("aria-hidden", "false");
+    // make main settings inert to avoid aria-hidden on focused element
     modal.inert = true;
     modal.style.pointerEvents = "none";
     modalEl.setAttribute("aria-hidden", "false");
-    modalEl.style.display = "block";
+    modalEl.style.display = "flex";
     document.body.classList.add("modal-open");
     const focusable = modalEl.querySelector('button, [href], input, textarea, select, [tabindex]:not([tabindex="-1"])');
     if (focusable) focusable.focus();
@@ -129,26 +122,24 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     modalEl.style.display = "none";
     modal.inert = false;
     modal.style.pointerEvents = "";
-    modal.setAttribute("aria-hidden", "false"); // keep the main settings visible to AT
     document.body.classList.remove("modal-open");
-    const settingsOpenBtn = document.querySelector('[data-open-settings], #settingsBtn');
-    if (settingsOpenBtn) settingsOpenBtn.focus();
+    const settingsBtnEl = modal.querySelector('button, [href], input, textarea, select, [tabindex]:not([tabindex="-1"])');
+    if (settingsBtnEl) settingsBtnEl.focus();
   }
 
-  // Create secondary modals (export/import/codes)
   const exportContainer = createSecondaryModal("exportModal", "Exporter", `
     <textarea id="exportText" rows="5" style="width:100%;margin-top:8px;"></textarea>
     <div style="display:flex;gap:8px;">
-      <button id="saveExportBtn" class="btn modal-btn" style="flex:1;">💾 Télécharger</button>
-      <button id="copyExportBtn" class="btn modal-btn" style="flex:1;">📋 Copier</button>
+      <button id="saveExportBtn" class="btn modal-btn" style="flex:1;background:#10141b;color:#fff;border-radius:6px;padding:8px;border:0;cursor:pointer;">💾 Télécharger</button>
+      <button id="copyExportBtn" class="btn modal-btn" style="flex:1;background:#10141b;color:#fff;border-radius:6px;padding:8px;border:0;cursor:pointer;">📋 Copier</button>
     </div>
   `);
 
   const importContainer = createSecondaryModal("importModal", "Importer", `
     <textarea id="importText" rows="5" style="width:100%;margin-top:8px;"></textarea>
     <div style="display:flex;gap:8px;">
-      <button id="applyImportBtn" class="btn modal-btn" style="flex:1;">📂 Appliquer</button>
-      <label class="btn modal-btn" style="flex:1;text-align:center;cursor:pointer;">
+      <button id="applyImportBtn" class="btn modal-btn" style="flex:1;background:#10141b;color:#fff;border-radius:6px;padding:8px;border:0;cursor:pointer;">📂 Appliquer</button>
+      <label class="btn modal-btn" style="flex:1;background:#10141b;color:#fff;border-radius:6px;padding:8px;border:0;cursor:pointer;text-align:center;">
         Parcourir
         <input id="fileImportInput" type="file" accept=".txt,application/json" style="display:none;">
       </label>
@@ -156,8 +147,8 @@ export function initSettings({ els, state, keys, save, renderMain }) {
   `);
 
   const codesContainer = createSecondaryModal("codesModal", "Codes", `
-    <input id="codeInput" type="text" placeholder="Entrez le code" style="width:100%;margin-top:8px;"/>
-    <button id="applyCodeBtn" class="btn modal-btn" style="margin-top:8px;width:100%;">✅ Valider</button>
+    <input id="codeInput" type="text" placeholder="Entrez le code" style="width:100%;margin-top:8px;padding:8px;border-radius:6px;border:1px solid #ddd;"/>
+    <button id="applyCodeBtn" class="btn modal-btn" style="margin-top:8px;width:100%;background:#10141b;color:#fff;border-radius:6px;padding:8px;border:0;cursor:pointer;">✅ Valider</button>
     <h4 style="margin:8px 0 4px;">Codes utilisés :</h4>
     <ul id="usedCodesList" style="padding-left:20px;margin:0;"></ul>
   `);
@@ -167,10 +158,9 @@ export function initSettings({ els, state, keys, save, renderMain }) {
   importContainer.style.display = "none";
   codesContainer.style.display = "none";
 
-  // Main open/close
   function openSettings() {
     modal.setAttribute("aria-hidden", "false");
-    modal.style.display = "block";
+    modal.style.display = "flex";
     document.body.classList.add("modal-open");
     const firstFocusable = modal.querySelector('button, [href], input, textarea, select, [tabindex]:not([tabindex="-1"])');
     if (firstFocusable) firstFocusable.focus();
@@ -186,12 +176,11 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     importContainer.setAttribute("aria-hidden", "true");
     codesContainer.style.display = "none";
     codesContainer.setAttribute("aria-hidden", "true");
+    modal.inert = false;
   }
 
-  // Reset total - make non-blocking and avoid focus/aria-hidden issues
   function performFullReset() {
     if (!confirm("⚠️ Réinitialiser TOUT le stockage local ?")) return;
-    // defer heavy ops to avoid long click handler violations
     setTimeout(() => {
       try {
         localStorage.clear();
@@ -211,14 +200,12 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     }, 16);
   }
 
-  // Wire events
   els.settingsBtn.addEventListener("click", openSettings);
   els.closeSettingsBtn.addEventListener("click", closeSettings);
   modal.addEventListener("click", e => { if (e.target === modal) closeSettings(); });
   els.loginBtn.addEventListener("click", () => { console.log("🔐 Fonction de connexion à implémenter"); });
   els.resetBtn.addEventListener("click", performFullReset);
 
-  // Export handler: produce single download and avoid double-download
   els.exportBtn.addEventListener("click", async () => {
     const password = prompt("🔐 Mot de passe pour chiffrer l’export :");
     if (!password) return;
@@ -231,11 +218,11 @@ export function initSettings({ els, state, keys, save, renderMain }) {
       ta.value = encrypted;
       openSecondaryModal(exportContainer);
 
-      // remove previous handlers to avoid duplicate actions
-      saveBtn.replaceWith(saveBtn.cloneNode(true));
-      copyBtn.replaceWith(copyBtn.cloneNode(true));
-      const newSave = document.getElementById("saveExportBtn");
-      const newCopy = document.getElementById("copyExportBtn");
+      // replace nodes to remove previous listeners
+      const newSave = saveBtn.cloneNode(true);
+      saveBtn.parentNode.replaceChild(newSave, saveBtn);
+      const newCopy = copyBtn.cloneNode(true);
+      copyBtn.parentNode.replaceChild(newCopy, copyBtn);
 
       newSave.addEventListener("click", () => {
         const blob = new Blob([ta.value], { type: "text/plain" });
@@ -265,7 +252,6 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     }
   });
 
-  // Import handler: allow textarea or file input, keep operations async and guarded
   els.importBtn.addEventListener("click", () => {
     const password = prompt("🔐 Mot de passe pour déchiffrer l’import :");
     if (!password) return;
@@ -274,9 +260,8 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     const fileInput = importContainer.querySelector("#fileImportInput");
     openSecondaryModal(importContainer);
 
-    // reset handlers safely
-    applyBtn.replaceWith(applyBtn.cloneNode(true));
-    const newApply = document.getElementById("applyImportBtn");
+    const newApply = applyBtn.cloneNode(true);
+    applyBtn.parentNode.replaceChild(newApply, applyBtn);
 
     newApply.addEventListener("click", async () => {
       newApply.disabled = true;
@@ -307,23 +292,18 @@ export function initSettings({ els, state, keys, save, renderMain }) {
       }, 16);
     });
 
-    // file input handler
     fileInput.addEventListener("change", async (ev) => {
       const file = ev.target.files && ev.target.files[0];
       if (!file) return;
       const reader = new FileReader();
-      reader.onload = () => {
-        ta.value = String(reader.result || "");
-      };
+      reader.onload = () => { ta.value = String(reader.result || ""); };
       reader.readAsText(file);
     }, { once: true });
   });
 
-  // Reload: clear caches and force fetch of new version with confirmation
   els.reloadBtn.addEventListener("click", async () => {
     if (!confirm("Voulez-vous vider le cache et recharger la nouvelle version en ligne ?")) return;
     try {
-      // non-blocking cache deletion
       if ('caches' in window) {
         const cacheNames = await caches.keys();
         await Promise.all(cacheNames.map(name => caches.delete(name)));
@@ -331,17 +311,15 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     } catch (e) {
       console.warn("Erreur lors de la suppression des caches", e);
     } finally {
-      // clear service-worker controlled resources by reloading bypassing cache
-      window.location.reload(true);
+      // force reload bypassing cache
+      location.reload(true);
     }
   });
 
-  // Theme stub
   els.themeBtn.addEventListener("click", () => {
     console.log("Changer le thème - à implémenter.");
   });
 
-  // Codes
   const validCodes = ["FREE"];
   function updateUsedCodesList() {
     const used = JSON.parse(localStorage.getItem("usedCodes") || "[]");
@@ -359,8 +337,8 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     const applyBtn = codesContainer.querySelector("#applyCodeBtn");
     const inp = codesContainer.querySelector("#codeInput");
 
-    applyBtn.replaceWith(applyBtn.cloneNode(true));
-    const newApply = document.getElementById("applyCodeBtn");
+    const newApply = applyBtn.cloneNode(true);
+    applyBtn.parentNode.replaceChild(newApply, applyBtn);
 
     newApply.addEventListener("click", () => {
       const code = inp.value.trim().toUpperCase();
@@ -380,30 +358,16 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     });
   });
 
-  // Fallback hooks (preserve expected handlers)
+  // Fallback hooks
   const saveExportBtn = document.getElementById("saveExportBtn");
-  if (saveExportBtn) {
-    saveExportBtn.addEventListener("click", () => {
-      // handled in export flow; keep no-op here
-      closeSecondaryModal(exportContainer);
-    });
-  }
+  if (saveExportBtn) saveExportBtn.addEventListener("click", () => closeSecondaryModal(exportContainer));
 
   const applyImportBtn = document.getElementById("applyImportBtn");
-  if (applyImportBtn) {
-    applyImportBtn.addEventListener("click", () => {
-      closeSecondaryModal(importContainer);
-    });
-  }
+  if (applyImportBtn) applyImportBtn.addEventListener("click", () => closeSecondaryModal(importContainer));
 
   const applyCodeBtn = document.getElementById("applyCodeBtn");
-  if (applyCodeBtn) {
-    applyCodeBtn.addEventListener("click", () => {
-      closeSecondaryModal(codesContainer);
-    });
-  }
+  if (applyCodeBtn) applyCodeBtn.addEventListener("click", () => closeSecondaryModal(codesContainer));
 
-  // Close secondary modals on Escape
   document.addEventListener("keydown", e => {
     if (e.key === "Escape") {
       const openSecondary = document.querySelector(".modal.modal-secondary[aria-hidden='false']");
