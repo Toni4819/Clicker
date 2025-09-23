@@ -1,7 +1,7 @@
 // settings.js
-// Init le modal settings en s'appuyant sur les classes .modal et .modal-second
-// Utilise le pattern du rebirthModal fourni : création DOM sûre, ouverture/fermeture robustes,
-// et containers export / import / codes implémentés comme modal-second.
+// initSettings qui n'altère pas le style global (utilise les classes du style.css existant)
+// Conçu pour remplacer directement ton fichier settings.js actuel.
+// Attends : els (avec settingsBtn), state, keys, save, renderMain, renderStore, encryptData, decryptData, formatCompact
 
 export function initSettings({
   els = {},
@@ -14,7 +14,7 @@ export function initSettings({
   decryptData,
   formatCompact = v => String(v)
 }) {
-  // Création du modal principal (.modal)
+  // --- Création du modal principal en respectant les classes existantes (.modal, .modal-content)
   let modal = document.getElementById("settingsModal");
   if (!modal) {
     modal = document.createElement("div");
@@ -29,34 +29,38 @@ export function initSettings({
     modal.setAttribute("aria-hidden", "true");
   }
 
-  // Contenu du modal principal (minimal, containers injectés)
+  // HTML du modal (compatible avec style.css)
   modal.innerHTML = `
-    <div class="modal-card" role="document" aria-labelledby="settingsTitle">
-      <header class="modal-header" style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;">
-        <h2 id="settingsTitle" style="margin:0;font-size:1.05rem;">⚙️ Paramètres</h2>
-        <button id="closeSettingsBtn" aria-label="Fermer" class="btn icon">✕</button>
+    <div class="modal-content" role="document" aria-labelledby="settingsTitle" id="settingsContent">
+      <header class="modal-header">
+        <h2 id="settingsTitle">⚙️ Paramètres</h2>
+        <button id="closeSettingsBtn" class="close-btn" aria-label="Fermer">✕</button>
       </header>
 
-      <section id="settingsButtons" style="padding:12px;display:flex;gap:8px;flex-wrap:wrap;">
-        <button id="exportBtn" class="btn">Exporter</button>
-        <button id="importBtn" class="btn">Importer</button>
-        <button id="codesBtn" class="btn">Codes</button>
-        <button id="themeBtn" class="btn">Thème</button>
-        <button id="reloadBtn" class="btn">Recharger</button>
-        <button id="resetBtn" class="btn danger">Réinitialiser</button>
-      </section>
+      <div class="modal-body" id="settingsBody">
+        <section class="section">
+          <div id="settingsButtons" class="settings-buttons">
+            <button id="exportBtn" class="btn btn-primary">📤 Exporter</button>
+            <button id="importBtn" class="btn">📥 Importer</button>
+            <button id="codesBtn" class="btn">🎟️ Codes</button>
+            <button id="themeBtn" class="btn">🎨 Thème</button>
+            <button id="reloadBtn" class="btn">🔁 Recharger</button>
+            <button id="resetBtn" class="btn btn-warning">⚠️ Réinitialiser</button>
+          </div>
+        </section>
 
-      <section id="settingsSecondaries" style="padding:12px;">
-        <!-- modal-second containers injected here -->
-      </section>
+        <section id="settingsSecondaries" class="section">
+          <!-- second modal containers injected via JS -->
+        </section>
+      </div>
 
-      <footer style="padding:10px 12px;font-size:.85rem;color:var(--muted-color);">
-        Fermer avec Échap ou clic en dehors
+      <footer class="modal-footer">
+        <small>Fermer avec Échap ou clic à l'extérieur</small>
       </footer>
     </div>
   `;
 
-  // Références sûres
+  // --- Références DOM
   els.closeSettingsBtn = modal.querySelector("#closeSettingsBtn");
   els.exportBtn = modal.querySelector("#exportBtn");
   els.importBtn = modal.querySelector("#importBtn");
@@ -65,28 +69,29 @@ export function initSettings({
   els.reloadBtn = modal.querySelector("#reloadBtn");
   els.resetBtn = modal.querySelector("#resetBtn");
   const secondaries = modal.querySelector("#settingsSecondaries");
-  const buttonsRow = modal.querySelector("#settingsButtons");
 
-  // Créer containers .modal-second (export, import, codes)
-  function createSecond(id, innerHTML) {
-    const s = document.createElement("div");
-    s.id = id;
-    s.className = "modal-second";
-    s.style.display = "none";
-    s.innerHTML = innerHTML;
-    secondaries.appendChild(s);
-    return s;
+  // --- Helper: create modal-second (keeps style consistent)
+  function createSecondary(id, html) {
+    const node = document.createElement("div");
+    node.id = id;
+    node.className = "modal-second";
+    node.setAttribute("aria-hidden", "true");
+    node.style.display = "none";
+    node.innerHTML = html;
+    secondaries.appendChild(node);
+    return node;
   }
 
-  const exportContainer = createSecond(
+  // --- Export container
+  const exportContainer = createSecondary(
     "exportContainer",
     `
-      <div style="display:flex;flex-direction:column;gap:8px;">
-        <label for="exportPassword">Mot de passe (optionnel)</label>
+      <div class="section">
+        <label for="exportPassword" class="section-title">Mot de passe (optionnel)</label>
         <input id="exportPassword" type="password" class="input" />
-        <textarea id="exportText" class="textarea" readonly rows="6" placeholder="Cliquez sur Générer"></textarea>
-        <div style="display:flex;gap:8px;justify-content:flex-end;">
-          <button id="doExportBtn" class="btn primary">Générer</button>
+        <textarea id="exportText" class="textarea" readonly rows="6" placeholder="Cliquez sur Générer pour créer l'export"></textarea>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">
+          <button id="doExportBtn" class="btn btn-primary">Générer</button>
           <button id="copyExportBtn" class="btn">Copier</button>
           <button id="backFromExport" class="btn">Retour</button>
         </div>
@@ -94,16 +99,17 @@ export function initSettings({
     `
   );
 
-  const importContainer = createSecond(
+  // --- Import container
+  const importContainer = createSecondary(
     "importContainer",
     `
-      <div style="display:flex;flex-direction:column;gap:8px;">
-        <label for="importPassword">Mot de passe</label>
+      <div class="section">
+        <label for="importPassword" class="section-title">Mot de passe</label>
         <input id="importPassword" type="password" class="input" />
-        <label for="importText">Données</label>
-        <textarea id="importText" class="textarea" rows="6" placeholder="Collez les données"></textarea>
-        <div style="display:flex;gap:8px;justify-content:flex-end;">
-          <button id="doImportBtn" class="btn primary">Importer</button>
+        <label for="importText" class="section-title">Données à importer</label>
+        <textarea id="importText" class="textarea" rows="6" placeholder="Collez les données chiffrées ou brutes ici"></textarea>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">
+          <button id="doImportBtn" class="btn btn-primary">Importer</button>
           <button id="clearImportBtn" class="btn">Effacer</button>
           <button id="backFromImport" class="btn">Retour</button>
         </div>
@@ -111,22 +117,23 @@ export function initSettings({
     `
   );
 
-  const codesContainer = createSecond(
+  // --- Codes container
+  const codesContainer = createSecondary(
     "codesContainer",
     `
-      <div style="display:flex;flex-direction:column;gap:8px;">
-        <label for="codeInput">Entrer un code</label>
+      <div class="section">
+        <label for="codeInput" class="section-title">Entrer un code</label>
         <input id="codeInput" class="input" />
-        <div style="display:flex;gap:8px;justify-content:flex-end;">
-          <button id="applyCodeBtn" class="btn primary">Appliquer</button>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">
+          <button id="applyCodeBtn" class="btn btn-primary">Appliquer</button>
           <button id="backFromCodes" class="btn">Retour</button>
         </div>
-        <div id="codesFeedback" style="color:var(--muted-color);font-size:.95rem;"></div>
+        <div id="codesFeedback" style="margin-top:10px;color:var(--muted);"></div>
       </div>
     `
   );
 
-  // Sélecteurs internes
+  // --- Selecteurs internes
   const exportPasswordInput = exportContainer.querySelector("#exportPassword");
   const exportText = exportContainer.querySelector("#exportText");
   const doExportBtn = exportContainer.querySelector("#doExportBtn");
@@ -144,69 +151,62 @@ export function initSettings({
   const codesFeedback = codesContainer.querySelector("#codesFeedback");
   const backFromCodes = codesContainer.querySelector("#backFromCodes");
 
-  // Etat et animation
-  let open = false;
+  // --- Etat
+  let isOpen = false;
   let rafId = null;
 
-  function openMain() {
-    modal.setAttribute("aria-hidden", "false");
-    modal.classList.add("open"); // styles externes .modal expected
-    open = true;
-    // cache toutes les secondary au départ
-    hideAllSeconds();
-    startLoop();
-  }
-
-  function closeMain() {
-    modal.setAttribute("aria-hidden", "true");
-    modal.classList.remove("open");
-    open = false;
-    hideAllSeconds();
-    stopLoop();
+  // --- Utilitaires d'affichage
+  function hideAllSeconds() {
+    [exportContainer, importContainer, codesContainer].forEach(c => {
+      c.style.display = "none";
+      c.setAttribute("aria-hidden", "true");
+    });
   }
 
   function showSecond(container) {
     hideAllSeconds();
     if (!container) return;
     container.style.display = "block";
+    container.setAttribute("aria-hidden", "false");
   }
 
-  function hideAllSeconds() {
-    exportContainer.style.display = "none";
-    importContainer.style.display = "none";
-    codesContainer.style.display = "none";
+  function openMain() {
+    modal.setAttribute("aria-hidden", "false");
+    modal.style.display = "flex"; // respecte .modal rules in style.css
+    document.body.classList.add("modal-open");
+    hideAllSeconds();
+    isOpen = true;
+    loop();
   }
 
-  // Boucle UI légère pour tenir les labels à jour (inspirée de rebirth)
-  function updateUI() {
-    // rien à faire ici par défaut, kept for parity if needed
-  }
-
-  function loop() {
-    if (!open) return;
-    updateUI();
-    rafId = requestAnimationFrame(loop);
-  }
-
-  function startLoop() {
-    if (!rafId) loop();
-  }
-
-  function stopLoop() {
+  function closeMain() {
+    modal.setAttribute("aria-hidden", "true");
+    modal.style.display = "none";
+    document.body.classList.remove("modal-open");
+    hideAllSeconds();
+    isOpen = false;
     if (rafId) cancelAnimationFrame(rafId);
     rafId = null;
   }
 
-  // Attache handlers sûrs (existence vérifiée)
-  const bindSettingsBtn = () => {
-    if (els.settingsBtn) {
-      els.settingsBtn.addEventListener("click", openMain);
-    } else {
-      const fallback = document.getElementById("settingsBtn");
-      if (fallback) fallback.addEventListener("click", openMain);
-    }
-  };
-  bindSettingsBtn();
+  // --- Loop UI léger (si futur besoin)
+  function updateUI() {
+    // placeholder pour mises à jour dynamiques si nécessaire
+  }
+  function loop() {
+    if (!isOpen) return;
+    updateUI();
+    rafId = requestAnimationFrame(loop);
+  }
+
+  // --- Event bindings (sûrs)
+  // settings button (from els or fallback DOM)
+  if (els.settingsBtn) {
+    els.settingsBtn.addEventListener("click", openMain);
+  } else {
+    const fallback = document.getElementById("settingsBtn");
+    if (fallback) fallback.addEventListener("click", openMain);
+  }
 
   if (els.closeSettingsBtn) els.closeSettingsBtn.addEventListener("click", closeMain);
   modal.addEventListener("click", e => {
@@ -216,7 +216,7 @@ export function initSettings({
     if (e.key === "Escape" && modal.getAttribute("aria-hidden") === "false") closeMain();
   });
 
-  // Reset global
+  // --- Reset
   function performFullReset() {
     if (!confirm("⚠️ Réinitialiser tout le stockage local ?")) return;
     localStorage.clear();
@@ -230,7 +230,7 @@ export function initSettings({
   }
   if (els.resetBtn) els.resetBtn.addEventListener("click", performFullReset);
 
-  // Export logic
+  // --- Export logic
   async function doExport() {
     try {
       const payload = JSON.stringify(state);
@@ -250,12 +250,13 @@ export function initSettings({
     await doExport();
     showSecond(exportContainer);
   });
+
   if (copyExportBtn) copyExportBtn.addEventListener("click", async () => {
     try {
       await navigator.clipboard.writeText(exportText.value);
-      alert("Copié");
+      alert("Copié dans le presse-papier");
     } catch (err) {
-      console.warn("copy failed", err);
+      console.warn("Clipboard failed", err);
       exportText.select();
       document.execCommand("copy");
       alert("Copié (fallback)");
@@ -263,7 +264,7 @@ export function initSettings({
   });
   if (backFromExport) backFromExport.addEventListener("click", () => showSecond(null));
 
-  // Import logic
+  // --- Import logic (whitelist keys to avoid surprises)
   async function doImport() {
     const pwd = importPasswordInput.value.trim();
     const encrypted = importText.value.trim();
@@ -271,18 +272,21 @@ export function initSettings({
       alert("Compléter les champs");
       return;
     }
+
     try {
       let decrypted = encrypted;
       if (pwd && typeof decryptData === "function") {
         decrypted = await decryptData(encrypted, pwd);
       }
       const imported = JSON.parse(decrypted);
-      if (typeof imported !== "object" || imported === null) throw new Error("invalid");
-      // whitelist keys to avoid injecting unexpected props
-      const whitelist = new Set([...keys, "rebirths", "theme", "pointsPerClick", "points"]);
+      if (typeof imported !== "object" || imported === null) throw new Error("invalid imported data");
+
+      // whitelist simple : only known keys allowed plus a few safe fields
+      const whitelist = new Set([...keys, "rebirths", "theme", "pointsPerClick", "points", "shopBoost"]);
       for (const k of Object.keys(imported)) {
         if (whitelist.has(k)) state[k] = imported[k];
       }
+
       save();
       renderMain();
       renderStore();
@@ -301,11 +305,9 @@ export function initSettings({
     importText.value = "";
   });
   if (backFromImport) backFromImport.addEventListener("click", () => showSecond(null));
-  if (els.importBtn) els.importBtn.addEventListener("click", () => {
-    showSecond(importContainer);
-  });
+  if (els.importBtn) els.importBtn.addEventListener("click", () => showSecond(importContainer));
 
-  // Codes logic
+  // --- Codes logic
   if (els.codesBtn) els.codesBtn.addEventListener("click", () => showSecond(codesContainer));
   if (applyCodeBtn) applyCodeBtn.addEventListener("click", () => {
     const code = (codeInput.value || "").trim();
@@ -328,7 +330,7 @@ export function initSettings({
   });
   if (backFromCodes) backFromCodes.addEventListener("click", () => showSecond(null));
 
-  // Reload
+  // --- Reload
   if (els.reloadBtn) els.reloadBtn.addEventListener("click", () => {
     const link = document.querySelector("link[rel~='icon']");
     if (link) {
@@ -338,7 +340,7 @@ export function initSettings({
     window.location.reload();
   });
 
-  // Theme toggler
+  // --- Theme toggle
   if (els.themeBtn) els.themeBtn.addEventListener("click", () => {
     const current = document.documentElement.getAttribute("data-theme") || "light";
     const next = current === "light" ? "dark" : "light";
@@ -350,11 +352,12 @@ export function initSettings({
     renderMain();
   });
 
-  // S'assure que tout démarre fermé
+  // --- Ensure closed at init
   hideAllSeconds();
-  closeMain();
+  modal.style.display = "none";
+  modal.setAttribute("aria-hidden", "true");
 
-  // Retourne API utile
+  // --- Retourne API utile pour tests / contrôle externe
   return {
     openMain,
     closeMain,
