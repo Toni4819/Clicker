@@ -36,31 +36,42 @@ async function sha256Hex(str) {
    --------------------------- */
 function ensureModal(id) {
   let modal = document.getElementById(id);
-  if (modal) return modal;
-  modal = document.createElement('div');
-  modal.id = id;
-  modal.className = cfg.modalClass;
-  modal.setAttribute('role', 'dialog');
-  modal.setAttribute('aria-modal', 'true');
-  modal.setAttribute('aria-hidden', 'true');
-  modal.style.display = 'none';
-  modal.innerHTML = `
-    <div class="${cfg.modalContentClass}" role="document">
-      <button class="${cfg.closeBtnClass}" aria-label="Fermer">✕</button>
-      <header><h2>Mode développeur</h2><p id="${id}-status">Initialisation...</p></header>
-      <main id="${id}-main" class="dev-main" tabindex="0"></main>
-      <footer class="dev-footer" style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
-        <button id="${id}-btn-apply" class="btn">Appliquer</button>
-        <button id="${id}-btn-export" class="btn">Exporter</button>
-        <button id="${id}-btn-import" class="btn">Importer</button>
-        <button id="${id}-btn-lock" class="btn">Verrouiller</button>
-      </footer>
-    </div>
-  `;
-  document.body.appendChild(modal);
-  injectStyles();
+  const needsPopulate = !modal || !modal.querySelector(`#${id}-main`);
+
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = id;
+    document.body.appendChild(modal);
+  }
+
+  if (needsPopulate) {
+    modal.className = cfg.modalClass;
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-hidden', 'true');
+    modal.style.display = 'none';
+    modal.innerHTML = `
+      <div class="${cfg.modalContentClass}" role="document">
+        <button class="${cfg.closeBtnClass}" aria-label="Fermer">✕</button>
+        <header>
+          <h2>Mode développeur</h2>
+          <p id="${id}-status" class="dev-status">Initialisation...</p>
+        </header>
+        <main id="${id}-main" class="dev-main" tabindex="0"></main>
+        <footer class="dev-footer" style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+          <button id="${id}-btn-apply" class="btn">Appliquer</button>
+          <button id="${id}-btn-export" class="btn">Exporter</button>
+          <button id="${id}-btn-import" class="btn">Importer</button>
+          <button id="${id}-btn-lock" class="btn">Verrouiller</button>
+        </footer>
+      </div>
+    `.trim();
+    injectStyles();
+  }
+
   return modal;
 }
+
 
 function injectStyles() {
   if (document.getElementById('dev-modal-styles')) return;
