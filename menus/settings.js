@@ -3,7 +3,13 @@ const enc = new TextEncoder();
 const dec = new TextDecoder();
 async function deriveKey(password, salt) {
   const baseKey = await crypto.subtle.importKey("raw", enc.encode(password), "PBKDF2", false, ["deriveKey"]);
-  return crypto.subtle.deriveKey({ name: "PBKDF2", salt, iterations: 100_000, hash: "SHA-256" }, baseKey, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+  return crypto.subtle.deriveKey(
+    { name: "PBKDF2", salt, iterations: 100_000, hash: "SHA-256" },
+    baseKey,
+    { name: "AES-GCM", length: 256 },
+    false,
+    ["encrypt", "decrypt"]
+  );
 }
 async function encryptData(plainText, password) {
   const salt = crypto.getRandomValues(new Uint8Array(16));
@@ -28,7 +34,12 @@ async function decryptData(b64Combined, password) {
 
 export function initSettings({ els, state, keys, save, renderMain }) {
   const modal = document.getElementById("settingsModal");
-  // center modal (full-screen fixed container)
+  if (!modal) {
+    console.error("initSettings: #settingsModal introuvable");
+    return;
+  }
+
+  // container / modal shell (centered)
   modal.className = "modal";
   modal.style.cssText = "position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;z-index:1000;";
   modal.setAttribute("role", "dialog");
@@ -41,29 +52,30 @@ export function initSettings({ els, state, keys, save, renderMain }) {
       <button id="closeSettingsBtn" class="close-btn" aria-label="Fermer" style="background:transparent;border:0;font-size:18px;cursor:pointer;">✕</button>
     </header>
     <div class="modal-body" id="settingsBody" style="flex:1;display:flex;flex-direction:column;gap:12px;padding:16px;">
-      <button id="loginBtn" class="btn" style="width:100%;background:#10141b;color:#fff;border-radius:6px;padding:10px 12px;border:0;cursor:pointer;">🔑 Se connecter</button>
+      <button id="loginBtn" class="btn btn-dark" style="width:100%;">🔑 Se connecter</button>
 
       <div id="rowTop" style="display:flex;gap:8px;">
-        <div style="flex:1;"><button id="exportBtn" class="btn" style="width:100%;background:#10141b;color:#fff;border-radius:6px;padding:10px 12px;border:0;cursor:pointer;">📤 Exporter</button></div>
-        <div style="flex:1;"><button id="importBtn" class="btn" style="width:100%;background:#10141b;color:#fff;border-radius:6px;padding:10px 12px;border:0;cursor:pointer;">📥 Importer</button></div>
+        <div style="flex:1;"><button id="exportBtn" class="btn btn-dark" style="width:100%;">📤 Exporter</button></div>
+        <div style="flex:1;"><button id="importBtn" class="btn btn-dark" style="width:100%;">📥 Importer</button></div>
       </div>
 
       <div id="rowMiddle" style="display:flex;gap:8px;">
-        <div style="flex:1;"><button id="reloadBtn" class="btn" style="width:100%;background:#10141b;color:#fff;border-radius:6px;padding:10px 12px;border:0;cursor:pointer;">🔄 Recharger</button></div>
-        <div style="flex:1;"><button id="themeBtn" class="btn" style="width:100%;background:#10141b;color:#fff;border-radius:6px;padding:10px 12px;border:0;cursor:pointer;">🎗 Thème</button></div>
+        <div style="flex:1;"><button id="reloadBtn" class="btn btn-dark" style="width:100%;">🔄 Recharger</button></div>
+        <div style="flex:1;"><button id="themeBtn" class="btn btn-dark" style="width:100%;">🎗 Thème</button></div>
       </div>
 
-      <div><button id="codesBtn" class="btn" style="width:100%;background:#10141b;color:#fff;border-radius:6px;padding:10px 12px;border:0;cursor:pointer;">💳 Codes</button></div>
+      <div><button id="codesBtn" class="btn btn-dark" style="width:100%;">💳 Codes</button></div>
 
       <div style="flex:1;"></div>
 
       <div style="display:flex;justify-content:center;padding-bottom:8px;">
-        <button id="resetBtn" class="btn footer-reset" style="background:#b31217;color:#fff;border-radius:6px;padding:6px 10px;border:0;cursor:pointer;width:auto;">↻ Réinitialiser</button>
+        <button id="resetBtn" class="btn btn-reset" style="width:auto;">↻ Réinitialiser</button>
       </div>
     </div>
   </div>
   `;
 
+  // DOM refs
   els.closeSettingsBtn = modal.querySelector("#closeSettingsBtn");
   els.resetBtn = modal.querySelector("#resetBtn");
   els.loginBtn = modal.querySelector("#loginBtn");
@@ -73,16 +85,34 @@ export function initSettings({ els, state, keys, save, renderMain }) {
   els.themeBtn = modal.querySelector("#themeBtn");
   els.codesBtn = modal.querySelector("#codesBtn");
 
+  // inject minimal styles to match requested couleurs (btn background #0e1117, reset distinct)
+  const styleId = "settings-btn-inline-styles";
+  if (!document.getElementById(styleId)) {
+    const s = document.createElement("style");
+    s.id = styleId;
+    s.textContent = `
+      .btn { font-family:inherit; font-size:14px; padding:8px 12px; border-radius:6px; border:0; cursor:pointer; }
+      .btn-dark { background:#0e1117; color:#ffffff; }
+      .btn-dark:disabled { opacity:0.5; cursor:not-allowed; }
+      .btn-reset { background:#b31217; color:#fff; padding:6px 10px; border-radius:6px; }
+      .modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.4); }
+      .modal-open { overflow:hidden; }
+      .modal.modal-secondary { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; padding:16px; z-index:1100; }
+      .modal.modal-secondary .modal-content { width:100%; max-width:540px; background:var(--bg,#fff); border-radius:8px; box-shadow:0 8px 30px rgba(0,0,0,0.3); overflow:hidden; }
+    `;
+    document.head.appendChild(s);
+  }
+
+  // Secondary modal utilities
   function createSecondaryModal(id, title, innerHtml) {
     const m = document.createElement("div");
     m.id = id;
     m.className = "modal modal-secondary";
     m.setAttribute("role", "dialog");
     m.setAttribute("aria-hidden", "true");
-    m.style.cssText = "position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;z-index:1100;";
     m.innerHTML = `
-      <div class="modal-backdrop" data-backdrop style="position:fixed;inset:0;background:rgba(0,0,0,0.4);"></div>
-      <div class="modal-content" style="width:100%;max-width:540px;background:var(--bg,#fff);border-radius:8px;box-shadow:0 8px 30px rgba(0,0,0,0.3);overflow:hidden;">
+      <div class="modal-backdrop" data-backdrop></div>
+      <div class="modal-content">
         <header class="modal-header" role="toolbar" style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid rgba(0,0,0,0.06);">
           <h3 id="${id}Title" class="modal-title" style="margin:0;font-size:1.05rem">${title}</h3>
           <button class="close-btn" data-close="${id}" aria-label="Fermer" style="background:transparent;border:0;font-size:16px;cursor:pointer;">✕</button>
@@ -92,6 +122,7 @@ export function initSettings({ els, state, keys, save, renderMain }) {
         </div>
       </div>
     `;
+    m.style.display = "none";
     m.addEventListener("click", e => {
       if (e.target === m || e.target.hasAttribute("data-backdrop")) closeSecondaryModal(m);
     });
@@ -99,7 +130,6 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     if (closeBtn) closeBtn.addEventListener("click", () => closeSecondaryModal(m));
     const content = m.querySelector(".modal-content");
     if (content) content.addEventListener("click", e => e.stopPropagation());
-    m.style.display = "none";
     document.body.appendChild(m);
     return m;
   }
@@ -107,9 +137,8 @@ export function initSettings({ els, state, keys, save, renderMain }) {
   function openSecondaryModal(modalEl) {
     const others = document.querySelectorAll(".modal.modal-secondary[aria-hidden='false']");
     others.forEach(o => { if (o !== modalEl) closeSecondaryModal(o); });
-    // make main settings inert to avoid aria-hidden on focused element
+    // make main settings inert to avoid hiding focused element with aria-hidden
     modal.inert = true;
-    modal.style.pointerEvents = "none";
     modalEl.setAttribute("aria-hidden", "false");
     modalEl.style.display = "flex";
     document.body.classList.add("modal-open");
@@ -121,25 +150,25 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     modalEl.setAttribute("aria-hidden", "true");
     modalEl.style.display = "none";
     modal.inert = false;
-    modal.style.pointerEvents = "";
     document.body.classList.remove("modal-open");
-    const settingsBtnEl = modal.querySelector('button, [href], input, textarea, select, [tabindex]:not([tabindex="-1"])');
-    if (settingsBtnEl) settingsBtnEl.focus();
+    const firstInModal = modal.querySelector('button, [href], input, textarea, select, [tabindex]:not([tabindex="-1"])');
+    if (firstInModal) firstInModal.focus();
   }
 
+  // Create secondaries
   const exportContainer = createSecondaryModal("exportModal", "Exporter", `
     <textarea id="exportText" rows="5" style="width:100%;margin-top:8px;"></textarea>
     <div style="display:flex;gap:8px;">
-      <button id="saveExportBtn" class="btn modal-btn" style="flex:1;background:#10141b;color:#fff;border-radius:6px;padding:8px;border:0;cursor:pointer;">💾 Télécharger</button>
-      <button id="copyExportBtn" class="btn modal-btn" style="flex:1;background:#10141b;color:#fff;border-radius:6px;padding:8px;border:0;cursor:pointer;">📋 Copier</button>
+      <button id="saveExportBtn" class="btn btn-dark" style="flex:1;">💾 Télécharger</button>
+      <button id="copyExportBtn" class="btn btn-dark" style="flex:1;">📋 Copier</button>
     </div>
   `);
 
   const importContainer = createSecondaryModal("importModal", "Importer", `
     <textarea id="importText" rows="5" style="width:100%;margin-top:8px;"></textarea>
     <div style="display:flex;gap:8px;">
-      <button id="applyImportBtn" class="btn modal-btn" style="flex:1;background:#10141b;color:#fff;border-radius:6px;padding:8px;border:0;cursor:pointer;">📂 Appliquer</button>
-      <label class="btn modal-btn" style="flex:1;background:#10141b;color:#fff;border-radius:6px;padding:8px;border:0;cursor:pointer;text-align:center;">
+      <button id="applyImportBtn" class="btn btn-dark" style="flex:1;">📂 Appliquer</button>
+      <label class="btn btn-dark" style="flex:1;text-align:center;cursor:pointer;">
         Parcourir
         <input id="fileImportInput" type="file" accept=".txt,application/json" style="display:none;">
       </label>
@@ -148,16 +177,17 @@ export function initSettings({ els, state, keys, save, renderMain }) {
 
   const codesContainer = createSecondaryModal("codesModal", "Codes", `
     <input id="codeInput" type="text" placeholder="Entrez le code" style="width:100%;margin-top:8px;padding:8px;border-radius:6px;border:1px solid #ddd;"/>
-    <button id="applyCodeBtn" class="btn modal-btn" style="margin-top:8px;width:100%;background:#10141b;color:#fff;border-radius:6px;padding:8px;border:0;cursor:pointer;">✅ Valider</button>
+    <button id="applyCodeBtn" class="btn btn-dark" style="margin-top:8px;width:100%;">✅ Valider</button>
     <h4 style="margin:8px 0 4px;">Codes utilisés :</h4>
     <ul id="usedCodesList" style="padding-left:20px;margin:0;"></ul>
   `);
 
-  // Ensure secondaries hidden initially
+  // ensure hidden
   exportContainer.style.display = "none";
   importContainer.style.display = "none";
   codesContainer.style.display = "none";
 
+  // open/close main settings
   function openSettings() {
     modal.setAttribute("aria-hidden", "false");
     modal.style.display = "flex";
@@ -169,7 +199,6 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     modal.setAttribute("aria-hidden", "true");
     modal.style.display = "none";
     document.body.classList.remove("modal-open");
-    // close secondaries
     exportContainer.style.display = "none";
     exportContainer.setAttribute("aria-hidden", "true");
     importContainer.style.display = "none";
@@ -179,6 +208,7 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     modal.inert = false;
   }
 
+  // Reset (deferred work)
   function performFullReset() {
     if (!confirm("⚠️ Réinitialiser TOUT le stockage local ?")) return;
     setTimeout(() => {
@@ -200,12 +230,14 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     }, 16);
   }
 
+  // Wire events
   els.settingsBtn.addEventListener("click", openSettings);
   els.closeSettingsBtn.addEventListener("click", closeSettings);
   modal.addEventListener("click", e => { if (e.target === modal) closeSettings(); });
   els.loginBtn.addEventListener("click", () => { console.log("🔐 Fonction de connexion à implémenter"); });
   els.resetBtn.addEventListener("click", performFullReset);
 
+  // Export
   els.exportBtn.addEventListener("click", async () => {
     const password = prompt("🔐 Mot de passe pour chiffrer l’export :");
     if (!password) return;
@@ -252,6 +284,7 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     }
   });
 
+  // Import
   els.importBtn.addEventListener("click", () => {
     const password = prompt("🔐 Mot de passe pour déchiffrer l’import :");
     if (!password) return;
@@ -301,6 +334,7 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     }, { once: true });
   });
 
+  // Reload: clear caches and reload bypassing cache
   els.reloadBtn.addEventListener("click", async () => {
     if (!confirm("Voulez-vous vider le cache et recharger la nouvelle version en ligne ?")) return;
     try {
@@ -311,7 +345,6 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     } catch (e) {
       console.warn("Erreur lors de la suppression des caches", e);
     } finally {
-      // force reload bypassing cache
       location.reload(true);
     }
   });
@@ -320,6 +353,7 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     console.log("Changer le thème - à implémenter.");
   });
 
+  // Codes
   const validCodes = ["FREE"];
   function updateUsedCodesList() {
     const used = JSON.parse(localStorage.getItem("usedCodes") || "[]");
@@ -334,6 +368,7 @@ export function initSettings({ els, state, keys, save, renderMain }) {
   els.codesBtn.addEventListener("click", () => {
     updateUsedCodesList();
     openSecondaryModal(codesContainer);
+
     const applyBtn = codesContainer.querySelector("#applyCodeBtn");
     const inp = codesContainer.querySelector("#codeInput");
 
@@ -358,16 +393,15 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     });
   });
 
-  // Fallback hooks
+  // fallback hooks (no-op)
   const saveExportBtn = document.getElementById("saveExportBtn");
   if (saveExportBtn) saveExportBtn.addEventListener("click", () => closeSecondaryModal(exportContainer));
-
   const applyImportBtn = document.getElementById("applyImportBtn");
   if (applyImportBtn) applyImportBtn.addEventListener("click", () => closeSecondaryModal(importContainer));
-
   const applyCodeBtn = document.getElementById("applyCodeBtn");
   if (applyCodeBtn) applyCodeBtn.addEventListener("click", () => closeSecondaryModal(codesContainer));
 
+  // Escape handling
   document.addEventListener("keydown", e => {
     if (e.key === "Escape") {
       const openSecondary = document.querySelector(".modal.modal-secondary[aria-hidden='false']");
