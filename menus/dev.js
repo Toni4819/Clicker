@@ -407,4 +407,3 @@ export function initDevMenu(options = {}) {
   }
   return { cfg, els, session };
 }
-```
