@@ -109,8 +109,7 @@ export function initSettings({ els, state, keys, save, renderMain }) {
   if (els.settingsBtn) {
       modal.setAttribute("aria-hidden", "false");
       document.body.classList.add("modal-open");
-    });
-  }
+    }
 
   // ─── Modal secondaire (injection attendue dans index.html: #modalSecond) ───
   const second = els.modalSecond || document.getElementById("modalSecond");
