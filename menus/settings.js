@@ -1,6 +1,5 @@
 // settings.js
-// initSettings qui n'altère pas le style global (utilise les classes du style.css existant)
-// Conçu pour remplacer directement ton fichier settings.js actuel.
+// initSettings qui respecte le style.css existant et applique la nouvelle disposition des boutons demandée.
 // Attends : els (avec settingsBtn), state, keys, save, renderMain, renderStore, encryptData, decryptData, formatCompact
 
 export function initSettings({
@@ -29,7 +28,7 @@ export function initSettings({
     modal.setAttribute("aria-hidden", "true");
   }
 
-  // HTML du modal (compatible avec style.css)
+  // HTML du modal avec la nouvelle disposition des boutons
   modal.innerHTML = `
     <div class="modal-content" role="document" aria-labelledby="settingsTitle" id="settingsContent">
       <header class="modal-header">
@@ -39,29 +38,44 @@ export function initSettings({
 
       <div class="modal-body" id="settingsBody">
         <section class="section">
-          <div id="settingsButtons" class="settings-buttons">
-            <button id="exportBtn" class="btn btn-primary">📤 Exporter</button>
-            <button id="importBtn" class="btn">📥 Importer</button>
-            <button id="codesBtn" class="btn">🎟️ Codes</button>
-            <button id="themeBtn" class="btn">🎨 Thème</button>
-            <button id="reloadBtn" class="btn">🔁 Recharger</button>
-            <button id="resetBtn" class="btn btn-warning">⚠️ Réinitialiser</button>
+          <!-- Login full width -->
+          <div style="margin-bottom:12px;">
+            <button id="loginBtn" class="btn btn-primary" style="width:100%;">🔐 Se connecter</button>
+          </div>
+
+          <!-- Exporter / Importer côte à côte -->
+          <div style="display:flex;gap:8px;margin-bottom:12px;">
+            <button id="exportBtn" class="btn btn-primary" style="flex:1;">📤 Exporter</button>
+            <button id="importBtn" class="btn" style="flex:1;">📥 Importer</button>
+          </div>
+
+          <!-- Recharger / Thème côte à côte -->
+          <div style="display:flex;gap:8px;margin-bottom:12px;">
+            <button id="reloadBtn" class="btn" style="flex:1;">🔁 Recharger</button>
+            <button id="themeBtn" class="btn" style="flex:1;">🎨 Thème</button>
+          </div>
+
+          <!-- Codes full width -->
+          <div style="margin-bottom:12px;">
+            <button id="codesBtn" class="btn" style="width:100%;">🎟️ Entrer un code</button>
           </div>
         </section>
 
         <section id="settingsSecondaries" class="section">
-          <!-- second modal containers injected via JS -->
+          <!-- modal-second containers injected via JS -->
         </section>
       </div>
 
-      <footer class="modal-footer">
-        <small>Fermer avec Échap ou clic à l'extérieur</small>
+      <footer class="modal-footer" style="text-align:center;">
+        <button id="resetBtn" class="btn btn-warning" style="padding:6px 12px;font-size:.9rem;">⚠️ Réinitialiser</button>
+        <div style="margin-top:8px;font-size:.85rem;color:var(--muted-color);">Fermer avec Échap ou clic à l'extérieur</div>
       </footer>
     </div>
   `;
 
   // --- Références DOM
   els.closeSettingsBtn = modal.querySelector("#closeSettingsBtn");
+  els.loginBtn = modal.querySelector("#loginBtn");
   els.exportBtn = modal.querySelector("#exportBtn");
   els.importBtn = modal.querySelector("#importBtn");
   els.codesBtn = modal.querySelector("#codesBtn");
@@ -172,7 +186,7 @@ export function initSettings({
 
   function openMain() {
     modal.setAttribute("aria-hidden", "false");
-    modal.style.display = "flex"; // respecte .modal rules in style.css
+    modal.style.display = "flex";
     document.body.classList.add("modal-open");
     hideAllSeconds();
     isOpen = true;
@@ -189,10 +203,8 @@ export function initSettings({
     rafId = null;
   }
 
-  // --- Loop UI léger (si futur besoin)
-  function updateUI() {
-    // placeholder pour mises à jour dynamiques si nécessaire
-  }
+  // --- Loop UI léger (placeholder)
+  function updateUI() { /* reserved for dynamic updates if needed */ }
   function loop() {
     if (!isOpen) return;
     updateUI();
@@ -200,7 +212,6 @@ export function initSettings({
   }
 
   // --- Event bindings (sûrs)
-  // settings button (from els or fallback DOM)
   if (els.settingsBtn) {
     els.settingsBtn.addEventListener("click", openMain);
   } else {
@@ -215,6 +226,14 @@ export function initSettings({
   window.addEventListener("keydown", e => {
     if (e.key === "Escape" && modal.getAttribute("aria-hidden") === "false") closeMain();
   });
+
+  // --- Login (no-op for now)
+  if (els.loginBtn) {
+    els.loginBtn.addEventListener("click", () => {
+      console.log("🔐 Connexion à implémenter");
+      // placeholder: eventually open a modal-second with login form
+    });
+  }
 
   // --- Reset
   function performFullReset() {
@@ -263,6 +282,7 @@ export function initSettings({
     }
   });
   if (backFromExport) backFromExport.addEventListener("click", () => showSecond(null));
+  if (els.exportBtn) els.exportBtn.addEventListener("click", () => showSecond(exportContainer));
 
   // --- Import logic (whitelist keys to avoid surprises)
   async function doImport() {
@@ -281,7 +301,7 @@ export function initSettings({
       const imported = JSON.parse(decrypted);
       if (typeof imported !== "object" || imported === null) throw new Error("invalid imported data");
 
-      // whitelist simple : only known keys allowed plus a few safe fields
+      // whitelist: only known keys allowed plus a few safe fields
       const whitelist = new Set([...keys, "rebirths", "theme", "pointsPerClick", "points", "shopBoost"]);
       for (const k of Object.keys(imported)) {
         if (whitelist.has(k)) state[k] = imported[k];
