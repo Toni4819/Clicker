@@ -107,20 +107,14 @@ export function initSettings({ els, state, keys, save, renderMain }) {
 
   // Branchement du bouton paramètres (si présent dans els)
   if (els.settingsBtn) {
-    console.log("✅ settingsBtn trouvé - branchement du click");
-    els.settingsBtn.addEventListener("click", () => {
-      console.log("⚙️ settingsBtn cliqué");
       modal.setAttribute("aria-hidden", "false");
       document.body.classList.add("modal-open");
     });
-  } else {
-    console.warn("⚠️ els.settingsBtn absent, le bouton Paramètres ne s'ouvrira pas");
   }
 
   // ─── Modal secondaire (injection attendue dans index.html: #modalSecond) ───
   const second = els.modalSecond || document.getElementById("modalSecond");
   if (!second) {
-    console.error("❌ modalSecond introuvable dans le DOM");
     return;
   }
 
@@ -240,9 +234,6 @@ export function initSettings({ els, state, keys, save, renderMain }) {
       renderMain();
       alert("✅ Import réussi !");
       closeSecond();
-      console.log("🔓 Import réussi");
-    } catch (err) {
-      console.error("Erreur import :", err);
       alert("Mot de passe incorrect ou données invalides.");
     }
   });
@@ -262,7 +253,6 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     if (code === "BONUS100") {
       state.points = (state.points || 0) + 100;
       alert("🎉 +100 points !");
-      console.log("Code BONUS100 appliqué");
     } else {
       alert("Code invalide.");
       return;
@@ -292,7 +282,6 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     renderMain();
     modal.setAttribute("aria-hidden", "true");
     document.body.classList.remove("modal-open");
-    console.log("🧹 Reset complet effectué");
   });
 
   // Remplir la liste usedCodes si déjà présent
@@ -304,5 +293,4 @@ export function initSettings({ els, state, keys, save, renderMain }) {
     }
   }
 
-  console.log("✅ initSettings terminé et prêt");
 }
