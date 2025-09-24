@@ -13,81 +13,80 @@ const auth = getAuth(app);
 const provider = new OAuthProvider("microsoft.com");
 provider.setCustomParameters({ prompt: "consent", tenant: "common" });
 
-// --- Safe listener ---
-function safeListen(el, ev, fn) {
-  if (el) {
-    el.removeEventListener(ev, fn);
-    el.addEventListener(ev, fn);
-  }
-}
-
-function openModal(modal) {
-  if (!modal) return;
-  modal.setAttribute("aria-hidden", "false");
-  modal.style.display = "block";
-}
-
-function closeModal(modal) {
-  if (!modal) return;
-  modal.setAttribute("aria-hidden", "true");
-  modal.style.display = "none";
-}
-
 // --- Export principal ---
 export function initSettings({ els, state, save, renderMain }) {
-  const {
-    settingsBtn,
-    closeSettingsBtn,
-    loginBtn,
-    logoutBtn,
-    exportBtn,
-    importBtn,
-    codesBtn,
-    resetBtn,
-    closeSecondBtn,
-    settingsModal,
-    settingsModalSecond
-  } = els;
+  const settingsBtn = els.settingsBtn;
+  if (!settingsBtn) {
+    console.error("initSettings : #settingsBtn introuvable");
+    return;
+  }
 
-  let modal = settingsModal;
-  let modalSecond = settingsModalSecond;
+  // --- Création / récupération de la modale ---
+  let modal = els.settingsModal;
+  if (!modal) {
+    modal = document.createElement("div");
+    modal.id = "settingsModal";
+    modal.className = "modal";
+    modal.setAttribute("aria-hidden", "true");
+    modal.setAttribute("role", "dialog");
+    modal.setAttribute("aria-labelledby", "settingsTitle");
+    document.body.append(modal);
+    els.settingsModal = modal;
+  }
 
-  // --- Render contenu du menu ---
+  modal.innerHTML = `
+    <div class="modal-content">
+      <header class="modal-header">
+        <h2 id="settingsTitle">⚙️ Paramètres</h2>
+        <button class="close-btn" aria-label="Fermer">✕</button>
+      </header>
+      <div class="modal-body" id="settingsBody"></div>
+    </div>
+  `;
+
+  const body     = modal.querySelector("#settingsBody");
+  const closeBtn = modal.querySelector(".close-btn");
+
+  // --- Fonctions ouverture / fermeture ---
+  function openSettings() {
+    renderSettingsBody();
+    modal.setAttribute("aria-hidden", "false");
+    document.body.classList.add("modal-open");
+  }
+  function closeSettings() {
+    modal.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("modal-open");
+  }
+
+  // --- Rendu du contenu ---
   function renderSettingsBody() {
-    if (!modal) return;
-    const body = modal.querySelector(".modal-body");
-    if (!body) return;
-
     const logged = !!state.user;
     body.innerHTML = `
       <div class="section">
-        <h2 id="settingsTitle">Paramètres</h2>
-        <div class="grid">
-          ${logged
-            ? `<button id="logoutBtn" class="item-btn">Se déconnecter</button>`
-            : `<button id="loginBtn" class="item-btn">Se connecter avec Microsoft</button>`}
-          <button id="exportBtn" class="item-btn">Exporter</button>
-          <button id="importBtn" class="item-btn">Importer</button>
-          <button id="codesBtn" class="item-btn">Entrer un code</button>
-          <button id="resetBtn" class="item-btn">Réinitialiser</button>
-        </div>
+        ${logged
+          ? `<button id="logoutBtn" class="item-btn">Se déconnecter</button>`
+          : `<button id="loginBtn" class="item-btn">Se connecter avec Microsoft</button>`}
+        <button id="exportBtn" class="item-btn">Exporter</button>
+        <button id="importBtn" class="item-btn">Importer</button>
+        <button id="codesBtn" class="item-btn">Entrer un code</button>
+        <button id="resetBtn" class="item-btn">Réinitialiser</button>
       </div>
     `;
 
     // Rebind boutons internes
-    const newLoginBtn = body.querySelector("#loginBtn");
-    const newLogoutBtn = body.querySelector("#logoutBtn");
-    const newExportBtn = body.querySelector("#exportBtn");
-    const newImportBtn = body.querySelector("#importBtn");
-    const newCodesBtn = body.querySelector("#codesBtn");
-    const newResetBtn = body.querySelector("#resetBtn");
+    const loginBtn  = body.querySelector("#loginBtn");
+    const logoutBtn = body.querySelector("#logoutBtn");
+    const exportBtn = body.querySelector("#exportBtn");
+    const importBtn = body.querySelector("#importBtn");
+    const codesBtn  = body.querySelector("#codesBtn");
+    const resetBtn  = body.querySelector("#resetBtn");
 
-    safeListen(newLoginBtn, "click", onLogin);
-    safeListen(newLogoutBtn, "click", onLogout);
-    safeListen(newExportBtn, "click", onExport);
-    safeListen(newImportBtn, "click", onImport);
-    safeListen(newCodesBtn, "click", onEnterCode);
-    safeListen(newResetBtn, "click", onReset);
+    if (loginBtn)  loginBtn.addEventListener("click", onLogin);
+    if (logoutBtn) logoutBtn.addEventListener("click", onLogout);
+    if (exportBtn) exportBtn.addEventListener("click", onExport);
+    if (importBtn) importBtn.addEventListener("click", onImport);
+    if (codesBtn)  codesBtn.addEventListener("click", onEnterCode);
+    if (resetBtn)  resetBtn.addEventListener("click", onReset);
   }
 
   // --- Login via redirect ---
@@ -146,32 +145,16 @@ export function initSettings({ els, state, save, renderMain }) {
 
   // --- Code secret ---
   function onEnterCode() {
-    if (!modalSecond) return;
-    const secondBody = modalSecond.querySelector(".modal-body");
-    secondBody.innerHTML = `
-      <div class="section">
-        <div style="text-align:center;margin-bottom:8px">Entrez votre code</div>
-        <div style="display:flex;gap:8px;justify-content:center">
-          <input id="codeInput" type="text" placeholder="Code" class="styled-input" />
-          <button id="applyCodeBtn" class="item-btn">Appliquer</button>
-        </div>
-      </div>
-    `;
-    openModal(modalSecond);
-
-    const applyBtn = secondBody.querySelector("#applyCodeBtn");
-    safeListen(applyBtn, "click", () => {
-      const code = secondBody.querySelector("#codeInput").value.trim().toUpperCase();
-      if (code === "400UPDATES!!!") {
-        state.points = (state.points || 0) + 1_000_000_000;
-        save();
-        renderMain();
-        alert("+1 000 000 000 points");
-      } else {
-        alert("Code invalide");
-      }
-      closeModal(modalSecond);
-    });
+    const code = prompt("Entrez votre code :");
+    if (!code) return;
+    if (code.trim().toUpperCase() === "400UPDATES!!!") {
+      state.points = (state.points || 0) + 1_000_000_000;
+      save();
+      renderMain();
+      alert("+1 000 000 000 points");
+    } else {
+      alert("Code invalide");
+    }
   }
 
   // --- Reset ---
@@ -184,31 +167,22 @@ export function initSettings({ els, state, save, renderMain }) {
     }
   }
 
-  // --- Listeners globaux ---
-  safeListen(settingsBtn, "click", () => {
-    renderSettingsBody();
-    openModal(settingsModal); // ← ici on ouvre bien le modal lié
+  // --- Liens d’ouverture / fermeture ---
+  settingsBtn.addEventListener("click", openSettings);
+  closeBtn.addEventListener("click", closeSettings);
+  modal.addEventListener("click", e => {
+    if (e.target === modal) closeSettings();
   });
 
-  safeListen(closeSettingsBtn, "click", () => closeModal(modal));
-  safeListen(closeSecondBtn, "click", () => closeModal(modalSecond));
-
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") {
-      if (modalSecond?.getAttribute("aria-hidden") === "false") closeModal(modalSecond);
-      else if (modal?.getAttribute("aria-hidden") === "false") closeModal(modal);
-    }
-  });
-
-  renderSettingsBody();
+  // --- Gestion du retour OAuth ---
+  getRedirectResult(auth)
+    .then((result) => {
+      if (result && result.user) {
+        state.user = { name: result.user.displayName || "Utilisateur" };
+        save();
+        renderMain();
+        renderSettingsBody();
+      }
+    })
+    .catch((err) => console.error("Erreur retour OAuth:", err));
 }
-
-// --- Gérer le retour de Microsoft après redirection ---
-getRedirectResult(auth)
-  .then((result) => {
-    if (result && result.user) {
-      console.log("Utilisateur connecté:", result.user.displayName);
-      // Ici tu peux mettre à jour state/save/renderMain si besoin
-    }
-  })
-  .catch((err) => console.error("Erreur retour OAuth:", err));
