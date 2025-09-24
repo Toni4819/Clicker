@@ -1,9 +1,9 @@
 ![GitHub repo size](https://img.shields.io/github/repo-size/Toni4819/Clicker)
 ![GitHub last commit](https://img.shields.io/github/last-commit/Toni4819/Clicker)
-![GitHub issues](https://img.shields.io/github/issues/Toni4819/Clicker)
-![GitHub pull requests](https://img.shields.io/github/issues-pr/Toni4819/Clicker)
-![GitHub license](https://img.shields.io/github/license/Toni4819/Clicker)
-![GitHub stars](https://img.shields.io/github/stars/Toni4819/Clicker?style=social)
+![Lines of code](https://img.shields.io/tokei/lines/github/Toni4819/Clicker)
+![Deploys](https://img.shields.io/badge/deploys-3-blue)
+![Status](https://img.shields.io/badge/status-stable-brightgreen)
+
 
 # Clicker
  lien: https://toni4819.github.io/Clicker
