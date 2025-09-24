@@ -15,7 +15,7 @@ let currentUser = null;
 
 // 🔐 Connexion Microsoft
 export function openMicrosoftLogin() {
-  signInWithRedirect(auth, provider).catch(err => {
+  return signInWithRedirect(auth, provider).catch(err => {
     console.error("Erreur OAuth Microsoft:", err);
     alert("Connexion échouée");
   });
@@ -27,7 +27,10 @@ export function handleRedirectResult(callback) {
     if (result && result.user) {
       currentUser = result.user;
       const btn = document.getElementById("loginBtn");
-      if (btn) btn.textContent = "Compte";   // 🔧 mise à jour du texte
+      if (btn) {
+        btn.textContent = "Compte";
+        btn.disabled = false;
+      }
       if (callback) callback({ user: result.user });
     }
     return result;
@@ -49,46 +52,54 @@ export async function appSignOut() {
   }
 }
 
-// 🧩 Injecte le modal-second (mais pas le bouton principal)
-export function initAccountModal({ save, renderMain }) {
-  const modal = document.createElement("div");
-  modal.className = "modal modal-second";
-  modal.id = "accountModal";
-  modal.hidden = true;
-  modal.innerHTML = `
-    <div class="modal-content" role="document" style="max-width:400px; margin:0 auto;">
-      <h2>Compte</h2>
-      <div style="display:flex; flex-direction:column; gap:12px; margin-top:16px;">
-        <button id="saveBtn" class="btn btn-secondary">Sauvegarder</button>
-        <button id="loadBtn" class="btn btn-secondary">Charger</button>
-        <button id="logoutBtn" class="btn danger">Se déconnecter</button>
+// 🧩 Injection et gestion du modal-second
+export function initAuthUI({ save, renderMain }) {
+  // Injecte le modal-second une seule fois
+  if (!document.getElementById("accountModal")) {
+    const modal = document.createElement("div");
+    modal.className = "modal modal-second";
+    modal.id = "accountModal";
+    modal.hidden = true;
+    modal.innerHTML = `
+      <div class="modal-content" role="document" style="max-width:400px; margin:0 auto;">
+        <h2>Compte</h2>
+        <div style="display:flex; flex-direction:column; gap:12px; margin-top:16px;">
+          <button id="saveBtn" class="btn btn-secondary">Sauvegarder</button>
+          <button id="loadBtn" class="btn btn-secondary">Charger</button>
+          <button id="logoutBtn" class="btn danger">Se déconnecter</button>
+        </div>
       </div>
-    </div>
-  `;
-  document.body.appendChild(modal);
+    `;
+    document.body.appendChild(modal);
 
-  const saveBtn = modal.querySelector("#saveBtn");
-  const loadBtn = modal.querySelector("#loadBtn");
-  const logoutBtn = modal.querySelector("#logoutBtn");
+    // Bind boutons du modal
+    modal.querySelector("#saveBtn").addEventListener("click", () => {
+      if (typeof save === "function") save();
+      alert("Sauvegarde effectuée !");
+      modal.hidden = true;
+    });
 
-  saveBtn.addEventListener("click", () => {
-    if (typeof save === "function") save();
-    alert("Sauvegarde effectuée !");
-    modal.hidden = true;
-  });
+    modal.querySelector("#loadBtn").addEventListener("click", () => {
+      if (typeof renderMain === "function") renderMain();
+      alert("Chargement effectué !");
+      modal.hidden = true;
+    });
 
-  loadBtn.addEventListener("click", () => {
-    if (typeof renderMain === "function") renderMain();
-    alert("Chargement effectué !");
-    modal.hidden = true;
-  });
+    modal.querySelector("#logoutBtn").addEventListener("click", () => {
+      appSignOut();
+    });
 
-  logoutBtn.addEventListener("click", () => {
-    appSignOut();
-  });
+    modal.addEventListener("click", e => {
+      if (e.target === modal) modal.hidden = true;
+    });
+  }
 
-  modal.addEventListener("click", e => {
-    if (e.target === modal) modal.hidden = true;
+  // Gestion du bouton principal (dans settings.js)
+  document.addEventListener("click", e => {
+    if (e.target && e.target.id === "loginBtn" && currentUser) {
+      const modal = document.getElementById("accountModal");
+      if (modal) modal.hidden = false;
+    }
   });
 }
 
