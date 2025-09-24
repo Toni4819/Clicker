@@ -38,15 +38,11 @@ export function initSettings({ els, state, save, renderMain }) {
         <!-- contenu injecté -->
       </div>
 
-      <footer class="modal-footer">
-        <button id="doneBtn" class="btn btn-primary">✓ Terminé</button>
-      </footer>
     </div>
   `;
 
   const body     = modal.querySelector("#settingsBody");
   const closeBtn = modal.querySelector(".close-btn");
-  const doneBtn  = modal.querySelector("#doneBtn");
 
   // Focus trap minimal
   function trapFocus(container) {
@@ -174,7 +170,6 @@ export function initSettings({ els, state, save, renderMain }) {
 
   settingsBtn.addEventListener("click", openSettings);
   closeBtn.addEventListener("click", closeSettings);
-  doneBtn.addEventListener("click", closeSettings);
   modal.addEventListener("click", e => {
     if (e.target === modal) closeSettings();
   });
