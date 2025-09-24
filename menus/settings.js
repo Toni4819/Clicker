@@ -1,4 +1,5 @@
 // --- Firebase Auth (redirect flow) ---
+import { getApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
 import {
   getAuth,
   OAuthProvider,
@@ -7,8 +8,10 @@ import {
   signOut
 } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
 
-// Déclare auth + provider une seule fois (globaux)
-const auth = getAuth();
+// Récupère l’app déjà initialisée dans index.html
+const app = getApp();
+const auth = getAuth(app);
+
 const provider = new OAuthProvider("microsoft.com");
 provider.setCustomParameters({ prompt: "consent", tenant: "common" });
 
