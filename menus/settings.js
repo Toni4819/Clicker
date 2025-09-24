@@ -367,29 +367,45 @@ async function onLogout() {
   function onReset() { if(confirm("Reset total ?")) { localStorage.clear(); location.reload(); } }
 
   // --- Safe listener ---
-  function safeListen(el, ev, fn) { if(el){ el.removeEventListener(ev, fn); el.addEventListener(ev, fn); } }
-  safeListen(settingsBtn,"click",()=>{ renderSettingsBody(); openModal(modal); });
-  safeListen(closeSettingsBtn,"click",()=>closeModal(modal));
-  safeListen(loginBtn,"click",onLogin);
-  safeListen(logoutBtn,"click",onLogout);
-  safeListen(exportBtn,"click",onExport);
-  safeListen(importBtn,"click",onImport);
-  safeListen(codesBtn,"click",onEnterCode);
-  safeListen(resetBtn,"click",onReset);
+// --- Safe listener ---
+function safeListen(el, ev, fn) {
+  if (el) {
+    el.removeEventListener(ev, fn);
+    el.addEventListener(ev, fn);
+  }
+}
 
-  safeListen(closeSecondBtn,"click",()=>closeModal(modalSecond));
-  modal.addEventListener("click",(e)=>{ if(e.target===modal) closeModal(modal); });
-  modalSecond.addEventListener("click",(e)=>{ if(e.target===modalSecond) closeModal(modalSecond); });
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") {
-      if (modalSecond.getAttribute("aria-hidden") === "false") {
-        closeModal(modalSecond);
-      } else if (modal.getAttribute("aria-hidden") === "false") {
-        closeModal(modal);
-      }
+safeListen(settingsBtn, "click", () => {
+  renderSettingsBody();
+  openModal(modal);
+});
+safeListen(closeSettingsBtn, "click", () => closeModal(modal));
+safeListen(loginBtn, "click", onLogin);
+safeListen(logoutBtn, "click", onLogout);
+safeListen(exportBtn, "click", onExport);
+safeListen(importBtn, "click", onImport);
+safeListen(codesBtn, "click", onEnterCode);
+safeListen(resetBtn, "click", onReset);
+
+safeListen(closeSecondBtn, "click", () => closeModal(modalSecond));
+
+modal.addEventListener("click", (e) => {
+  if (e.target === modal) closeModal(modal);
+});
+
+modalSecond.addEventListener("click", (e) => {
+  if (e.target === modalSecond) closeModal(modalSecond);
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    if (modalSecond.getAttribute("aria-hidden") === "false") {
+      closeModal(modalSecond);
+    } else if (modal.getAttribute("aria-hidden") === "false") {
+      closeModal(modal);
     }
+  }
 });
 
 renderSettingsBody();
 } // ← ferme initSettings
-
