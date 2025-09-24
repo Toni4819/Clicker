@@ -24,22 +24,67 @@ export function initSettings({ els, state, save, renderMain }) {
     els.settingsModal = modal;
   }
 
+  // CSS minimal injectable pour forcer le centrage et styles des boxes emojis
+  const styleId = "settingsModal-styles";
+  if (!document.getElementById(styleId)) {
+    const style = document.createElement("style");
+    style.id = styleId;
+    style.textContent = `
+      .modal-overlay{
+        position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+        background:rgba(0,0,0,0.45); z-index:10000;
+      }
+      .modal-card{
+        width:min(640px, 94%); background:var(--bg, #fff); border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.25);
+        overflow:hidden; display:flex; flex-direction:column; max-height:90vh;
+      }
+      .modal-header{ display:flex; align-items:center; justify-content:space-between; padding:14px 18px; border-bottom:1px solid rgba(0,0,0,0.06); }
+      .modal-body{ padding:18px; overflow:auto; }
+      .modal-footer{ padding:12px 18px; border-top:1px solid rgba(0,0,0,0.06); text-align:right; }
+
+      /* layout des boutons */
+      .settings-grid{ display:grid; gap:14px; }
+      .center{ display:flex; justify-content:center; align-items:center; }
+      .two-col{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+
+      /* bouton avec emoji box */
+      .emoji-box {
+        display:inline-flex; align-items:center; gap:10px; padding:10px 12px; border-radius:10px;
+        background:linear-gradient(180deg, rgba(0,0,0,0.02), rgba(0,0,0,0.01));
+        border:1px solid rgba(0,0,0,0.06); min-height:44px; width:100%;
+      }
+      .emoji-circle{ width:36px; height:36px; border-radius:8px; display:inline-grid; place-items:center; font-size:18px; background:rgba(0,0,0,0.03); border:1px solid rgba(0,0,0,0.04); }
+
+      /* boutons standards */
+      .btn { cursor:pointer; border:0; font:inherit; }
+      .btn-primary{ background:#0366d6; color:#fff; border-radius:8px; padding:10px 12px; }
+      .btn-secondary{ background:#f5f7fa; color: #111; border-radius:8px; padding:10px 12px; }
+      .btn-warning{ background:#ffebcc; color:#4a2b00; border-radius:8px; padding:10px 12px; }
+
+      /* responsive small widths */
+      @media (max-width:420px){
+        .two-col{ grid-template-columns:1fr; }
+      }
+    `;
+    document.head.append(style);
+  }
+
   modal.innerHTML = `
-    <div class="modal-card" role="document" style="max-width:640px; width:92%; margin:48px auto; border-radius:10px; overflow:hidden;">
-      <header class="modal-header" style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;background:var(--surface-2);">
-        <div style="display:flex;gap:12px;align-items:center;">
-          <span style="font-size:20px;">⚙️</span>
-          <h2 id="settingsTitle" style="margin:0;font-size:18px;">Paramètres</h2>
+    <div class="modal-card" role="document" aria-label="Paramètres">
+      <header class="modal-header">
+        <div style="display:flex;gap:10px;align-items:center;">
+          <div style="font-size:20px;">⚙️</div>
+          <h2 id="settingsTitle" style="margin:0;font-size:16px;">Paramètres</h2>
         </div>
         <button class="close-btn" aria-label="Fermer" title="Fermer" style="background:none;border:none;font-size:18px;cursor:pointer;padding:6px 8px;">✕</button>
       </header>
 
-      <div class="modal-body" id="settingsBody" style="padding:20px;background:var(--surface-1);">
+      <div class="modal-body" id="settingsBody">
         <!-- contenu injecté -->
       </div>
 
-      <footer class="modal-footer" style="padding:12px 20px;background:var(--surface-2);text-align:right;">
-        <button id="doneBtn" class="btn btn-primary" style="padding:8px 14px;">✓ Terminé</button>
+      <footer class="modal-footer">
+        <button id="doneBtn" class="btn btn-primary">✓ Terminé</button>
       </footer>
     </div>
   `;
@@ -75,8 +120,9 @@ export function initSettings({ els, state, save, renderMain }) {
   function openSettings() {
     renderSettingsBody();
     modal.setAttribute("aria-hidden", "false");
+    modal.style.display = "flex";
     document.body.classList.add("modal-open");
-    // set inert for background if supported
+    // inert minimal
     document.querySelectorAll("body > *:not(#settingsModal)").forEach(el => el.inert = true);
     releaseFocusTrap = trapFocus(modal);
     const firstButton = modal.querySelector("button, [tabindex]:not([tabindex='-1'])");
@@ -85,6 +131,7 @@ export function initSettings({ els, state, save, renderMain }) {
 
   function closeSettings() {
     modal.setAttribute("aria-hidden", "true");
+    modal.style.display = "none";
     document.body.classList.remove("modal-open");
     document.querySelectorAll("body > *:not(#settingsModal)").forEach(el => el.inert = false);
     releaseFocusTrap();
@@ -93,39 +140,41 @@ export function initSettings({ els, state, save, renderMain }) {
 
   function renderSettingsBody() {
     body.innerHTML = `
-      <section class="group" style="display:grid;grid-template-columns:1fr;gap:14px;">
-        <div style="display:flex;gap:12px;align-items:center;justify-content:center;">
-          <button id="loginBtn" class="btn btn-shop" style="display:flex;align-items:center;gap:10px;padding:10px 14px;">
-            <span style="font-size:18px;">🔐</span>
-            <span>Se connecter avec Microsoft</span>
+      <div class="settings-grid">
+        <div class="center">
+          <button id="loginBtn" class="emoji-box" aria-label="Se connecter">
+            <span class="emoji-circle">🔐</span>
+            <span style="flex:1;text-align:center;font-weight:600;">Se connecter avec Microsoft</span>
           </button>
         </div>
 
-        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;">
-          <button id="exportBtn" class="btn btn-secondary" style="display:flex;align-items:center;gap:8px;padding:10px;">
-            <span>⬇️</span>
-            <span>Exporter</span>
+        <div class="two-col">
+          <button id="exportBtn" class="emoji-box" aria-label="Exporter">
+            <span class="emoji-circle">⬇️</span>
+            <span style="flex:1;font-weight:600;">Exporter</span>
           </button>
-          <button id="importBtn" class="btn btn-secondary" style="display:flex;align-items:center;gap:8px;padding:10px;">
-            <span>⬆️</span>
-            <span>Importer</span>
-          </button>
-        </div>
-
-        <div style="display:flex;gap:12px;align-items:center;justify-content:center;">
-          <button id="codesBtn" class="btn btn-primary" style="display:flex;align-items:center;gap:10px;padding:10px 14px;">
-            <span>🎟️</span>
-            <span>Entrer un code</span>
+          <button id="importBtn" class="emoji-box" aria-label="Importer">
+            <span class="emoji-circle">⬆️</span>
+            <span style="flex:1;font-weight:600;">Importer</span>
           </button>
         </div>
 
-        <div style="margin-top:6px;border-top:1px dashed var(--muted);padding-top:12px;display:flex;justify-content:center;">
-          <button id="resetBtn" class="btn btn-warning" style="display:flex;align-items:center;gap:10px;padding:10px 14px;">
-            <span>⚠️</span>
-            <span>Réinitialiser</span>
+        <div class="center">
+          <button id="codesBtn" class="emoji-box" aria-label="Entrer un code">
+            <span class="emoji-circle">🎟️</span>
+            <span style="flex:1;text-align:center;font-weight:600;">Entrer un code</span>
           </button>
         </div>
-      </section>
+
+        <div style="border-top:1px dashed rgba(0,0,0,0.06);padding-top:10px;">
+          <div class="center">
+            <button id="resetBtn" class="emoji-box" aria-label="Réinitialiser">
+              <span class="emoji-circle">⚠️</span>
+              <span style="flex:1;text-align:center;font-weight:600;color:#7a2b00;">Réinitialiser</span>
+            </button>
+          </div>
+        </div>
+      </div>
     `;
 
     const loginBtn  = body.querySelector("#loginBtn");
@@ -137,15 +186,14 @@ export function initSettings({ els, state, save, renderMain }) {
     // Login
     if (loginBtn) {
       loginBtn.addEventListener("click", async () => {
-        loginBtn.disabled = true;
-        const label = loginBtn.querySelector("span:nth-child(2)");
-        if (label) label.textContent = "Connexion…";
+        loginBtn.setAttribute("aria-busy", "true");
+        loginBtn.querySelector("span[style*='flex:1']").textContent = "Connexion…";
         try {
           openMicrosoftLogin();
         } catch (err) {
           console.error("Erreur ouverture login :", err);
-          loginBtn.disabled = false;
-          if (label) label.textContent = "Se connecter avec Microsoft";
+          loginBtn.removeAttribute("aria-busy");
+          loginBtn.querySelector("span[style*='flex:1']").textContent = "Se connecter avec Microsoft";
         }
       });
     }
@@ -187,6 +235,9 @@ export function initSettings({ els, state, save, renderMain }) {
   modal.addEventListener("click", e => {
     if (e.target === modal) closeSettings();
   });
+
+  // Initial hidden state
+  modal.style.display = "none";
 
   // Close with Esc globally (safety)
   document.addEventListener("keydown", e => {
