@@ -21,6 +21,18 @@ function safeListen(el, ev, fn) {
   }
 }
 
+function openModal(modal) {
+  if (!modal) return;
+  modal.setAttribute("aria-hidden", "false");
+  modal.style.display = "block";
+}
+
+function closeModal(modal) {
+  if (!modal) return;
+  modal.setAttribute("aria-hidden", "true");
+  modal.style.display = "none";
+}
+
 // --- Export principal ---
 export function initSettings({ els, state, save, renderMain }) {
   const {
