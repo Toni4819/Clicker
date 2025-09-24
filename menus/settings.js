@@ -1,5 +1,6 @@
-// --- Firebase Auth (redirect flow) ---
-import { getApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+// menus/settings.js
+
+import app from "./firebase.js"; // ← récupère l'app initialisée
 import {
   getAuth,
   OAuthProvider,
@@ -8,10 +9,7 @@ import {
   signOut
 } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
 
-// Récupère l’app déjà initialisée dans index.html
-const app = getApp();
 const auth = getAuth(app);
-
 const provider = new OAuthProvider("microsoft.com");
 provider.setCustomParameters({ prompt: "consent", tenant: "common" });
 
@@ -196,10 +194,8 @@ export function initSettings({ els, state, save, renderMain }) {
 getRedirectResult(auth)
   .then((result) => {
     if (result && result.user) {
-      state.user = { name: result.user.displayName || "Utilisateur" };
-      save();
-      renderMain();
-      renderSettingsBody();
+      console.log("Utilisateur connecté:", result.user.displayName);
+      // Ici tu peux mettre à jour state/save/renderMain si besoin
     }
   })
   .catch((err) => console.error("Erreur retour OAuth:", err));
