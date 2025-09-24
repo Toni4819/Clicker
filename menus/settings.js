@@ -388,7 +388,7 @@ async function onLogout() {
         closeModal(modal);
       }
     }
-  });
+});
 
 renderSettingsBody();
 } // ← ferme initSettings
