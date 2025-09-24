@@ -184,6 +184,7 @@ export function initSettings({ els, state, save, renderMain }) {
       loginBtn.onclick = onLogin;
       logoutBtn.style.display = "none";
     }
+  }
 
 
 
