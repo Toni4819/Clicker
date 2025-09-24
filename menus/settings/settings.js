@@ -113,7 +113,6 @@ export function initSettings({ els, state, save, renderMain }) {
     if (exportBtn) exportBtn.addEventListener("click", () => {
       const ie = initImportExport();
       ie.exportState(state);
-      // pas de re-render nécessaire après export
     });
 
     if (importBtn) importBtn.addEventListener("click", () => {
