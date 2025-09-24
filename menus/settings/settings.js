@@ -1,14 +1,7 @@
-import { openMicrosoftLogin, handleRedirectResult } from "./auth.js";
+import { initAuthUI, handleRedirectResult } from "./auth.js";
 import { initImportExport } from "./import-export.js";
 import { enterCode } from "./codes.js";
 import { doReset } from "./reset.js";
-
-/*
-  settings.js
-  - Utilise les mêmes classes et l'approche visuelle que l'index (pas d'inversion, pas d'ombres ajoutées).
-  - Centre les boutons à l'intérieur de la modal.
-  - Délègue l'auth, import/export, codes et reset aux modules correspondants.
-*/
 
 export function initSettings({ els, state, save, renderMain }) {
   const settingsBtn = els.settingsBtn;
@@ -57,15 +50,7 @@ export function initSettings({ els, state, save, renderMain }) {
   }
 
   function renderSettingsBody() {
-    const logged = !!state.user;
-
     body.innerHTML = `
-      <div class="section" style="text-align:center; margin-bottom:12px;">
-        ${logged
-          ? `<button id="logoutBtn" class="btn btn-shop">Se déconnecter</button>`
-          : `<button id="loginBtn" class="btn btn-shop">Se connecter avec Microsoft</button>`}
-      </div>
-
       <div class="section" style="text-align:center; display:flex; justify-content:center; gap:12px; margin-bottom:12px;">
         <button id="exportBtn" class="btn btn-secondary">Exporter</button>
         <button id="importBtn" class="btn btn-secondary">Importer</button>
@@ -80,29 +65,10 @@ export function initSettings({ els, state, save, renderMain }) {
       </div>
     `;
 
-    const loginBtn  = body.querySelector("#loginBtn");
-    const logoutBtn = body.querySelector("#logoutBtn");
     const exportBtn = body.querySelector("#exportBtn");
     const importBtn = body.querySelector("#importBtn");
     const codesBtn  = body.querySelector("#codesBtn");
     const resetBtn  = body.querySelector("#resetBtn");
-
-    if (loginBtn)  loginBtn.addEventListener("click", () => {
-      loginBtn.disabled = true;
-      openMicrosoftLogin();
-    });
-
-    if (logoutBtn) logoutBtn.addEventListener("click", async () => {
-      try {
-        if (typeof window.__appSignOut === "function") await window.__appSignOut();
-        state.user = null;
-        save();
-        renderMain();
-        renderSettingsBody();
-      } catch (err) {
-        console.error("Erreur de déconnexion:", err);
-      }
-    });
 
     if (exportBtn) exportBtn.addEventListener("click", () => {
       const ie = initImportExport();
@@ -114,11 +80,11 @@ export function initSettings({ els, state, save, renderMain }) {
       ie.importState(state, save, renderMain, renderSettingsBody);
     });
 
-    if (codesBtn)  codesBtn.addEventListener("click", () => {
+    if (codesBtn) codesBtn.addEventListener("click", () => {
       enterCode(state, save, renderMain, renderSettingsBody);
     });
 
-    if (resetBtn)  resetBtn.addEventListener("click", () => {
+    if (resetBtn) resetBtn.addEventListener("click", () => {
       doReset(state, save, renderMain, renderSettingsBody);
     });
   }
@@ -129,13 +95,15 @@ export function initSettings({ els, state, save, renderMain }) {
     if (e.target === modal) closeSettings();
   });
 
-  // Gestion du retour OAuth via auth.js
+  // Initialise l’UI Auth (bouton + modal-second)
+  initAuthUI({ save, renderMain });
+
+  // Gestion du retour OAuth
   handleRedirectResult(({ user }) => {
     if (user) {
       state.user = { name: user.displayName || "Utilisateur" };
       save();
       renderMain();
-      renderSettingsBody();
     }
   }).catch(err => console.error("Erreur retour OAuth:", err));
 }
