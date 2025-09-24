@@ -187,8 +187,9 @@ export function initSettings({ els, state, save, renderMain }) {
   // --- Listeners globaux ---
   safeListen(settingsBtn, "click", () => {
     renderSettingsBody();
-    openModal(modal);
+    openModal(settingsModal); // ← ici on ouvre bien le modal lié
   });
+
   safeListen(closeSettingsBtn, "click", () => closeModal(modal));
   safeListen(closeSecondBtn, "click", () => closeModal(modalSecond));
 
