@@ -43,6 +43,7 @@ export function initSettings({ els, state, save, renderMain }) {
     const firstButton = modal.querySelector("button");
     if (firstButton) firstButton.focus();
   }
+
   function closeSettings() {
     modal.setAttribute("aria-hidden", "true");
     document.body.classList.remove("modal-open");
@@ -51,6 +52,10 @@ export function initSettings({ els, state, save, renderMain }) {
 
   function renderSettingsBody() {
     body.innerHTML = `
+      <div class="section" style="text-align:center; margin-bottom:12px;">
+        <button id="loginBtn" class="btn btn-shop">Se connecter avec Microsoft</button>
+      </div>
+
       <div class="section" style="text-align:center; display:flex; justify-content:center; gap:12px; margin-bottom:12px;">
         <button id="exportBtn" class="btn btn-secondary">Exporter</button>
         <button id="importBtn" class="btn btn-secondary">Importer</button>
@@ -65,10 +70,17 @@ export function initSettings({ els, state, save, renderMain }) {
       </div>
     `;
 
+    const loginBtn  = body.querySelector("#loginBtn");
     const exportBtn = body.querySelector("#exportBtn");
     const importBtn = body.querySelector("#importBtn");
     const codesBtn  = body.querySelector("#codesBtn");
     const resetBtn  = body.querySelector("#resetBtn");
+
+    if (loginBtn) loginBtn.addEventListener("click", () => {
+      loginBtn.disabled = true;
+      loginBtn.textContent = "Connexion...";
+      openMicrosoftLogin();
+    });
 
     if (exportBtn) exportBtn.addEventListener("click", () => {
       const ie = initImportExport();
@@ -95,7 +107,7 @@ export function initSettings({ els, state, save, renderMain }) {
     if (e.target === modal) closeSettings();
   });
 
-  // Initialise l’UI Auth (bouton + modal-second)
+  // Injecte le modal secondaire et initialise les événements auth
   initAuthUI({ save, renderMain });
 
   // Gestion du retour OAuth
