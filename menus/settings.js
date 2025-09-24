@@ -1,6 +1,13 @@
+import { getAuth, OAuthProvider, signInWithPopup, signOut } 
+  from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
+
+
 // initSettings.js
 export function initSettings({ els, state, save, renderMain }) {
   const settingsBtn = els.settingsBtn;
+  const auth = getAuth();
+  const provider = new OAuthProvider('microsoft.com');
+  provider.setCustomParameters({ prompt: 'consent', tenant: 'common' });
   if (!settingsBtn) {
     console.error("initSettings : #settingsBtn introuvable");
     return;
@@ -150,10 +157,35 @@ export function initSettings({ els, state, save, renderMain }) {
   // --- Render dynamique ---
   function renderSettingsBody() {
     const logged = !!state.user;
-    loginBtn.disabled = logged;
-    logoutBtn.disabled = !logged;
-    acctLabelEl.textContent = logged ? (state.user.name || "utilisateur") : "Non connecté";
-  }
+    if (logged) {
+      loginBtn.textContent = `Compte (${state.user.name || "Microsoft"})`;
+      loginBtn.style.backgroundColor = "orange";
+      loginBtn.disabled = false;
+      loginBtn.onclick = () => {
+        secondTitle.textContent = "Compte Microsoft";
+        secondBody.innerHTML = `
+          <div class="section" style="text-align:center">
+            <button id="saveBtn" class="btn btn-blue">💾 Sauvegarder</button>
+            <button id="loadBtn" class="btn btn-blue">📥 Charger</button>
+            <hr style="margin:20px 0;border:0;border-top:1px solid var(--border)" />
+            <button id="logoutBtn" class="btn" style="background-color:red">🔓 Se déconnecter</button>
+          </div>
+        `;
+        secondBody.querySelector("#saveBtn").onclick = () => alert("Sauvegarde (à brancher Firestore)");
+        secondBody.querySelector("#loadBtn").onclick = () => alert("Chargement (à brancher Firestore)");
+        secondBody.querySelector("#logoutBtn").onclick = onLogout;
+        openModal(modalSecond);
+      };
+      logoutBtn.style.display = "none";
+    } else {
+      loginBtn.textContent = "Se connecter";
+      loginBtn.style.backgroundColor = "green";
+      loginBtn.disabled = false;
+      loginBtn.onclick = onLogin;
+      logoutBtn.style.display = "none";
+    }
+
+
 
   // --- Crypto helpers ---
   async function deriveKey(password, salt) {
@@ -287,8 +319,30 @@ export function initSettings({ els, state, save, renderMain }) {
     });
   }
 
-  function onLogin() { state.user = { name:"Player" }; save(); renderMain(); renderSettingsBody(); }
-  function onLogout() { state.user = null; save(); renderMain(); renderSettingsBody(); }
+async function onLogin() {
+  try {
+    const result = await signInWithPopup(auth, provider);
+    const user = result.user;
+    state.user = { name: user.displayName || "Utilisateur" };
+    save();
+    renderMain();
+    renderSettingsBody();
+  } catch (err) {
+    console.error("Erreur OAuth Microsoft:", err);
+    alert("Connexion échouée");
+  }
+}
+
+async function onLogout() {
+  if (confirm("Se déconnecter ?")) {
+    await signOut(auth);
+    state.user = null;
+    save();
+    renderMain();
+    renderSettingsBody();
+  }
+}
+
   function onEnterCode() {
     secondTitle.textContent = "Entrer un code";
     secondBody.innerHTML = `
@@ -303,9 +357,9 @@ export function initSettings({ els, state, save, renderMain }) {
     openModal(modalSecond);
     secondBody.querySelector("#applyCodeBtn").addEventListener("click", () => {
       const code = secondBody.querySelector("#codeInput").value.trim().toUpperCase();
-      if (code === "BONUS") {
-        state.points = (state.points || 0) + 1_000_000;
-        save(); renderMain(); alert("+1 000 000 points");
+      if (code === "400UPDATES!!!") {
+        state.points = (state.points || 0) + 1_000_000_000;
+        save(); renderMain(); alert("+1 000 000 000points");
       } else alert("Code invalide");
       closeModal(modalSecond);
     }, { once:true });
