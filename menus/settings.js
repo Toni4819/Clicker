@@ -1,5 +1,31 @@
-import { getAuth, OAuthProvider, signInWithPopup, signOut } 
+import { getAuth, OAuthProvider, signInWithRedirect, getRedirectResult, signOut } 
   from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
+
+async function onLogin() {
+  loginBtn.disabled = true;
+  try {
+    await signInWithRedirect(auth, provider);
+    // La redirection part vers Microsoft, puis revient sur ton site
+  } catch (err) {
+    console.error("Erreur OAuth Microsoft:", err);
+    alert("Connexion échouée");
+    loginBtn.disabled = false;
+  }
+}
+
+// À placer dans initSettings, après avoir défini auth/provider :
+getRedirectResult(auth)
+  .then((result) => {
+    if (result && result.user) {
+      state.user = { name: result.user.displayName || "Utilisateur" };
+      save();
+      renderMain();
+      renderSettingsBody();
+    }
+  })
+  .catch((err) => {
+    if (err) console.error("Erreur retour OAuth:", err);
+  });
 
 
 // initSettings.js
@@ -321,21 +347,30 @@ export function initSettings({ els, state, save, renderMain }) {
   }
 
 async function onLogin() {
-  loginBtn.disabled = true; // 🔒 empêche double clic
+  loginBtn.disabled = true;
   try {
-    const result = await signInWithPopup(auth, provider);
-    const user = result.user;
-    state.user = { name: user.displayName || "Utilisateur" };
-    save();
-    renderMain();
-    renderSettingsBody();
+    await signInWithRedirect(auth, provider);
+    // La redirection part vers Microsoft, puis revient sur ton site
   } catch (err) {
     console.error("Erreur OAuth Microsoft:", err);
     alert("Connexion échouée");
-  } finally {
-    loginBtn.disabled = false; // 🔓 réactive le bouton
+    loginBtn.disabled = false;
   }
 }
+
+// À placer dans initSettings, après avoir défini auth/provider :
+getRedirectResult(auth)
+  .then((result) => {
+    if (result && result.user) {
+      state.user = { name: result.user.displayName || "Utilisateur" };
+      save();
+      renderMain();
+      renderSettingsBody();
+    }
+  })
+  .catch((err) => {
+    if (err) console.error("Erreur retour OAuth:", err);
+  });
 
 
 async function onLogout() {
