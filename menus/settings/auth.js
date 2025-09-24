@@ -13,18 +13,20 @@ provider.setCustomParameters({ prompt: "consent", tenant: "common" });
 
 let currentUser = null;
 
-// 🏗️ Injection du HTML directement depuis auth.js
+// 🏗️ Injection du HTML (bouton + modal second)
 function injectAuthUI() {
   const container = document.createElement("div");
   container.innerHTML = `
-    <button id="accountButton">Se connecter avec Microsoft</button>
+    <button id="accountButton" class="btn btn-shop">Se connecter avec Microsoft</button>
 
     <div class="modal modal-second" id="accountModal" hidden>
-      <div class="modal-content">
+      <div class="modal-content" role="document" style="max-width:400px; margin:0 auto;">
         <h2>Compte</h2>
-        <button id="saveButton">Sauvegarder</button>
-        <button id="loadButton">Charger</button>
-        <button id="logoutButton" class="danger">Se déconnecter</button>
+        <div style="display:flex; flex-direction:column; gap:12px; margin-top:16px;">
+          <button id="saveBtn" class="btn btn-secondary">Sauvegarder</button>
+          <button id="loadBtn" class="btn btn-secondary">Charger</button>
+          <button id="logoutBtn" class="btn danger">Se déconnecter</button>
+        </div>
       </div>
     </div>
   `;
@@ -32,7 +34,7 @@ function injectAuthUI() {
 }
 
 // 🔐 Connexion Microsoft
-function openMicrosoftLogin() {
+export function openMicrosoftLogin() {
   signInWithRedirect(auth, provider).catch(err => {
     console.error("Erreur OAuth Microsoft:", err);
     alert("Connexion échouée");
@@ -40,39 +42,43 @@ function openMicrosoftLogin() {
 }
 
 // 🔄 Résultat du redirect
-function handleRedirectResult() {
-  getRedirectResult(auth).then(result => {
+export function handleRedirectResult(callback) {
+  return getRedirectResult(auth).then(result => {
     if (result && result.user) {
       currentUser = result.user;
-      document.getElementById("accountButton").textContent = "Compte";
+      const btn = document.getElementById("accountButton");
+      if (btn) btn.textContent = "Compte";
+      if (callback) callback({ user: result.user });
     }
+    return result;
   });
 }
 
 // 🚪 Déconnexion
-async function appSignOut() {
+export async function appSignOut() {
   try {
     await signOut(auth);
     currentUser = null;
-    document.getElementById("accountButton").textContent =
-      "Se connecter avec Microsoft";
-    document.getElementById("accountModal").hidden = true;
+    const btn = document.getElementById("accountButton");
+    if (btn) btn.textContent = "Se connecter avec Microsoft";
+    const modal = document.getElementById("accountModal");
+    if (modal) modal.hidden = true;
   } catch (err) {
     console.error("Erreur de déconnexion:", err);
     alert("Échec de la déconnexion");
   }
 }
 
-// 🧩 Initialisation complète
-export function initAuthUI() {
+// 🧩 Initialisation complète de l’UI
+export function initAuthUI({ save, renderMain }) {
   injectAuthUI();
   handleRedirectResult();
 
   const accountButton = document.getElementById("accountButton");
   const accountModal = document.getElementById("accountModal");
-  const saveButton = document.getElementById("saveButton");
-  const loadButton = document.getElementById("loadButton");
-  const logoutButton = document.getElementById("logoutButton");
+  const saveBtn = document.getElementById("saveBtn");
+  const loadBtn = document.getElementById("loadBtn");
+  const logoutBtn = document.getElementById("logoutBtn");
 
   accountButton.addEventListener("click", () => {
     if (currentUser) {
@@ -82,18 +88,25 @@ export function initAuthUI() {
     }
   });
 
-  saveButton.addEventListener("click", () => {
+  saveBtn.addEventListener("click", () => {
+    if (typeof save === "function") save();
     alert("Sauvegarde effectuée !");
     accountModal.hidden = true;
   });
 
-  loadButton.addEventListener("click", () => {
+  loadBtn.addEventListener("click", () => {
+    if (typeof renderMain === "function") renderMain();
     alert("Chargement effectué !");
     accountModal.hidden = true;
   });
 
-  logoutButton.addEventListener("click", () => {
+  logoutBtn.addEventListener("click", () => {
     appSignOut();
+  });
+
+  // Fermer le modal si clic en dehors
+  accountModal.addEventListener("click", e => {
+    if (e.target === accountModal) accountModal.hidden = true;
   });
 }
 
