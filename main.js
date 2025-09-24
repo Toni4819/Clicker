@@ -116,7 +116,7 @@ import { initRebirthSystem }          from "./rebirthSystem.js";
 import { initStats }                  from "./modules/stats.js";
 import { animateClick, animatePassive } from "./modules/animations.js";
 import { initShop }                   from "./menus/shop.js";
-import { initSettings } from "./menus/settings.js";
+import { initSettings } from "./menus/settings/settings.js";
 import { initCoinDrop } from "./modules/initCoinDrop.js";
 import { initUpdatePopup } from './popup.js';
 
