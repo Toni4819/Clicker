@@ -4,6 +4,13 @@ import { initImportExport } from "./import-export.js";
 import { enterCode } from "./codes.js";
 import { doReset } from "./reset.js";
 
+/*
+  settings.js
+  - Utilise les mêmes classes et l'approche visuelle que l'index (pas d'inversion, pas d'ombres ajoutées).
+  - Centre les boutons à l'intérieur de la modal.
+  - Délègue l'auth, import/export, codes et reset aux modules correspondants.
+*/
+
 export function initSettings({ els, state, save, renderMain }) {
   const settingsBtn = els.settingsBtn;
   if (!settingsBtn) {
@@ -25,7 +32,7 @@ export function initSettings({ els, state, save, renderMain }) {
   }
 
   modal.innerHTML = `
-    <div class="modal-content" role="document">
+    <div class="modal-content" role="document" style="max-width:560px; margin:0 auto;">
       <header class="modal-header">
         <h2 id="settingsTitle">⚙️ Paramètres</h2>
         <button class="close-btn" aria-label="Fermer">✕</button>
@@ -41,38 +48,39 @@ export function initSettings({ els, state, save, renderMain }) {
     renderSettingsBody();
     modal.setAttribute("aria-hidden", "false");
     document.body.classList.add("modal-open");
+    // set focus for accessibility
+    const firstButton = modal.querySelector("button");
+    if (firstButton) firstButton.focus();
   }
   function closeSettings() {
     modal.setAttribute("aria-hidden", "true");
     document.body.classList.remove("modal-open");
+    settingsBtn.focus();
   }
 
-  // Rendu du contenu en respectant l'ordre et les classes de style
+  // Rendu du contenu en respectant l'ordre et les classes utilisées par l'index
   function renderSettingsBody() {
     const logged = !!state.user;
-    // ordre demandé :
-    // - bouton secondaire (vert) en dessous
-    // - export & import en bleu clair
-    // - bouton codes en orange en dessous
-    // - bouton reset en rouge, un peu plus espacé
+
+    // On centre les boutons avec text-align:center; on n'ajoute aucune ombre ni inversion de couleur
     body.innerHTML = `
-      <div class="section">
+      <div class="section" style="text-align:center; margin-bottom:12px;">
         ${logged
-          ? `<button id="logoutBtn" class="item-btn btn btn-shop">Se déconnecter</button>`
-          : `<button id="loginBtn" class="item-btn btn btn-shop">Se connecter avec Microsoft</button>`}
+          ? `<button id="logoutBtn" class="btn btn-shop">Se déconnecter</button>`
+          : `<button id="loginBtn" class="btn btn-shop">Se connecter avec Microsoft</button>`}
       </div>
 
-      <div class="section" style="display:flex; gap:10px; margin-bottom:8px;">
-        <button id="exportBtn" class="item-btn btn btn-secondary">Exporter</button>
-        <button id="importBtn" class="item-btn btn btn-secondary">Importer</button>
+      <div class="section" style="text-align:center; display:flex; justify-content:center; gap:12px; margin-bottom:12px;">
+        <button id="exportBtn" class="btn btn-secondary">Exporter</button>
+        <button id="importBtn" class="btn btn-secondary">Importer</button>
       </div>
 
-      <div class="section" style="margin-bottom:8px;">
-        <button id="codesBtn" class="item-btn btn btn-primary">Entrer un code</button>
+      <div class="section" style="text-align:center; margin-bottom:12px;">
+        <button id="codesBtn" class="btn btn-primary">Entrer un code</button>
       </div>
 
-      <div class="section" style="margin-top:16px;">
-        <button id="resetBtn" class="item-btn btn btn-warning" style="padding:12px 16px;">Réinitialiser</button>
+      <div class="section" style="text-align:center; margin-top:20px;">
+        <button id="resetBtn" class="btn btn-warning" style="padding:12px 18px;">Réinitialiser</button>
       </div>
     `;
 
@@ -84,11 +92,14 @@ export function initSettings({ els, state, save, renderMain }) {
     const codesBtn  = body.querySelector("#codesBtn");
     const resetBtn  = body.querySelector("#resetBtn");
 
-    if (loginBtn)  loginBtn.addEventListener("click", () => openMicrosoftLogin());
+    if (loginBtn)  loginBtn.addEventListener("click", () => {
+      // désactive le bouton pour éviter double-clic
+      loginBtn.disabled = true;
+      openMicrosoftLogin();
+    });
+
     if (logoutBtn) logoutBtn.addEventListener("click", async () => {
-      // déléguer la déconnexion au code appelant si présent
       try {
-        // signOut est géré dans auth.js si nécessaire
         if (typeof window.__appSignOut === "function") await window.__appSignOut();
         state.user = null;
         save();
@@ -100,27 +111,33 @@ export function initSettings({ els, state, save, renderMain }) {
     });
 
     if (exportBtn) exportBtn.addEventListener("click", () => {
-      // délègue à import-export
-      initImportExport().exportState(state, save, renderMain, renderSettingsBody);
+      const ie = initImportExport();
+      ie.exportState(state);
+      // pas de re-render nécessaire après export
     });
+
     if (importBtn) importBtn.addEventListener("click", () => {
-      initImportExport().importState(state, save, renderMain, renderSettingsBody);
+      const ie = initImportExport();
+      ie.importState(state, save, renderMain, renderSettingsBody);
     });
+
     if (codesBtn)  codesBtn.addEventListener("click", () => {
       enterCode(state, save, renderMain, renderSettingsBody);
     });
+
     if (resetBtn)  resetBtn.addEventListener("click", () => {
       doReset(state, save, renderMain, renderSettingsBody);
     });
   }
 
+  // Liens ouverture / fermeture
   settingsBtn.addEventListener("click", openSettings);
   closeBtn.addEventListener("click", closeSettings);
   modal.addEventListener("click", e => {
     if (e.target === modal) closeSettings();
   });
 
-  // gestion du retour OAuth (auth.js expose cette fonction)
+  // Gestion du retour OAuth via auth.js
   handleRedirectResult(({ user }) => {
     if (user) {
       state.user = { name: user.displayName || "Utilisateur" };
