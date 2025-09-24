@@ -380,7 +380,16 @@ async function onLogout() {
   safeListen(closeSecondBtn,"click",()=>closeModal(modalSecond));
   modal.addEventListener("click",(e)=>{ if(e.target===modal) closeModal(modal); });
   modalSecond.addEventListener("click",(e)=>{ if(e.target===modalSecond) closeModal(modalSecond); });
-  document.addEventListener("keydown",(e)=>{ if(e.key==="Escape"){ if(modalSecond.getAttribute("aria-hidden")==="false") closeModal(modalSecond); else if(modal.getAttribute("aria-hidden")==="false") closeModal(modal);} });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      if (modalSecond.getAttribute("aria-hidden") === "false") {
+        closeModal(modalSecond);
+      } else if (modal.getAttribute("aria-hidden") === "false") {
+        closeModal(modal);
+      }
+    }
+  });
 
-  renderSettingsBody();
-}
+renderSettingsBody();
+} // ← ferme initSettings
+
