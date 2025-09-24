@@ -1,390 +1,140 @@
-import { getAuth, OAuthProvider, signInWithRedirect, getRedirectResult, signOut } 
-  from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
+// --- Firebase Auth (redirect flow) ---
+import {
+  getAuth,
+  OAuthProvider,
+  signInWithRedirect,
+  getRedirectResult,
+  signOut
+} from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
 
-async function onLogin() {
-  loginBtn.disabled = true;
-  try {
-    await signInWithRedirect(auth, provider);
-    // La redirection part vers Microsoft, puis revient sur ton site
-  } catch (err) {
-    console.error("Erreur OAuth Microsoft:", err);
-    alert("Connexion échouée");
-    loginBtn.disabled = false;
+// Déclare auth + provider une seule fois (globaux)
+const auth = getAuth();
+const provider = new OAuthProvider("microsoft.com");
+provider.setCustomParameters({ prompt: "consent", tenant: "common" });
+
+// --- Safe listener ---
+function safeListen(el, ev, fn) {
+  if (el) {
+    el.removeEventListener(ev, fn);
+    el.addEventListener(ev, fn);
   }
 }
 
-// À placer dans initSettings, après avoir défini auth/provider :
-getRedirectResult(auth)
-  .then((result) => {
-    if (result && result.user) {
-      state.user = { name: result.user.displayName || "Utilisateur" };
-      save();
-      renderMain();
-      renderSettingsBody();
-    }
-  })
-  .catch((err) => {
-    if (err) console.error("Erreur retour OAuth:", err);
-  });
-
-
-// initSettings.js
+// --- Export principal ---
 export function initSettings({ els, state, save, renderMain }) {
-  const settingsBtn = els.settingsBtn;
-  const auth = getAuth();
-  const provider = new OAuthProvider('microsoft.com');
-  provider.setCustomParameters({ prompt: 'consent', tenant: 'common' });
-  if (!settingsBtn) {
-    console.error("initSettings : #settingsBtn introuvable");
-    return;
-  }
+  const {
+    settingsBtn,
+    closeSettingsBtn,
+    loginBtn,
+    logoutBtn,
+    exportBtn,
+    importBtn,
+    codesBtn,
+    resetBtn,
+    closeSecondBtn,
+    settingsModal,
+    settingsModalSecond
+  } = els;
 
-  // --- Créer / récupérer modal principal (settings) ---
-  let modal = els.settingsModal;
-  if (!modal) {
-    modal = document.createElement("div");
-    modal.id = "settingsModal";
-    modal.className = "modal";
-    modal.setAttribute("aria-hidden", "true");
-    modal.setAttribute("role", "dialog");
-    modal.setAttribute("aria-labelledby", "settingsTitle");
-    document.body.append(modal);
-    els.settingsModal = modal;
-  }
+  let modal = settingsModal;
+  let modalSecond = settingsModalSecond;
 
-  // --- Créer / récupérer modal secondaire ---
-  let modalSecond = els.settingsModalSecond;
-  if (!modalSecond) {
-    modalSecond = document.createElement("div");
-    modalSecond.id = "settingsModalSecond";
-    modalSecond.className = "modal modal-second";
-    modalSecond.setAttribute("aria-hidden", "true");
-    modalSecond.setAttribute("role", "dialog");
-    modalSecond.setAttribute("aria-labelledby", "settingsSecondTitle");
-    document.body.append(modalSecond);
-    els.settingsModalSecond = modalSecond;
-  }
-
-  // --- HTML modal principal ---
-  modal.innerHTML = `
-    <div class="modal-content">
-      <header class="modal-header">
-        <h2 id="settingsTitle">⚙️ Paramètres</h2>
-        <button id="closeSettingsBtn" class="close-btn" aria-label="Fermer">✕</button>
-      </header>
-      <div class="modal-body" id="settingsBody">
-        <section class="section">
-          <h3 class="section-title" style="text-align:center">Compte <span id="acctState">(<span id="acctLabel">Non connecté</span>)</span></h3>
-          <div style="display:flex;gap:8px;justify-content:center;margin-top:8px">
-            <button id="loginBtn" class="btn btn-primary">🔐 Se connecter</button>
-            <button id="logoutBtn" class="btn btn-primary">🔓 Se déconnecter</button>
-          </div>
-        </section>
-
-        <section class="section">
-          <h3 class="section-title" style="text-align:center">Données</h3>
-          <div style="display:flex;gap:8px;justify-content:center;margin-top:8px;flex-wrap:wrap">
-            <button id="exportBtn" class="btn btn-blue btn-data">📤 Exporter (chiffré)</button>
-            <button id="importBtn" class="btn btn-blue btn-data">📥 Importer (chiffré)</button>
-          </div>
-        </section>
-
-        <section class="section">
-          <h3 class="section-title" style="text-align:center">Codes</h3>
-          <div style="display:flex;gap:8px;justify-content:center;margin-top:8px">
-            <button id="codesBtn" class="btn btn-green btn-codes">💳 Entrer un code</button>
-          </div>
-        </section>
-
-        <hr style="margin:20px 0;border:0;border-top:1px solid var(--border)" />
-        <section class="section" style="display:flex;justify-content:center">
-          <button id="resetBtn" class="btn btn-warning">↺ Reset total</button>
-        </section>
-      </div>
-    </div>
-  `;
-
-  // --- HTML modal secondaire ---
-  modalSecond.innerHTML = `
-    <div class="modal-content">
-      <header class="modal-header">
-        <h2 id="settingsSecondTitle">Action</h2>
-        <button id="closeSettingsSecondBtn" class="close-btn" aria-label="Fermer">✕</button>
-      </header>
-      <div class="modal-body" id="settingsSecondBody"></div>
-    </div>
-  `;
-
-  // --- Style spécial zone texte + boutons colorés ---
-  if (!document.getElementById("settings-modal-style")) {
-    const style = document.createElement("style");
-    style.id = "settings-modal-style";
-    style.textContent = `
-      .copilot-box {
-        position:relative;
-        background:rgba(0,0,0,0.4);
-        border:1px solid var(--border);
-        border-radius:10px;
-        padding-top:32px;
-        padding:10px;
-      }
-      .copilot-box button.copy-btn {
-        position:absolute;
-        top:4px;
-        left:4px;
-        font-size:12px;
-        padding:4px 8px;
-        border-radius:6px;
-        cursor:pointer;
-      }
-      .copilot-box textarea {
-        width:100%;
-        border:none;
-        outline:none;
-        background:transparent;
-        color:var(--fg);
-        resize:none;
-      }
-      /* Boutons colorés */
-      .btn-green { background:#28a745; color:white; border:none; padding:10px 14px; border-radius:8px; cursor:pointer; }
-      .btn-green:hover { background:#218838; }
-      .btn-blue { background:#007bff; color:white; border:none; padding:10px 14px; border-radius:8px; cursor:pointer; }
-      .btn-blue:hover { background:#0069d9; }
-      .item-btn { background:var(--border); padding:8px 12px; border-radius:8px; cursor:pointer; }
-    `;
-    document.head.appendChild(style);
-  }
-
-  // --- Refs DOM ---
-  const closeSettingsBtn = modal.querySelector("#closeSettingsBtn");
-  const acctLabelEl = modal.querySelector("#acctLabel");
-  const loginBtn = modal.querySelector("#loginBtn");
-  const logoutBtn = modal.querySelector("#logoutBtn");
-  const exportBtn = modal.querySelector("#exportBtn");
-  const importBtn = modal.querySelector("#importBtn");
-  const codesBtn = modal.querySelector("#codesBtn");
-  const resetBtn = modal.querySelector("#resetBtn");
-
-  const closeSecondBtn = modalSecond.querySelector("#closeSettingsSecondBtn");
-  const secondBody = modalSecond.querySelector("#settingsSecondBody");
-  const secondTitle = modalSecond.querySelector("#settingsSecondTitle");
-
-  // --- open / close helpers ---
-  function openModal(m) {
-    m.setAttribute("aria-hidden", "false");
-    document.body.classList.add("modal-open");
-  }
-  function closeModal(m) {
-    m.setAttribute("aria-hidden", "true");
-    const anyOpen = Array.from(document.querySelectorAll(".modal")).some(x => x.getAttribute("aria-hidden") === "false");
-    if (!anyOpen) document.body.classList.remove("modal-open");
-  }
-
-  // --- Render dynamique ---
+  // --- Render contenu du menu ---
   function renderSettingsBody() {
+    if (!modal) return;
+    const body = modal.querySelector(".modal-body");
+    if (!body) return;
+
     const logged = !!state.user;
-    if (logged) {
-      loginBtn.textContent = `Compte (${state.user.name || "Microsoft"})`;
-      loginBtn.style.backgroundColor = "orange";
-      loginBtn.disabled = false;
-      loginBtn.onclick = () => {
-        secondTitle.textContent = "Compte Microsoft";
-        secondBody.innerHTML = `
-          <div class="section" style="text-align:center">
-            <button id="saveBtn" class="btn btn-blue">💾 Sauvegarder</button>
-            <button id="loadBtn" class="btn btn-blue">📥 Charger</button>
-            <hr style="margin:20px 0;border:0;border-top:1px solid var(--border)" />
-            <button id="logoutBtn" class="btn" style="background-color:red">🔓 Se déconnecter</button>
-          </div>
-        `;
-        secondBody.querySelector("#saveBtn").onclick = () => alert("Sauvegarde (à brancher Firestore)");
-        secondBody.querySelector("#loadBtn").onclick = () => alert("Chargement (à brancher Firestore)");
-        secondBody.querySelector("#logoutBtn").onclick = onLogout;
-        openModal(modalSecond);
-      };
-      logoutBtn.style.display = "none";
-    } else {
-      loginBtn.textContent = "Se connecter";
-      loginBtn.style.backgroundColor = "green";
-      loginBtn.disabled = false;
-      loginBtn.onclick = onLogin;
-      logoutBtn.style.display = "none";
+    body.innerHTML = `
+      <div class="section">
+        <h2 id="settingsTitle">Paramètres</h2>
+        <div class="grid">
+          ${logged
+            ? `<button id="logoutBtn" class="item-btn">Se déconnecter</button>`
+            : `<button id="loginBtn" class="item-btn">Se connecter avec Microsoft</button>`}
+          <button id="exportBtn" class="item-btn">Exporter</button>
+          <button id="importBtn" class="item-btn">Importer</button>
+          <button id="codesBtn" class="item-btn">Entrer un code</button>
+          <button id="resetBtn" class="item-btn">Réinitialiser</button>
+        </div>
+      </div>
+    `;
+
+    // Rebind boutons internes
+    const newLoginBtn = body.querySelector("#loginBtn");
+    const newLogoutBtn = body.querySelector("#logoutBtn");
+    const newExportBtn = body.querySelector("#exportBtn");
+    const newImportBtn = body.querySelector("#importBtn");
+    const newCodesBtn = body.querySelector("#codesBtn");
+    const newResetBtn = body.querySelector("#resetBtn");
+
+    safeListen(newLoginBtn, "click", onLogin);
+    safeListen(newLogoutBtn, "click", onLogout);
+    safeListen(newExportBtn, "click", onExport);
+    safeListen(newImportBtn, "click", onImport);
+    safeListen(newCodesBtn, "click", onEnterCode);
+    safeListen(newResetBtn, "click", onReset);
+  }
+
+  // --- Login via redirect ---
+  async function onLogin() {
+    const btn = document.querySelector("#loginBtn");
+    if (btn) btn.disabled = true;
+    try {
+      await signInWithRedirect(auth, provider);
+    } catch (err) {
+      console.error("Erreur OAuth Microsoft:", err);
+      alert("Connexion échouée");
+      if (btn) btn.disabled = false;
     }
   }
 
-
-
-  // --- Crypto helpers ---
-  async function deriveKey(password, salt) {
-    const enc = new TextEncoder();
-    const keyMaterial = await crypto.subtle.importKey("raw", enc.encode(password), { name: "PBKDF2" }, false, ["deriveKey"]);
-    return crypto.subtle.deriveKey({ name: "PBKDF2", salt, iterations: 150000, hash: "SHA-256" }, keyMaterial, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
-  }
-
-  async function encryptJSON(obj, password) {
-    const enc = new TextEncoder();
-    const iv = crypto.getRandomValues(new Uint8Array(12));
-    const salt = crypto.getRandomValues(new Uint8Array(16));
-    const key = await deriveKey(password, salt);
-    const data = enc.encode(JSON.stringify(obj));
-    const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, data);
-    const payload = { v: 1, salt: Array.from(salt), iv: Array.from(iv), ct: Array.from(new Uint8Array(ct)) };
-    return btoa(JSON.stringify(payload));
-  }
-
-  async function decryptJSON(b64, password) {
-    const raw = atob(b64);
-    const payload = JSON.parse(raw);
-    const salt = new Uint8Array(payload.salt);
-    const iv = new Uint8Array(payload.iv);
-    const ct = new Uint8Array(payload.ct);
-    const key = await deriveKey(password, salt);
-    const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, ct);
-    return JSON.parse(new TextDecoder().decode(pt));
-  }
-
-  // --- Actions ---
-  async function onExport() {
-    secondTitle.textContent = "Exporter (chiffré)";
-    secondBody.innerHTML = `
-      <div class="section">
-        <div style="text-align:center;margin-bottom:8px">Mot de passe pour chiffrer l'export</div>
-        <div style="display:flex;justify-content:center;gap:8px">
-          <input id="exportPwd" type="password" placeholder="Mot de passe" class="styled-input" />
-          <button id="doExportBtn" class="item-btn">Générer</button>
-        </div>
-        <div id="exportOutput" style="margin-top:12px"></div>
-      </div>
-    `;
-    openModal(modalSecond);
-
-    const doExportBtn = secondBody.querySelector("#doExportBtn");
-    const exportPwd = secondBody.querySelector("#exportPwd");
-    const exportOutput = secondBody.querySelector("#exportOutput");
-
-    doExportBtn.addEventListener("click", async function handleExport() {
-      const pwd = exportPwd.value || "";
-      if (!pwd) return alert("Mot de passe requis");
-      exportPwd.disabled = true; // 🔒 empêche modification
-      try {
-        const blob = await encryptJSON(state, pwd);
-        exportOutput.innerHTML = `
-          <div class="copilot-box">
-            <button class="copy-btn">Copier</button>
-            <textarea rows="6" readonly>${blob}</textarea>
-          </div>
-          <div style="text-align:center;margin-top:8px">
-            <button id="saveExportBtn" class="item-btn">Enregistrer</button>
-          </div>
-        `;
-        const copyBtn = exportOutput.querySelector(".copy-btn");
-        copyBtn.addEventListener("click", () => navigator.clipboard.writeText(blob));
-
-        const saveBtn = exportOutput.querySelector("#saveExportBtn");
-        saveBtn.addEventListener("click", () => {
-          const now = new Date();
-          const name = now.toISOString().replace(/[:T]/g,"-").slice(0,16) + "-clicker-export.txt";
-          const a = document.createElement("a");
-          a.href = URL.createObjectURL(new Blob([blob], {type:"text/plain"}));
-          a.download = name;
-          a.click();
-        });
-      } catch (err) {
-        alert("Erreur lors de l'export");
-      }
-    }, { once: true });
-  }
-
-  async function onImport() {
-    secondTitle.textContent = "Importer (chiffré)";
-    secondBody.innerHTML = `
-      <div class="section">
-        <div style="text-align:center;margin-bottom:8px">Fichier ou collez votre export</div>
-        <input id="importFile" type="file" accept=".txt" class="styled-input" />
-        <div class="copilot-box">
-          <button class="copy-btn">Coller</button>
-          <textarea id="importData" rows="6"></textarea>
-        </div>
-        <input id="importPwd" type="password" placeholder="Mot de passe" class="styled-input" />
-        <div style="text-align:center;margin-top:8px">
-          <button id="doImportBtn" class="item-btn">Importer</button>
-        </div>
-      </div>
-    `;
-    openModal(modalSecond);
-
-    const copyBtn = secondBody.querySelector(".copy-btn");
-    const importData = secondBody.querySelector("#importData");
-    copyBtn.addEventListener("click", async () => {
-      try { importData.value = await navigator.clipboard.readText(); } catch {}
-    });
-
-    const importFile = secondBody.querySelector("#importFile");
-    importFile.addEventListener("change", async (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        const txt = await file.text();
-        importData.value = txt;
-      }
-    });
-
-    const doImportBtn = secondBody.querySelector("#doImportBtn");
-    doImportBtn.addEventListener("click", async () => {
-      const raw = importData.value.trim();
-      const pwd = secondBody.querySelector("#importPwd").value || "";
-      if (!raw || !pwd) return alert("Données et mot de passe requis");
-      try {
-        const parsed = await decryptJSON(raw, pwd);
-        Object.assign(state, parsed);
-        save();
-        renderMain();
-        alert("Import réussi");
-        closeModal(modalSecond);
-      } catch {
-        alert("Import échoué");
-      }
-    });
-  }
-
-async function onLogin() {
-  loginBtn.disabled = true;
-  try {
-    await signInWithRedirect(auth, provider);
-    // La redirection part vers Microsoft, puis revient sur ton site
-  } catch (err) {
-    console.error("Erreur OAuth Microsoft:", err);
-    alert("Connexion échouée");
-    loginBtn.disabled = false;
-  }
-}
-
-// À placer dans initSettings, après avoir défini auth/provider :
-getRedirectResult(auth)
-  .then((result) => {
-    if (result && result.user) {
-      state.user = { name: result.user.displayName || "Utilisateur" };
+  // --- Logout ---
+  async function onLogout() {
+    try {
+      await signOut(auth);
+      state.user = null;
       save();
       renderMain();
       renderSettingsBody();
+    } catch (err) {
+      console.error("Erreur de déconnexion:", err);
     }
-  })
-  .catch((err) => {
-    if (err) console.error("Erreur retour OAuth:", err);
-  });
-
-
-async function onLogout() {
-  if (confirm("Se déconnecter ?")) {
-    await signOut(auth);
-    state.user = null;
-    save();
-    renderMain();
-    renderSettingsBody();
   }
-}
 
+  // --- Export ---
+  function onExport() {
+    const data = JSON.stringify(state);
+    const blob = new Blob([data], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "clicker-save.json";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  // --- Import ---
+  function onImport() {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "application/json";
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      const text = await file.text();
+      Object.assign(state, JSON.parse(text));
+      save();
+      renderMain();
+      renderSettingsBody();
+    };
+    input.click();
+  }
+
+  // --- Code secret ---
   function onEnterCode() {
-    secondTitle.textContent = "Entrer un code";
+    if (!modalSecond) return;
+    const secondBody = modalSecond.querySelector(".modal-body");
     secondBody.innerHTML = `
       <div class="section">
         <div style="text-align:center;margin-bottom:8px">Entrez votre code</div>
@@ -395,31 +145,58 @@ async function onLogout() {
       </div>
     `;
     openModal(modalSecond);
-    secondBody.querySelector("#applyCodeBtn").addEventListener("click", () => {
+
+    const applyBtn = secondBody.querySelector("#applyCodeBtn");
+    safeListen(applyBtn, "click", () => {
       const code = secondBody.querySelector("#codeInput").value.trim().toUpperCase();
       if (code === "400UPDATES!!!") {
         state.points = (state.points || 0) + 1_000_000_000;
-        save(); renderMain(); alert("+1 000 000 000points");
-      } else alert("Code invalide");
+        save();
+        renderMain();
+        alert("+1 000 000 000 points");
+      } else {
+        alert("Code invalide");
+      }
       closeModal(modalSecond);
-    }, { once:true });
+    });
   }
-  function onReset() { if(confirm("Reset total ?")) { localStorage.clear(); location.reload(); } }
 
-  function safeListen(el, ev, fn) { if(el){ el.removeEventListener(ev, fn); el.addEventListener(ev, fn); } }
-  safeListen(settingsBtn,"click",()=>{ renderSettingsBody(); openModal(modal); });
-  safeListen(closeSettingsBtn,"click",()=>closeModal(modal));
-  safeListen(loginBtn,"click",onLogin);
-  safeListen(logoutBtn,"click",onLogout);
-  safeListen(exportBtn,"click",onExport);
-  safeListen(importBtn,"click",onImport);
-  safeListen(codesBtn,"click",onEnterCode);
-  safeListen(resetBtn,"click",onReset);
+  // --- Reset ---
+  function onReset() {
+    if (confirm("Réinitialiser la partie ?")) {
+      for (const k of Object.keys(state)) delete state[k];
+      save();
+      renderMain();
+      renderSettingsBody();
+    }
+  }
 
-  safeListen(closeSecondBtn,"click",()=>closeModal(modalSecond));
-  modal.addEventListener("click",(e)=>{ if(e.target===modal) closeModal(modal); });
-  modalSecond.addEventListener("click",(e)=>{ if(e.target===modalSecond) closeModal(modalSecond); });
-  document.addEventListener("keydown",(e)=>{ if(e.key==="Escape"){ if(modalSecond.getAttribute("aria-hidden")==="false") closeModal(modalSecond); else if(modal.getAttribute("aria-hidden")==="false") closeModal(modal);} });
+  // --- Listeners globaux ---
+  safeListen(settingsBtn, "click", () => {
+    renderSettingsBody();
+    openModal(modal);
+  });
+  safeListen(closeSettingsBtn, "click", () => closeModal(modal));
+  safeListen(closeSecondBtn, "click", () => closeModal(modalSecond));
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      if (modalSecond?.getAttribute("aria-hidden") === "false") closeModal(modalSecond);
+      else if (modal?.getAttribute("aria-hidden") === "false") closeModal(modal);
+    }
+  });
 
   renderSettingsBody();
 }
+
+// --- Gérer le retour de Microsoft après redirection ---
+getRedirectResult(auth)
+  .then((result) => {
+    if (result && result.user) {
+      state.user = { name: result.user.displayName || "Utilisateur" };
+      save();
+      renderMain();
+      renderSettingsBody();
+    }
+  })
+  .catch((err) => console.error("Erreur retour OAuth:", err));
