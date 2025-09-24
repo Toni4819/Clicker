@@ -321,6 +321,7 @@ export function initSettings({ els, state, save, renderMain }) {
   }
 
 async function onLogin() {
+  loginBtn.disabled = true; // 🔒 empêche double clic
   try {
     const result = await signInWithPopup(auth, provider);
     const user = result.user;
@@ -331,8 +332,11 @@ async function onLogin() {
   } catch (err) {
     console.error("Erreur OAuth Microsoft:", err);
     alert("Connexion échouée");
+  } finally {
+    loginBtn.disabled = false; // 🔓 réactive le bouton
   }
 }
+
 
 async function onLogout() {
   if (confirm("Se déconnecter ?")) {
