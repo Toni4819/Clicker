@@ -1,5 +1,6 @@
-// firebase.js
-import { initializeApp, getApp, getApps } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+// menus/firebase.js
+import { initializeApp, getApp, getApps } 
+  from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBVZKPSVzpkNehiJlnrNErrEvXwWnK8TtY",
