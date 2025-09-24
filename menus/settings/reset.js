@@ -1,7 +1,21 @@
-// menus/settings/reset.js
 export function doReset(state, save, renderMain, renderSettingsBody) {
   if (!confirm("Réinitialiser la partie ?")) return;
-  for (const k of Object.keys(state)) delete state[k];
+
+  Object.assign(state, {
+    score: 0,
+    clickValue: 1,
+    multiplier: 1,
+    autoClickers: 0,
+    upgrades: {
+      clickBoost: false,
+      autoClickerBoost: false
+    },
+    settings: {
+      sound: true,
+    },
+    lastSave: null
+  });
+
   save();
   renderMain();
   renderSettingsBody();
