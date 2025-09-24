@@ -1,19 +1,9 @@
-// menus/settings.js
+// menus/settings/settings.js
+import { openMicrosoftLogin, handleRedirectResult } from "./auth.js";
+import { initImportExport } from "./import-export.js";
+import { enterCode } from "./codes.js";
+import { doReset } from "./reset.js";
 
-import app from "./firebase.js"; // ← récupère l'app initialisée
-import {
-  getAuth,
-  OAuthProvider,
-  signInWithRedirect,
-  getRedirectResult,
-  signOut
-} from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
-
-const auth = getAuth(app);
-const provider = new OAuthProvider("microsoft.com");
-provider.setCustomParameters({ prompt: "consent", tenant: "common" });
-
-// --- Export principal ---
 export function initSettings({ els, state, save, renderMain }) {
   const settingsBtn = els.settingsBtn;
   if (!settingsBtn) {
@@ -21,7 +11,7 @@ export function initSettings({ els, state, save, renderMain }) {
     return;
   }
 
-  // --- Création / récupération de la modale ---
+  // --- Création / récupération de la modale principale ---
   let modal = els.settingsModal;
   if (!modal) {
     modal = document.createElement("div");
@@ -35,7 +25,7 @@ export function initSettings({ els, state, save, renderMain }) {
   }
 
   modal.innerHTML = `
-    <div class="modal-content">
+    <div class="modal-content" role="document">
       <header class="modal-header">
         <h2 id="settingsTitle">⚙️ Paramètres</h2>
         <button class="close-btn" aria-label="Fermer">✕</button>
@@ -47,7 +37,6 @@ export function initSettings({ els, state, save, renderMain }) {
   const body     = modal.querySelector("#settingsBody");
   const closeBtn = modal.querySelector(".close-btn");
 
-  // --- Fonctions ouverture / fermeture ---
   function openSettings() {
     renderSettingsBody();
     modal.setAttribute("aria-hidden", "false");
@@ -58,18 +47,32 @@ export function initSettings({ els, state, save, renderMain }) {
     document.body.classList.remove("modal-open");
   }
 
-  // --- Rendu du contenu ---
+  // Rendu du contenu en respectant l'ordre et les classes de style
   function renderSettingsBody() {
     const logged = !!state.user;
+    // ordre demandé :
+    // - bouton secondaire (vert) en dessous
+    // - export & import en bleu clair
+    // - bouton codes en orange en dessous
+    // - bouton reset en rouge, un peu plus espacé
     body.innerHTML = `
       <div class="section">
         ${logged
-          ? `<button id="logoutBtn" class="item-btn">Se déconnecter</button>`
-          : `<button id="loginBtn" class="item-btn">Se connecter avec Microsoft</button>`}
-        <button id="exportBtn" class="item-btn">Exporter</button>
-        <button id="importBtn" class="item-btn">Importer</button>
-        <button id="codesBtn" class="item-btn">Entrer un code</button>
-        <button id="resetBtn" class="item-btn">Réinitialiser</button>
+          ? `<button id="logoutBtn" class="item-btn btn btn-shop">Se déconnecter</button>`
+          : `<button id="loginBtn" class="item-btn btn btn-shop">Se connecter avec Microsoft</button>`}
+      </div>
+
+      <div class="section" style="display:flex; gap:10px; margin-bottom:8px;">
+        <button id="exportBtn" class="item-btn btn btn-secondary">Exporter</button>
+        <button id="importBtn" class="item-btn btn btn-secondary">Importer</button>
+      </div>
+
+      <div class="section" style="margin-bottom:8px;">
+        <button id="codesBtn" class="item-btn btn btn-primary">Entrer un code</button>
+      </div>
+
+      <div class="section" style="margin-top:16px;">
+        <button id="resetBtn" class="item-btn btn btn-warning" style="padding:12px 16px;">Réinitialiser</button>
       </div>
     `;
 
@@ -81,108 +84,49 @@ export function initSettings({ els, state, save, renderMain }) {
     const codesBtn  = body.querySelector("#codesBtn");
     const resetBtn  = body.querySelector("#resetBtn");
 
-    if (loginBtn)  loginBtn.addEventListener("click", onLogin);
-    if (logoutBtn) logoutBtn.addEventListener("click", onLogout);
-    if (exportBtn) exportBtn.addEventListener("click", onExport);
-    if (importBtn) importBtn.addEventListener("click", onImport);
-    if (codesBtn)  codesBtn.addEventListener("click", onEnterCode);
-    if (resetBtn)  resetBtn.addEventListener("click", onReset);
+    if (loginBtn)  loginBtn.addEventListener("click", () => openMicrosoftLogin());
+    if (logoutBtn) logoutBtn.addEventListener("click", async () => {
+      // déléguer la déconnexion au code appelant si présent
+      try {
+        // signOut est géré dans auth.js si nécessaire
+        if (typeof window.__appSignOut === "function") await window.__appSignOut();
+        state.user = null;
+        save();
+        renderMain();
+        renderSettingsBody();
+      } catch (err) {
+        console.error("Erreur de déconnexion:", err);
+      }
+    });
+
+    if (exportBtn) exportBtn.addEventListener("click", () => {
+      // délègue à import-export
+      initImportExport().exportState(state, save, renderMain, renderSettingsBody);
+    });
+    if (importBtn) importBtn.addEventListener("click", () => {
+      initImportExport().importState(state, save, renderMain, renderSettingsBody);
+    });
+    if (codesBtn)  codesBtn.addEventListener("click", () => {
+      enterCode(state, save, renderMain, renderSettingsBody);
+    });
+    if (resetBtn)  resetBtn.addEventListener("click", () => {
+      doReset(state, save, renderMain, renderSettingsBody);
+    });
   }
 
-  // --- Login via redirect ---
-  async function onLogin() {
-    const btn = document.querySelector("#loginBtn");
-    if (btn) btn.disabled = true;
-    try {
-      await signInWithRedirect(auth, provider);
-    } catch (err) {
-      console.error("Erreur OAuth Microsoft:", err);
-      alert("Connexion échouée");
-      if (btn) btn.disabled = false;
-    }
-  }
-
-  // --- Logout ---
-  async function onLogout() {
-    try {
-      await signOut(auth);
-      state.user = null;
-      save();
-      renderMain();
-      renderSettingsBody();
-    } catch (err) {
-      console.error("Erreur de déconnexion:", err);
-    }
-  }
-
-  // --- Export ---
-  function onExport() {
-    const data = JSON.stringify(state);
-    const blob = new Blob([data], { type: "application/json" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "clicker-save.json";
-    a.click();
-    URL.revokeObjectURL(a.href);
-  }
-
-  // --- Import ---
-  function onImport() {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = "application/json";
-    input.onchange = async () => {
-      const file = input.files?.[0];
-      if (!file) return;
-      const text = await file.text();
-      Object.assign(state, JSON.parse(text));
-      save();
-      renderMain();
-      renderSettingsBody();
-    };
-    input.click();
-  }
-
-  // --- Code secret ---
-  function onEnterCode() {
-    const code = prompt("Entrez votre code :");
-    if (!code) return;
-    if (code.trim().toUpperCase() === "400UPDATES!!!") {
-      state.points = (state.points || 0) + 1_000_000_000;
-      save();
-      renderMain();
-      alert("+1 000 000 000 points");
-    } else {
-      alert("Code invalide");
-    }
-  }
-
-  // --- Reset ---
-  function onReset() {
-    if (confirm("Réinitialiser la partie ?")) {
-      for (const k of Object.keys(state)) delete state[k];
-      save();
-      renderMain();
-      renderSettingsBody();
-    }
-  }
-
-  // --- Liens d’ouverture / fermeture ---
   settingsBtn.addEventListener("click", openSettings);
   closeBtn.addEventListener("click", closeSettings);
   modal.addEventListener("click", e => {
     if (e.target === modal) closeSettings();
   });
 
-  // --- Gestion du retour OAuth ---
-  getRedirectResult(auth)
-    .then((result) => {
-      if (result && result.user) {
-        state.user = { name: result.user.displayName || "Utilisateur" };
-        save();
-        renderMain();
-        renderSettingsBody();
-      }
-    })
-    .catch((err) => console.error("Erreur retour OAuth:", err));
+  // gestion du retour OAuth (auth.js expose cette fonction)
+  handleRedirectResult(({ user }) => {
+    if (user) {
+      state.user = { name: user.displayName || "Utilisateur" };
+      save();
+      renderMain();
+      renderSettingsBody();
+    }
+  }).catch(err => console.error("Erreur retour OAuth:", err));
 }
