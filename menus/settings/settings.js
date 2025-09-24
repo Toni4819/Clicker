@@ -1,4 +1,4 @@
-import { initAuthUI, handleRedirectResult } from "./auth.js";
+import { initAuthUI, handleRedirectResult, openMicrosoftLogin } from "./auth.js";
 import { initImportExport } from "./import-export.js";
 import { enterCode } from "./codes.js";
 import { doReset } from "./reset.js";
