@@ -1,4 +1,3 @@
-// menus/settings/settings.js
 import { openMicrosoftLogin, handleRedirectResult } from "./auth.js";
 import { initImportExport } from "./import-export.js";
 import { enterCode } from "./codes.js";
@@ -48,7 +47,6 @@ export function initSettings({ els, state, save, renderMain }) {
     renderSettingsBody();
     modal.setAttribute("aria-hidden", "false");
     document.body.classList.add("modal-open");
-    // set focus for accessibility
     const firstButton = modal.querySelector("button");
     if (firstButton) firstButton.focus();
   }
@@ -58,11 +56,9 @@ export function initSettings({ els, state, save, renderMain }) {
     settingsBtn.focus();
   }
 
-  // Rendu du contenu en respectant l'ordre et les classes utilisées par l'index
   function renderSettingsBody() {
     const logged = !!state.user;
 
-    // On centre les boutons avec text-align:center; on n'ajoute aucune ombre ni inversion de couleur
     body.innerHTML = `
       <div class="section" style="text-align:center; margin-bottom:12px;">
         ${logged
@@ -84,7 +80,6 @@ export function initSettings({ els, state, save, renderMain }) {
       </div>
     `;
 
-    // Rebind boutons internes
     const loginBtn  = body.querySelector("#loginBtn");
     const logoutBtn = body.querySelector("#logoutBtn");
     const exportBtn = body.querySelector("#exportBtn");
@@ -93,7 +88,6 @@ export function initSettings({ els, state, save, renderMain }) {
     const resetBtn  = body.querySelector("#resetBtn");
 
     if (loginBtn)  loginBtn.addEventListener("click", () => {
-      // désactive le bouton pour éviter double-clic
       loginBtn.disabled = true;
       openMicrosoftLogin();
     });
@@ -129,7 +123,6 @@ export function initSettings({ els, state, save, renderMain }) {
     });
   }
 
-  // Liens ouverture / fermeture
   settingsBtn.addEventListener("click", openSettings);
   closeBtn.addEventListener("click", closeSettings);
   modal.addEventListener("click", e => {
