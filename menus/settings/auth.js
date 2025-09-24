@@ -26,16 +26,31 @@ export function handleRedirectResult(callback) {
   return getRedirectResult(auth).then(result => {
     if (result && result.user) {
       currentUser = result.user;
-      const btn = document.getElementById("loginBtn");
-      if (btn) {
-        btn.textContent = "Compte";
-        btn.disabled = false;
+
+      // 🔁 Attendre que le bouton soit dans le DOM
+      const updateButton = () => {
+        const btn = document.getElementById("loginBtn");
+        if (btn) {
+          btn.textContent = "Compte";
+          btn.disabled = false;
+          return true;
+        }
+        return false;
+      };
+
+      if (!updateButton()) {
+        const observer = new MutationObserver(() => {
+          if (updateButton()) observer.disconnect();
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
       }
+
       if (callback) callback({ user: result.user });
     }
     return result;
   });
 }
+
 
 // 🚪 Déconnexion
 export async function appSignOut() {
