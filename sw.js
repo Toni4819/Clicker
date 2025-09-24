@@ -1,4 +1,4 @@
-const CACHE_NAME = 'clicker-toni-s-studios';
+const CACHE_NAME = 'clicker-toni-s-studios-v2';
 
 // JS à la racine
 const rootJS = [
@@ -30,12 +30,7 @@ const staticFiles = [
   './style.css',
 ];
 
-// Icônes Android, Apple, MS, favicon
-const androidSizes = [36, 48, 72, 96, 144, 192];
-const appleSizes = [57, 60, 72, 76, 114, 120, 144, 152, 180];
-const msSizes = [70, 144, 150, 310];
-const faviconSizes = [16, 32, 96];
-
+// Icônes
 const iconPaths = [
   'favicon.ico',
   'favicon.svg',
@@ -44,10 +39,9 @@ const iconPaths = [
   'site.webmanifest',
   'web-app-manifest-192x192.png',
   'web-app-manifest-512x512.png'
-
 ].map(file => `./icons/${file}`);
 
-// Liste finale à cacher
+// Liste finale
 const urlsToCache = [
   ...staticFiles,
   ...rootJS,
@@ -56,7 +50,7 @@ const urlsToCache = [
   ...iconPaths
 ];
 
-// Installation : cache initial (tolérant aux fichiers manquants)
+// --- INSTALL ---
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(async cache => {
@@ -79,7 +73,7 @@ self.addEventListener('install', event => {
   );
 });
 
-// Activation : suppression des anciens caches
+// --- ACTIVATE ---
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
@@ -91,7 +85,7 @@ self.addEventListener('activate', event => {
   );
 });
 
-// Interception des requêtes
+// --- FETCH : stratégie network-first ---
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
 
@@ -104,27 +98,19 @@ self.addEventListener('fetch', event => {
           caches.open(CACHE_NAME).then(cache => cache.put(event.request, respClone));
           return resp;
         })
-        .catch(() => caches.match('/index.html'))
+        .catch(() => caches.match('./index.html'))
     );
     return;
   }
 
   // Autres ressources
   event.respondWith(
-    caches.match(event.request)
-      .then(cached => {
-        if (cached) return cached;
-        return fetch(event.request)
-          .then(resp => {
-            const respClone = resp.clone();
-            caches.open(CACHE_NAME).then(cache => cache.put(event.request, respClone));
-            return resp;
-          });
+    fetch(event.request)
+      .then(resp => {
+        const respClone = resp.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(event.request, respClone));
+        return resp;
       })
-      .catch(() => {
-        if (event.request.destination === 'image') {
-          return caches.match('/images/favicon.svg');
-        }
-      })
+      .catch(() => caches.match(event.request))
   );
 });
