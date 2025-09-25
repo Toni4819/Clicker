@@ -1,5 +1,61 @@
 // menus/settings/import-export.js
 // Ce module fournit exportState/importState et crée un modal-second si besoin
+// Utilise la classe CSS modal-second (doit exister dans style.css)
+// Chiffrement via Web Crypto API (AES-GCM) — pas de dépendance externe
+
+function bufToBase64(buf) {
+  return btoa(String.fromCharCode(...new Uint8Array(buf)));
+}
+function base64ToBuf(b64) {
+  return Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+}
+function strToBuf(str) {
+  return new TextEncoder().encode(str);
+}
+function bufToStr(buf) {
+  return new TextDecoder().decode(buf);
+}
+async function deriveKey(password, salt, usage = ["encrypt", "decrypt"]) {
+  const baseKey = await crypto.subtle.importKey(
+    "raw",
+    strToBuf(password),
+    "PBKDF2",
+    false,
+    ["deriveKey"]
+  );
+  return crypto.subtle.deriveKey(
+    {
+      name: "PBKDF2",
+      salt: salt,
+      iterations: 200_000,
+      hash: "SHA-256"
+    },
+    baseKey,
+    { name: "AES-GCM", length: 256 },
+    false,
+    usage
+  );
+}
+async function encryptJsonWithPassword(obj, password) {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const key = await deriveKey(password, salt, ["encrypt"]);
+  const plaintext = strToBuf(JSON.stringify(obj));
+  const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, plaintext);
+  // output base64: salt.iv.ciphertext
+  return `${bufToBase64(salt)}.${bufToBase64(iv)}.${bufToBase64(ct)}`;
+}
+async function decryptJsonWithPassword(b64string, password) {
+  const parts = b64string.split(".");
+  if (parts.length !== 3) throw new Error("Format invalide");
+  const salt = base64ToBuf(parts[0]);
+  const iv = base64ToBuf(parts[1]);
+  const ct = base64ToBuf(parts[2]);
+  const key = await deriveKey(password, salt, ["decrypt"]);
+  const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, ct);
+  return JSON.parse(bufToStr(pt));
+}
+
 export function initImportExport() {
   // modal-second : modal léger placé en dessous du modal principal si besoin
   function ensureModalSecond() {
@@ -7,10 +63,12 @@ export function initImportExport() {
     if (modal) return modal;
     modal = document.createElement("div");
     modal.id = "modalSecond";
-    modal.className = "modal";
+    modal.className = "modal modal-second"; // utilise les styles existants modal-second
     modal.setAttribute("aria-hidden", "true");
+    modal.setAttribute("role", "dialog");
+    modal.setAttribute("aria-modal", "false");
     modal.innerHTML = `
-      <div class="modal-content" role="document" style="max-width:520px;">
+      <div class="modal-content" role="document">
         <header class="modal-header">
           <h3 id="modalSecondTitle">Importer / Exporter</h3>
           <button class="close-btn" aria-label="Fermer">✕</button>
@@ -19,63 +77,143 @@ export function initImportExport() {
       </div>
     `;
     document.body.append(modal);
-    modal.querySelector(".close-btn").addEventListener("click", () => {
+
+    const close = () => {
       modal.setAttribute("aria-hidden", "true");
       document.body.classList.remove("modal-open");
-    });
+      // cleanup listeners that may remain on dynamic elements
+      const doImport = modal.querySelector("#doImport");
+      if (doImport) doImport.replaceWith(doImport.cloneNode(true));
+      const doExport = modal.querySelector("#doExport");
+      if (doExport) doExport.replaceWith(doExport.cloneNode(true));
+    };
+
+    modal.querySelector(".close-btn").addEventListener("click", close);
     modal.addEventListener("click", e => {
-      if (e.target === modal) {
-        modal.setAttribute("aria-hidden", "true");
-        document.body.classList.remove("modal-open");
-      }
+      if (e.target === modal) close();
     });
     return modal;
   }
 
-  function showModalSecond(contentHtml) {
+  function showModalSecond(contentHtml, title) {
     const modal = ensureModalSecond();
     const body = modal.querySelector("#modalSecondBody");
+    if (title) modal.querySelector("#modalSecondTitle").textContent = title;
     body.innerHTML = contentHtml;
     modal.setAttribute("aria-hidden", "false");
     document.body.classList.add("modal-open");
+    return modal;
   }
 
-  function exportState(state) {
-    const data = JSON.stringify(state);
-    const blob = new Blob([data], { type: "application/json" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "clicker-save.json";
-    a.click();
-    URL.revokeObjectURL(a.href);
-  }
-
-  function importState(state, save, renderMain, renderSettingsBody) {
-    // on ouvre modal-second avec un input file
-    showModalSecond(`
-      <p class="section-title">Choisissez un fichier JSON</p>
-      <div style="display:flex; gap:10px; align-items:center;">
-        <input id="importFile" type="file" accept="application/json" />
-        <button id="doImport" class="btn btn-secondary">Importer</button>
+  // Export: chiffre l'objet state avec mot de passe, affiche chaîne encodée,
+  // propose copier et télécharger (fichier .txt)
+  async function exportState(state) {
+    const html = `
+      <p class="section-title">Exporter — chiffrer l'état avec un mot de passe</p>
+      <label class="label">Mot de passe</label>
+      <input id="exportPassword" type="password" class="input" autocomplete="new-password" />
+      <div class="row" style="gap:8px; margin-top:8px;">
+        <button id="doExport" class="btn btn-primary">Générer la chaîne</button>
       </div>
-    `);
-    const modal = document.getElementById("modalSecond");
-    const input = modal.querySelector("#importFile");
-    const doImport = modal.querySelector("#doImport");
-    doImport.addEventListener("click", async () => {
-      const file = input.files?.[0];
-      if (!file) return alert("Aucun fichier sélectionné");
+      <label class="label" style="margin-top:12px;">Chaîne chiffrée</label>
+      <textarea id="exportResult" class="input" rows="6" readonly></textarea>
+      <div class="row" style="gap:8px; margin-top:8px;">
+        <button id="copyExport" class="btn btn-secondary">Copier</button>
+        <button id="downloadExport" class="btn btn-secondary">Télécharger</button>
+      </div>
+    `;
+    const modal = showModalSecond(html, "Exporter");
+    const pw = modal.querySelector("#exportPassword");
+    const doExport = modal.querySelector("#doExport");
+    const resultArea = modal.querySelector("#exportResult");
+    const copyBtn = modal.querySelector("#copyExport");
+    const downloadBtn = modal.querySelector("#downloadExport");
+
+    doExport.addEventListener("click", async () => {
+      const password = pw.value || "";
+      if (!password) return alert("Mot de passe requis pour chiffrer");
       try {
-        const text = await file.text();
-        Object.assign(state, JSON.parse(text));
-        save();
-        renderMain();
-        renderSettingsBody();
-        modal.setAttribute("aria-hidden", "true");
-        document.body.classList.remove("modal-open");
+        const encoded = await encryptJsonWithPassword(state, password);
+        resultArea.value = encoded;
+      } catch (err) {
+        console.error("Encryption error", err);
+        alert("Échec lors du chiffrement");
+      }
+    });
+
+    copyBtn.addEventListener("click", async () => {
+      if (!resultArea.value) return;
+      try {
+        await navigator.clipboard.writeText(resultArea.value);
+      } catch {
+        resultArea.select();
+        document.execCommand("copy");
+      }
+    });
+
+    downloadBtn.addEventListener("click", () => {
+      if (!resultArea.value) return;
+      const blob = new Blob([resultArea.value], { type: "text/plain;charset=utf-8" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "clicker-save.txt";
+      a.click();
+      URL.revokeObjectURL(a.href);
+    });
+  }
+
+  // Import: colle chaîne chiffrée, mot de passe, déchiffre et applique
+  function importState(state, save, renderMain, renderSettingsBody) {
+    const html = `
+      <p class="section-title">Importer — collez la chaîne chiffrée</p>
+      <label class="label">Chaîne chiffrée</label>
+      <textarea id="importData" class="input" rows="6" placeholder="Coller la chaîne ici"></textarea>
+      <label class="label" style="margin-top:8px;">Mot de passe</label>
+      <input id="importPassword" type="password" class="input" autocomplete="current-password" />
+      <div class="row" style="gap:8px; margin-top:8px;">
+        <button id="doImport" class="btn btn-primary">Importer</button>
+        <button id="pasteClipboard" class="btn btn-secondary">Coller depuis le presse-papiers</button>
+      </div>
+      <p class="muted" style="margin-top:8px;">Si vous avez téléchargé un fichier, ouvrez-le et copiez-collez son contenu ici.</p>
+    `;
+    const modal = showModalSecond(html, "Importer");
+    const dataArea = modal.querySelector("#importData");
+    const pw = modal.querySelector("#importPassword");
+    const doImport = modal.querySelector("#doImport");
+    const pasteBtn = modal.querySelector("#pasteClipboard");
+
+    pasteBtn.addEventListener("click", async () => {
+      try {
+        const text = await navigator.clipboard.readText();
+        dataArea.value = text;
+      } catch {
+        alert("Impossible de lire le presse-papiers");
+      }
+    });
+
+    doImport.addEventListener("click", async () => {
+      const encrypted = dataArea.value.trim();
+      const password = pw.value || "";
+      if (!encrypted) return alert("Aucune donnée fournie");
+      if (!password) return alert("Mot de passe requis");
+      try {
+        const parsed = await decryptJsonWithPassword(encrypted, password);
+        // merge safely
+        Object.keys(state).forEach(k => delete state[k]);
+        Object.assign(state, parsed);
+        // persist and rerender via callbacks
+        if (typeof save === "function") save();
+        if (typeof renderMain === "function") renderMain();
+        if (typeof renderSettingsBody === "function") renderSettingsBody();
+        // close modal
+        const mm = document.getElementById("modalSecond");
+        if (mm) {
+          mm.setAttribute("aria-hidden", "true");
+          document.body.classList.remove("modal-open");
+        }
       } catch (err) {
         console.error("Import failed:", err);
-        alert("Fichier invalide");
+        alert("Mot de passe incorrect ou données corrompues");
       }
     });
   }
