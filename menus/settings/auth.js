@@ -1,10 +1,12 @@
+// auth.js
 import app from "../firebase.js";
 import {
   getAuth,
   OAuthProvider,
   signInWithRedirect,
   getRedirectResult,
-  signOut
+  signOut,
+  onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
 
 const auth = getAuth(app);
@@ -12,53 +14,81 @@ const provider = new OAuthProvider("microsoft.com");
 provider.setCustomParameters({ prompt: "consent", tenant: "common" });
 
 let currentUser = null;
+const REDIRECT_FLAG = "authRedirecting";
 
-// 🔐 Connexion Microsoft
-export function openMicrosoftLogin() {
-  return signInWithRedirect(auth, provider).catch(err => {
-    console.error("Erreur OAuth Microsoft:", err);
-    alert("Connexion échouée");
-  });
+// -----------------------------
+// Utilitaires UI
+// -----------------------------
+function getLoginBtn() {
+  return document.getElementById("loginBtn");
 }
 
-// 🔄 Résultat du redirect
-export function handleRedirectResult(callback) {
-  return getRedirectResult(auth).then(result => {
-    if (result && result.user) {
-      currentUser = result.user;
+function updateLoginBtnForUser(user) {
+  const btn = getLoginBtn();
+  if (!btn) return;
+  if (user) {
+    btn.textContent = "Compte";
+    btn.disabled = false;
+  } else {
+    btn.textContent = "Se connecter avec Microsoft";
+    btn.disabled = false;
+  }
+}
 
-      // 🔁 Attendre que le bouton soit dans le DOM
-      const updateButton = () => {
-        const btn = document.getElementById("loginBtn");
-        if (btn) {
-          btn.textContent = "Compte";
-          btn.disabled = false;
-          return true;
-        }
-        return false;
-      };
+function setLoginBtnPending() {
+  const btn = getLoginBtn();
+  if (!btn) return;
+  btn.textContent = "Connexion en cours…";
+  btn.disabled = true;
+}
 
-      if (!updateButton()) {
-        const observer = new MutationObserver(() => {
-          if (updateButton()) observer.disconnect();
-        });
-        observer.observe(document.body, { childList: true, subtree: true });
+// Attendre qu'un élément existe dans le DOM (retourne la référence ou null)
+function waitForElement(id, timeout = 3000) {
+  return new Promise(resolve => {
+    const el = document.getElementById(id);
+    if (el) return resolve(el);
+
+    const observer = new MutationObserver(() => {
+      const found = document.getElementById(id);
+      if (found) {
+        observer.disconnect();
+        resolve(found);
       }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
 
-      if (callback) callback({ user: result.user });
-    }
-    return result;
+    // fallback timeout
+    setTimeout(() => {
+      observer.disconnect();
+      resolve(document.getElementById(id));
+    }, timeout);
   });
 }
 
+// -----------------------------
+// Connexion / Déconnexion
+// -----------------------------
+export function openMicrosoftLogin() {
+  try {
+    // flag pour indiquer qu'on part en redirect
+    sessionStorage.setItem(REDIRECT_FLAG, "1");
+    return signInWithRedirect(auth, provider).catch(err => {
+      sessionStorage.removeItem(REDIRECT_FLAG);
+      console.error("Erreur OAuth Microsoft (signInWithRedirect):", err);
+      alert("Connexion échouée");
+    });
+  } catch (err) {
+    sessionStorage.removeItem(REDIRECT_FLAG);
+    console.error("Erreur openMicrosoftLogin:", err);
+    alert("Connexion échouée");
+  }
+}
 
-// 🚪 Déconnexion
 export async function appSignOut() {
   try {
     await signOut(auth);
     currentUser = null;
-    const btn = document.getElementById("loginBtn");
-    if (btn) btn.textContent = "Se connecter avec Microsoft";
+    updateLoginBtnForUser(null);
     const modal = document.getElementById("accountModal");
     if (modal) modal.hidden = true;
   } catch (err) {
@@ -67,8 +97,34 @@ export async function appSignOut() {
   }
 }
 
-// 🧩 Injection et gestion du modal-second
-export function initAuthUI({ save, renderMain }) {
+// -----------------------------
+// Gestion du redirect result
+// -----------------------------
+export async function handleRedirectResult(callback) {
+  try {
+    const result = await getRedirectResult(auth);
+    // getRedirectResult peut retourner null si pas de redirect en cours
+    if (result && result.user) {
+      currentUser = result.user;
+      updateLoginBtnForUser(result.user);
+      sessionStorage.removeItem(REDIRECT_FLAG);
+      if (typeof callback === "function") callback({ user: result.user, result });
+    } else {
+      // Pas de résultat de redirect, on laisse onAuthStateChanged gérer l'UI
+      sessionStorage.removeItem(REDIRECT_FLAG);
+    }
+    return result;
+  } catch (err) {
+    sessionStorage.removeItem(REDIRECT_FLAG);
+    console.error("Erreur getRedirectResult:", err);
+    return null;
+  }
+}
+
+// -----------------------------
+// Initialisation UI et modal
+// -----------------------------
+export function initAuthUI({ save, renderMain } = {}) {
   // Injecte le modal-second une seule fois
   if (!document.getElementById("accountModal")) {
     const modal = document.createElement("div");
@@ -109,14 +165,59 @@ export function initAuthUI({ save, renderMain }) {
     });
   }
 
-  // Gestion du bouton principal (dans settings.js)
+  // Clic sur le bouton principal
   document.addEventListener("click", e => {
-    if (e.target && e.target.id === "loginBtn" && currentUser) {
-      const modal = document.getElementById("accountModal");
-      if (modal) modal.hidden = false;
+    if (e.target && e.target.id === "loginBtn") {
+      if (currentUser) {
+        const modal = document.getElementById("accountModal");
+        if (modal) modal.hidden = false;
+      } else {
+        // si pas connecté, lancer le flow
+        openMicrosoftLogin();
+      }
     }
   });
 }
 
-// 🔓 Expose globalement
-window.__appSignOut = appSignOut;
+// -----------------------------
+// Synchronisation de l'UI au démarrage
+// -----------------------------
+function initAuthListeners() {
+  // onAuthStateChanged met à jour l'UI dès que Firebase connaît l'utilisateur
+  onAuthStateChanged(auth, user => {
+    currentUser = user || null;
+    updateLoginBtnForUser(user);
+  });
+
+  // Si on revient d'un redirect, on veut afficher un état "pending" tant que getRedirectResult n'a pas répondu
+  if (sessionStorage.getItem(REDIRECT_FLAG)) {
+    // Si le bouton n'existe pas encore, on attend un peu
+    waitForElement("loginBtn", 5000).then(btn => {
+      if (btn) setLoginBtnPending();
+      // Tenter de récupérer le résultat du redirect
+      handleRedirectResult().catch(err => {
+        console.error("Erreur handleRedirectResult (init):", err);
+      });
+    });
+  } else {
+    // Pas de redirect en cours : on s'assure que le bouton est à jour au chargement
+    waitForElement("loginBtn", 3000).then(btn => {
+      updateLoginBtnForUser(currentUser);
+    });
+  }
+}
+
+// -----------------------------
+// Initialisation automatique (à appeler depuis ton script principal)
+// -----------------------------
+export function startAuth({ save, renderMain } = {}) {
+  initAuthUI({ save, renderMain });
+  initAuthListeners();
+  // Expose globalement la déconnexion si besoin
+  window.__appSignOut = appSignOut;
+}
+
+// -----------------------------
+// Exports utiles
+// -----------------------------
+export { currentUser };
