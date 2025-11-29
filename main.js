@@ -119,15 +119,6 @@ import { initShop }                   from "./menus/shop.js";
 import { initSettings } from "./menus/settings/settings.js";
 import { initCoinDrop } from "./modules/initCoinDrop.js";
 import { initUpdatePopup } from './popup.js';
-import { fetchBuildVersion } from "./utils/version.js";
-
-let BUILD_VERSION = null;
-
-// charger la version (async) au démarrage
-fetchBuildVersion().then(v => {
-  BUILD_VERSION = v;
-  try { renderMain(); } catch (e) { /* renderMain peut ne pas être défini encore */ }
-});
 
 // ─── Sélecteurs DOM ───
 const els = {
@@ -171,11 +162,7 @@ function renderMain() {
     getShopBoostFactor();
 
   els.tapBtn.textContent = `👇 Tapper (+${realPerClick.toFixed(2)})`;
-  if (BUILD_VERSION) {
-  els.versionText.textContent = `Toni’s Studios – v2.6 - ${BUILD_VERSION}`;
-} else {
   els.versionText.textContent = `Toni’s Studios – v2.6`;
-}
 
 
   if (els.boostValue) {
