@@ -9,6 +9,9 @@ import {
   onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
 
+// -----------------------------
+// Initialisation Auth
+// -----------------------------
 const auth = getAuth(app);
 const provider = new OAuthProvider("microsoft.com");
 provider.setCustomParameters({ prompt: "consent", tenant: "common" });
@@ -42,7 +45,6 @@ function setLoginBtnPending() {
   btn.disabled = true;
 }
 
-// Attendre qu'un élément existe dans le DOM (retourne la référence ou null)
 function waitForElement(id, timeout = 3000) {
   return new Promise(resolve => {
     const el = document.getElementById(id);
@@ -57,7 +59,6 @@ function waitForElement(id, timeout = 3000) {
     });
     observer.observe(document.body, { childList: true, subtree: true });
 
-    // fallback timeout
     setTimeout(() => {
       observer.disconnect();
       resolve(document.getElementById(id));
@@ -70,11 +71,10 @@ function waitForElement(id, timeout = 3000) {
 // -----------------------------
 export function openMicrosoftLogin() {
   try {
-    // flag pour indiquer qu'on part en redirect
     sessionStorage.setItem(REDIRECT_FLAG, "1");
     return signInWithRedirect(auth, provider).catch(err => {
       sessionStorage.removeItem(REDIRECT_FLAG);
-      console.error("Erreur OAuth Microsoft (signInWithRedirect):", err);
+      console.error("Erreur OAuth Microsoft:", err);
       alert("Connexion échouée");
     });
   } catch (err) {
@@ -103,14 +103,12 @@ export async function appSignOut() {
 export async function handleRedirectResult(callback) {
   try {
     const result = await getRedirectResult(auth);
-    // getRedirectResult peut retourner null si pas de redirect en cours
     if (result && result.user) {
       currentUser = result.user;
       updateLoginBtnForUser(result.user);
       sessionStorage.removeItem(REDIRECT_FLAG);
       if (typeof callback === "function") callback({ user: result.user, result });
     } else {
-      // Pas de résultat de redirect, on laisse onAuthStateChanged gérer l'UI
       sessionStorage.removeItem(REDIRECT_FLAG);
     }
     return result;
@@ -125,7 +123,6 @@ export async function handleRedirectResult(callback) {
 // Initialisation UI et modal
 // -----------------------------
 export function initAuthUI({ save, renderMain } = {}) {
-  // Injecte le modal-second une seule fois
   if (!document.getElementById("accountModal")) {
     const modal = document.createElement("div");
     modal.className = "modal modal-second";
@@ -143,7 +140,6 @@ export function initAuthUI({ save, renderMain } = {}) {
     `;
     document.body.appendChild(modal);
 
-    // Bind boutons du modal
     modal.querySelector("#saveBtn").addEventListener("click", () => {
       if (typeof save === "function") save();
       alert("Sauvegarde effectuée !");
@@ -165,14 +161,12 @@ export function initAuthUI({ save, renderMain } = {}) {
     });
   }
 
-  // Clic sur le bouton principal
   document.addEventListener("click", e => {
     if (e.target && e.target.id === "loginBtn") {
       if (currentUser) {
         const modal = document.getElementById("accountModal");
         if (modal) modal.hidden = false;
       } else {
-        // si pas connecté, lancer le flow
         openMicrosoftLogin();
       }
     }
@@ -180,27 +174,22 @@ export function initAuthUI({ save, renderMain } = {}) {
 }
 
 // -----------------------------
-// Synchronisation de l'UI au démarrage
+// Synchronisation de l'UI
 // -----------------------------
 function initAuthListeners() {
-  // onAuthStateChanged met à jour l'UI dès que Firebase connaît l'utilisateur
   onAuthStateChanged(auth, user => {
     currentUser = user || null;
     updateLoginBtnForUser(user);
   });
 
-  // Si on revient d'un redirect, on veut afficher un état "pending" tant que getRedirectResult n'a pas répondu
   if (sessionStorage.getItem(REDIRECT_FLAG)) {
-    // Si le bouton n'existe pas encore, on attend un peu
     waitForElement("loginBtn", 5000).then(btn => {
       if (btn) setLoginBtnPending();
-      // Tenter de récupérer le résultat du redirect
       handleRedirectResult().catch(err => {
         console.error("Erreur handleRedirectResult (init):", err);
       });
     });
   } else {
-    // Pas de redirect en cours : on s'assure que le bouton est à jour au chargement
     waitForElement("loginBtn", 3000).then(btn => {
       updateLoginBtnForUser(currentUser);
     });
@@ -208,12 +197,11 @@ function initAuthListeners() {
 }
 
 // -----------------------------
-// Initialisation automatique (à appeler depuis ton script principal)
+// Initialisation automatique
 // -----------------------------
 export function startAuth({ save, renderMain } = {}) {
   initAuthUI({ save, renderMain });
   initAuthListeners();
-  // Expose globalement la déconnexion si besoin
   window.__appSignOut = appSignOut;
 }
 
