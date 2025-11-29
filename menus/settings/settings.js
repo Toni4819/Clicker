@@ -126,20 +126,19 @@ export function initSettings({ els, state, save, renderMain }) {
     const codesBtn  = body.querySelector("#codesBtn");
     const resetBtn  = body.querySelector("#resetBtn");
 
-    if (loginBtn) {
-      loginBtn.addEventListener("click", () => {
-        loginBtn.disabled = true;
-        const original = loginBtn.textContent;
-        loginBtn.textContent = "Connexion...";
-        try {
-          openMicrosoftLogin();
-        } catch (err) {
-          console.error("Erreur ouverture login :", err);
-          loginBtn.disabled = false;
-          loginBtn.textContent = original;
-        }
-      });
-    }
+handleRedirectResult(({ user }) => {
+  if (user) {
+    state.user = {
+      name: user.displayName || "Utilisateur",
+      email: user.email || null,
+      photo: user.photoURL || null,
+      uid: user.uid
+    };
+    save();
+    renderMain();
+  }
+});
+
 
     if (exportBtn) exportBtn.addEventListener("click", () => {
       try {
