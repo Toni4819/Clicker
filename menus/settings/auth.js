@@ -14,7 +14,7 @@ import {
 // -----------------------------
 const auth = getAuth(app);
 const provider = new OAuthProvider("microsoft.com");
-provider.setCustomParameters({ prompt: "consent", tenant: "common" });
+provider.setCustomParameters({ prompt: "select_account" });
 
 let currentUser = null;
 const REDIRECT_FLAG = "authRedirecting";
@@ -109,6 +109,7 @@ export async function handleRedirectResult(callback) {
       sessionStorage.removeItem(REDIRECT_FLAG);
       if (typeof callback === "function") callback({ user: result.user, result });
     } else {
+      // Pas de résultat, mais on laisse onAuthStateChanged gérer le fallback
       sessionStorage.removeItem(REDIRECT_FLAG);
     }
     return result;
@@ -177,11 +178,18 @@ export function initAuthUI({ save, renderMain } = {}) {
 // Synchronisation de l'UI
 // -----------------------------
 function initAuthListeners() {
+  // Fallback principal : toujours écouter l'état
   onAuthStateChanged(auth, user => {
     currentUser = user || null;
     updateLoginBtnForUser(user);
+
+    if (sessionStorage.getItem(REDIRECT_FLAG) && user) {
+      // Si on revient du redirect et que Firebase a déjà l’utilisateur
+      sessionStorage.removeItem(REDIRECT_FLAG);
+    }
   });
 
+  // Essayer quand même de récupérer les infos supplémentaires
   if (sessionStorage.getItem(REDIRECT_FLAG)) {
     waitForElement("loginBtn", 5000).then(btn => {
       if (btn) setLoginBtnPending();
