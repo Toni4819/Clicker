@@ -19,6 +19,11 @@ export function initSettings({ els, state, save, renderMain }) {
     modal.setAttribute("aria-hidden", "true");
     modal.setAttribute("role", "dialog");
     modal.setAttribute("aria-labelledby", "settingsTitle");
+
+    // positionnement et z-index pour rester sous modal-second
+    modal.style.position = "fixed";
+    modal.style.zIndex = "10000";
+
     document.body.append(modal);
     els.settingsModal = modal;
   }
