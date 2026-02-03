@@ -109,7 +109,7 @@ export async function handleRedirectResult(callback) {
       sessionStorage.removeItem(REDIRECT_FLAG);
       if (typeof callback === "function") callback({ user: result.user, result });
     } else {
-      // Pas de résultat, mais on laisse onAuthStateChanged gérer le fallback
+      // Pas de résultat, mais onAuthStateChanged prendra le relais
       sessionStorage.removeItem(REDIRECT_FLAG);
     }
     return result;
@@ -178,18 +178,17 @@ export function initAuthUI({ save, renderMain } = {}) {
 // Synchronisation de l'UI
 // -----------------------------
 function initAuthListeners() {
-  // Fallback principal : toujours écouter l'état
+  // Toujours écouter l'état utilisateur
   onAuthStateChanged(auth, user => {
     currentUser = user || null;
     updateLoginBtnForUser(user);
 
     if (sessionStorage.getItem(REDIRECT_FLAG) && user) {
-      // Si on revient du redirect et que Firebase a déjà l’utilisateur
       sessionStorage.removeItem(REDIRECT_FLAG);
     }
   });
 
-  // Essayer quand même de récupérer les infos supplémentaires
+  // Si on revient d’un redirect, afficher "Connexion en cours…" puis traiter le résultat
   if (sessionStorage.getItem(REDIRECT_FLAG)) {
     waitForElement("loginBtn", 5000).then(btn => {
       if (btn) setLoginBtnPending();
