@@ -67,6 +67,11 @@ export function initImportExport() {
       modal.setAttribute("aria-hidden", "true");
       modal.setAttribute("role", "dialog");
       modal.setAttribute("aria-modal", "false");
+
+      // Force positionnement et z-index pour être au-dessus des autres modales
+      modal.style.position = "fixed";
+      modal.style.zIndex = "10010";
+
       modal.innerHTML = `
         <div class="modal-content" role="document">
           <header class="modal-header">
@@ -134,6 +139,10 @@ export function initImportExport() {
       bodyDiv.id = "modalSecondBody";
       modal.querySelector(".modal-content").appendChild(bodyDiv);
     }
+
+    // S'assurer que le style z-index est correct même si la modal existait déjà
+    modal.style.position = modal.style.position || "fixed";
+    modal.style.zIndex = modal.style.zIndex || "10010";
 
     // Attacher le listener de clic sur le fond si absent
     if (!modal._modalSecondBackdropListener) {
