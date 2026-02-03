@@ -87,6 +87,9 @@ export function initSettings({ els, state, save, renderMain }) {
     settingsBtn.focus();
   }
 
+  // Initialiser import/export une seule fois et réutiliser
+  const ie = initImportExport();
+
   function renderSettingsBody() {
     // Structure alignée sur style.css : sections, actions-grid, boutons .btn-*
     body.innerHTML = `
@@ -126,23 +129,10 @@ export function initSettings({ els, state, save, renderMain }) {
     const codesBtn  = body.querySelector("#codesBtn");
     const resetBtn  = body.querySelector("#resetBtn");
 
-handleRedirectResult(({ user }) => {
-  if (user) {
-    state.user = {
-      name: user.displayName || "Utilisateur",
-      email: user.email || null,
-      photo: user.photoURL || null,
-      uid: user.uid
-    };
-    save();
-    renderMain();
-  }
-});
-
+    if (loginBtn) loginBtn.addEventListener("click", openMicrosoftLogin);
 
     if (exportBtn) exportBtn.addEventListener("click", () => {
       try {
-        const ie = initImportExport();
         ie.exportState(state);
       } catch (err) {
         console.error("Erreur export :", err);
@@ -151,7 +141,6 @@ handleRedirectResult(({ user }) => {
 
     if (importBtn) importBtn.addEventListener("click", () => {
       try {
-        const ie = initImportExport();
         ie.importState(state, save, renderMain, renderSettingsBody);
       } catch (err) {
         console.error("Erreur import :", err);
@@ -184,9 +173,15 @@ handleRedirectResult(({ user }) => {
   // Initialise l'UI auth secondaire et gère le retour OAuth
   initAuthUI({ save, renderMain });
 
+  // Un seul handleRedirectResult centralisé
   handleRedirectResult(({ user }) => {
     if (user) {
-      state.user = { name: user.displayName || "Utilisateur" };
+      state.user = {
+        name: user.displayName || "Utilisateur",
+        email: user.email || null,
+        photo: user.photoURL || null,
+        uid: user.uid
+      };
       save();
       renderMain();
     }
