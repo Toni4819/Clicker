@@ -60,46 +60,117 @@ export function initImportExport() {
   // modal-second : modal léger placé en dessous du modal principal si besoin
   function ensureModalSecond() {
     let modal = document.getElementById("modalSecond");
-    if (modal) return modal;
-    modal = document.createElement("div");
-    modal.id = "modalSecond";
-    modal.className = "modal modal-second"; // utilise les styles existants modal-second
-    modal.setAttribute("aria-hidden", "true");
-    modal.setAttribute("role", "dialog");
-    modal.setAttribute("aria-modal", "false");
-    modal.innerHTML = `
-      <div class="modal-content" role="document">
-        <header class="modal-header">
-          <h3 id="modalSecondTitle">Importer / Exporter</h3>
-          <button class="close-btn" aria-label="Fermer">✕</button>
-        </header>
-        <div class="modal-body" id="modalSecondBody"></div>
-      </div>
-    `;
-    document.body.append(modal);
-
-    const close = () => {
+    if (!modal) {
+      modal = document.createElement("div");
+      modal.id = "modalSecond";
+      modal.className = "modal modal-second"; // utilise les styles existants modal-second
       modal.setAttribute("aria-hidden", "true");
-      document.body.classList.remove("modal-open");
-      // cleanup listeners that may remain on dynamic elements
-      const doImport = modal.querySelector("#doImport");
-      if (doImport) doImport.replaceWith(doImport.cloneNode(true));
-      const doExport = modal.querySelector("#doExport");
-      if (doExport) doExport.replaceWith(doExport.cloneNode(true));
-    };
+      modal.setAttribute("role", "dialog");
+      modal.setAttribute("aria-modal", "false");
+      modal.innerHTML = `
+        <div class="modal-content" role="document">
+          <header class="modal-header">
+            <h3 id="modalSecondTitle">Importer / Exporter</h3>
+            <button class="close-btn" aria-label="Fermer">✕</button>
+          </header>
+          <div class="modal-body" id="modalSecondBody"></div>
+        </div>
+      `;
+      document.body.append(modal);
 
-    modal.querySelector(".close-btn").addEventListener("click", close);
-    modal.addEventListener("click", e => {
-      if (e.target === modal) close();
-    });
+      const close = () => {
+        modal.setAttribute("aria-hidden", "true");
+        document.body.classList.remove("modal-open");
+        // cleanup listeners that may remain on dynamic elements
+        const doImport = modal.querySelector("#doImport");
+        if (doImport) doImport.replaceWith(doImport.cloneNode(true));
+        const doExport = modal.querySelector("#doExport");
+        if (doExport) doExport.replaceWith(doExport.cloneNode(true));
+      };
+
+      modal.querySelector(".close-btn").addEventListener("click", close);
+      modal.addEventListener("click", e => {
+        if (e.target === modal) close();
+      });
+      return modal;
+    }
+
+    // Si la modal existait déjà, s'assurer que la structure minimale est présente
+    if (!modal.querySelector(".modal-content")) {
+      const content = document.createElement("div");
+      content.className = "modal-content";
+      content.setAttribute("role", "document");
+      modal.appendChild(content);
+    }
+
+    if (!modal.querySelector(".modal-header")) {
+      const header = document.createElement("header");
+      header.className = "modal-header";
+      modal.querySelector(".modal-content").insertBefore(header, modal.querySelector(".modal-content").firstChild);
+    }
+
+    if (!modal.querySelector("#modalSecondTitle")) {
+      const h3 = document.createElement("h3");
+      h3.id = "modalSecondTitle";
+      h3.textContent = "Importer / Exporter";
+      modal.querySelector(".modal-header").insertBefore(h3, modal.querySelector(".modal-header").firstChild || null);
+    }
+
+    if (!modal.querySelector(".close-btn")) {
+      const btn = document.createElement("button");
+      btn.className = "close-btn";
+      btn.setAttribute("aria-label", "Fermer");
+      btn.textContent = "✕";
+      modal.querySelector(".modal-header").appendChild(btn);
+      btn.addEventListener("click", () => {
+        modal.setAttribute("aria-hidden", "true");
+        document.body.classList.remove("modal-open");
+      });
+    }
+
+    if (!modal.querySelector("#modalSecondBody")) {
+      const bodyDiv = document.createElement("div");
+      bodyDiv.className = "modal-body";
+      bodyDiv.id = "modalSecondBody";
+      modal.querySelector(".modal-content").appendChild(bodyDiv);
+    }
+
+    // Attacher le listener de clic sur le fond si absent
+    if (!modal._modalSecondBackdropListener) {
+      const backdropListener = e => { if (e.target === modal) { modal.setAttribute("aria-hidden", "true"); document.body.classList.remove("modal-open"); } };
+      modal.addEventListener("click", backdropListener);
+      modal._modalSecondBackdropListener = true;
+    }
+
     return modal;
   }
 
   function showModalSecond(contentHtml, title) {
     const modal = ensureModalSecond();
     const body = modal.querySelector("#modalSecondBody");
-    if (title) modal.querySelector("#modalSecondTitle").textContent = title;
-    body.innerHTML = contentHtml;
+    const titleEl = modal.querySelector("#modalSecondTitle");
+
+    if (title) {
+      if (titleEl) titleEl.textContent = title;
+      else {
+        const header = modal.querySelector(".modal-header") || modal.querySelector(".modal-content") || modal;
+        const h3 = document.createElement("h3");
+        h3.id = "modalSecondTitle";
+        h3.textContent = title;
+        header.insertBefore(h3, header.firstChild || null);
+      }
+    }
+
+    if (body) {
+      body.innerHTML = contentHtml;
+    } else {
+      const newBody = document.createElement("div");
+      newBody.className = "modal-body";
+      newBody.id = "modalSecondBody";
+      newBody.innerHTML = contentHtml;
+      modal.querySelector(".modal-content").appendChild(newBody);
+    }
+
     modal.setAttribute("aria-hidden", "false");
     document.body.classList.add("modal-open");
     return modal;
